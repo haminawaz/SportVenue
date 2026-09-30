@@ -7,7 +7,6 @@ import { DayTimeline } from '@/features/bookings/components/DayTimeline';
 import type { CalendarDate } from '@/lib/datetime';
 import { useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { EmptyState } from '@/ui/EmptyState';
 import { ErrorState } from '@/ui/ErrorState';
 import { Screen } from '@/ui/Screen';
@@ -19,14 +18,13 @@ import { useAvailability, useCourt } from '../api';
 export function CourtCalendarScreen() {
   const { id, date: initial } = useLocalSearchParams<{ id: string; date?: string }>();
   const router = useRouter();
-  const { can } = useSession();
   const f = useFormat();
   const today = f.today();
   const [date, setDate] = useState<CalendarDate>(initial ?? today);
   const court = useCourt(id);
   const availability = useAvailability(id, date);
   const [refreshing, setRefreshing] = useState(false);
-  const bookable = can('booking.create') && court.data?.status === 'ACTIVE';
+  const bookable = court.data?.status === 'ACTIVE';
   const slots = availability.data?.slots ?? [];
   const free = slots.filter((s) => s.status === 'FREE').length;
 

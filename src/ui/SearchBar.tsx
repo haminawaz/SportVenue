@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { MagnifyingGlass, XCircle } from 'phosphor-react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fontFamily, radius, spacing, touchTarget } from '@/theme/tokens';
+import { radius, spacing, touchTarget, typography } from '@/theme/tokens';
 
 import { useSurface } from './surface';
 
@@ -25,7 +25,7 @@ export function SearchBar({ value, onChange, placeholder, label }: SearchBarProp
         returnKeyType="search"
         autoCorrect={false}
         autoCapitalize="none"
-        style={[styles.input, { color: colors.text, fontFamily: fontFamily.regular }]}
+        style={[styles.input, { color: colors.text }]}
         maxFontSizeMultiplier={1.5}
       />
       {value.length > 0 && (
@@ -39,5 +39,5 @@ export function SearchBar({ value, onChange, placeholder, label }: SearchBarProp
 
 const styles = StyleSheet.create({
   box: { minHeight: touchTarget + 4, borderRadius: radius.full, flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl },
-  input: { flex: 1, fontSize: 17, paddingVertical: spacing.md },
+  input: { ...typography['body-md'], flex: 1, paddingVertical: spacing.md },
 });

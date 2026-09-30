@@ -7,7 +7,7 @@ import { ApiError } from '@/api/client';
 import { addDays, todayIn } from '@/lib/datetime';
 import { dashboardDestinations } from '@/navigation/dashboardDestinations';
 import { SessionProvider } from '@/session/SessionProvider';
-import type { Permission, Session } from '@/session/types';
+import type { Session } from '@/session/types';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ToastProvider } from '@/ui/Toast';
 
@@ -39,13 +39,10 @@ const service = facilityDashboardService as jest.Mocked<typeof facilityDashboard
 const mockDestinations = dashboardDestinations as jest.Mocked<typeof dashboardDestinations>;
 
 const TZ = 'Asia/Karachi';
-const ALL: Permission[] = ['dashboard.view', 'booking.create', 'booking.view', 'payment.view', 'payment.remind', 'opportunity.view'];
-
-function makeSession(permissions: Permission[] = ALL): Session {
+function makeSession(): Session {
   return {
     user: { id: 'u1', firstName: 'Hamid', lastName: 'Nawaz', email: 'hamid@example.com', role: 'OWNER' },
     facility: { id: 'fac_1', name: 'Baseline Padel Club', timezone: TZ, currency: 'PKR' },
-    permissions,
   };
 }
 
@@ -165,7 +162,6 @@ describe('states', () => {
 
     expect(await screen.findByText('No bookings for this period')).toBeOnTheScreen();
     expect(screen.getByText("You're all caught up")).toBeOnTheScreen();
-    expect(screen.getByText('No outstanding payments')).toBeOnTheScreen();
     expect(screen.queryByText('Unable to load dashboard')).not.toBeOnTheScreen();
   });
 
@@ -181,10 +177,10 @@ describe('states', () => {
     expect(await screen.findByText(money('Rs 24,500'))).toBeOnTheScreen();
   });
 
-  test('403 explains missing permission and offers no pointless retry', async () => {
+  test('403 explains lost facility access and offers no pointless retry', async () => {
     service.getDashboard.mockRejectedValue(new ApiError(403, ''));
     await renderDashboard();
-    expect(await screen.findByText("You don't have permission to view this dashboard.")).toBeOnTheScreen();
+    expect(await screen.findByText('This account no longer has access to this facility. Log out and back in to continue.')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeOnTheScreen();
   });
 
@@ -266,31 +262,27 @@ describe('navigation', () => {
   });
 });
 
-describe('permissions', () => {
-  test('hides Remind without payment.remind but still shows the payment', async () => {
-    await renderDashboard(makeSession(['dashboard.view', 'booking.view', 'payment.view']));
-    expect(await screen.findByText('Ahmed Khan')).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: /Remind/ })).not.toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: 'New booking' })).not.toBeOnTheScreen();
-  });
-
-  test('hides Remind when the backend has no reminder capability', async () => {
+describe('owner actions', () => {
+  test('hides Remind when the facility plan has no reminder capability', async () => {
     service.getDashboard.mockResolvedValue(makeDashboard({ capabilities: { paymentReminders: false } }));
     await renderDashboard();
     expect(await screen.findByText('Ahmed Khan')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /Remind/ })).not.toBeOnTheScreen();
   });
 
-  test('shows authorised actions', async () => {
+  test('the owner sees every action', async () => {
     await renderDashboard();
     expect(await screen.findByRole('button', { name: 'Remind Ahmed Khan to pay' })).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'New booking' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Record payment' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Add customer' })).toBeOnTheScreen();
   });
 
-  test('without dashboard.view nothing is fetched', async () => {
-    await renderDashboard(makeSession([]));
-    expect(screen.getByText("You don't have permission to view this dashboard.")).toBeOnTheScreen();
-    expect(service.getDashboard).not.toHaveBeenCalled();
+  test('outstanding payments and opportunities share one Needs attention list', async () => {
+    await renderDashboard();
+    expect(await screen.findByText('Needs attention')).toBeOnTheScreen();
+    expect(screen.getByText('Ahmed Khan')).toBeOnTheScreen();
+    expect(screen.getByText('Low demand on Court 2')).toBeOnTheScreen();
   });
 });
 

@@ -23,7 +23,7 @@ export function ErrorState({ title, message, onRetry, retrying }: ErrorStateProp
       <View style={[styles.iconWrap, { backgroundColor: colors.dangerSoft }]}>
         <WarningCircle size={30} color={colors.danger} />
       </View>
-      <AppText variant="heading" style={styles.center}>
+      <AppText variant="title-md" style={styles.center}>
         {title}
       </AppText>
       <AppText tone="muted" style={[styles.center, styles.message]}>

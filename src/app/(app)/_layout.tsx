@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fontFamily } from '@/theme/tokens';
+import { typography } from '@/theme/tokens';
 
 /** Signed-in area: tabs at the root, every detail and form pushed on top. */
 export default function AppLayout() {
@@ -12,7 +12,8 @@ export default function AppLayout() {
         headerStyle: { backgroundColor: colors.background },
         headerShadowVisible: false,
         headerTintColor: colors.text,
-        headerTitleStyle: { fontFamily: fontFamily.semibold, fontSize: 19, color: colors.text },
+        headerTitleAlign: 'center',
+        headerTitleStyle: { fontFamily: typography['title-md'].fontFamily, fontSize: typography['title-md'].fontSize, color: colors.text },
         headerBackButtonDisplayMode: 'minimal',
         contentStyle: { backgroundColor: colors.background },
       }}

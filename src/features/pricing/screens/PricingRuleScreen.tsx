@@ -8,9 +8,8 @@ import { qk } from '@/api/queryKeys';
 import type { PricingRule, Weekday } from '@/domain/types';
 import { useCourts } from '@/features/courts/api';
 import { opportunitiesService } from '@/features/opportunities/api';
-import { clockOptions, formatClock, formatWeekdays, useFormat } from '@/lib/format';
+import { clockOptions, formatClock, useFormat } from '@/lib/format';
 import { parseMoney, rules as v, useForm } from '@/lib/useForm';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
@@ -50,7 +49,6 @@ type Values = { name: string; courtId: string; weekdays: number[]; startTime?: s
 function RuleForm({ rule }: { rule?: PricingRule }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { can } = useSession();
   const f = useFormat();
   const queryClient = useQueryClient();
   const params = useLocalSearchParams<{ courtId?: string; weekdays?: string; startTime?: string; endTime?: string; name?: string; opportunityId?: string }>();
@@ -59,7 +57,6 @@ function RuleForm({ rule }: { rule?: PricingRule }) {
   const remove = useDeleteRule();
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const canManage = can('pricing.manage');
 
   const form = useForm<Values>(
     {
@@ -84,20 +81,6 @@ function RuleForm({ rule }: { rule?: PricingRule }) {
   );
 
   const court = courts.data?.find((c) => c.id === form.values.courtId);
-
-  if (!canManage && rule) {
-    return (
-      <Screen>
-        <ListGroup title={rule.name}>
-          <ListRow title="Court" value={rule.courtName ?? 'All courts'} />
-          <ListRow title="Days" value={formatWeekdays(rule.weekdays)} />
-          <ListRow title="Time" value={`${formatClock(rule.startTime)} - ${formatClock(rule.endTime)}`} />
-          <ListRow title="Rate" value={`${f.money(rule.hourlyRate)} / h`} />
-          <ListRow title="Status" value={rule.active ? 'Active' : 'Off'} />
-        </ListGroup>
-      </Screen>
-    );
-  }
 
   const submit = async () => {
     setSaving(true);

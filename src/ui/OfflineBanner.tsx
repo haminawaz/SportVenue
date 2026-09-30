@@ -33,7 +33,7 @@ export function OfflineBanner() {
     <View pointerEvents="none" style={[styles.host, { top: insets.top + spacing.xs }]}>
       <View role="alert" style={[styles.pill, { backgroundColor: colors.text, shadowColor: colors.shadow }]}>
         <WifiSlash size={20} color={colors.background} />
-        <AppText variant="bodyStrong" style={{ color: colors.background }}>
+        <AppText variant="body-strong" style={{ color: colors.background }}>
           You’re offline. Showing saved data.
         </AppText>
       </View>

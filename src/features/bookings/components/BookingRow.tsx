@@ -6,12 +6,16 @@ import type { Booking } from '@/domain/types';
 import { facilityWallClock, formatMonthDay, formatTime } from '@/lib/datetime';
 import { useFormat, WEEKDAY_SHORT } from '@/lib/format';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { radius, spacing, typography } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { StatusBadge } from '@/ui/StatusBadge';
 
 type BookingRowProps = { booking: Booking; onPress: (id: string) => void; showDate?: boolean; showCustomer?: boolean };
 
+/**
+ * Two lines and at most one status tag: who and how much, then when and where.
+ * The tag shows only what needs attention (not confirmed, or not fully paid).
+ */
 export const BookingRow = memo(function BookingRow({ booking: b, onPress, showDate = true, showCustomer = true }: BookingRowProps) {
   const { colors } = useTheme();
   const f = useFormat();
@@ -22,6 +26,9 @@ export const BookingRow = memo(function BookingRow({ booking: b, onPress, showDa
   const cancelled = b.status === 'CANCELLED';
   const time = `${formatTime(b.startAt, f.timeZone)} - ${formatTime(b.endAt, f.timeZone)}`;
   const showPay = !cancelled || b.paymentStatus === 'REFUNDED';
+
+  // One tag at most: a booking-status problem wins, then an unpaid balance.
+  const tag = b.status !== 'CONFIRMED' && b.status !== 'COMPLETED' ? status : showPay && b.paymentStatus !== 'PAID' ? pay : null;
 
   const a11y = [
     showCustomer ? b.customerName : undefined,
@@ -38,35 +45,29 @@ export const BookingRow = memo(function BookingRow({ booking: b, onPress, showDa
   return (
     <Pressable role="button" aria-label={a11y} onPress={() => onPress(b.id)} style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceMuted }]}>
       {showDate && (
-        <View style={[styles.date, { backgroundColor: cancelled ? colors.surfaceMuted : colors.accentSoft }]}>
-          <AppText variant="badge" style={{ color: cancelled ? colors.textMuted : colors.accent }}>
-            {weekday.toUpperCase()}
+        <View style={[styles.date, { backgroundColor: cancelled ? colors.surfaceMuted : colors.background }]}>
+          <AppText variant="caption-uppercase" style={{ color: colors.textMuted }}>
+            {weekday}
           </AppText>
-          <AppText variant="heading" numeric style={{ color: cancelled ? colors.textMuted : colors.accent }}>
+          <AppText numeric style={[styles.day, { color: cancelled ? colors.textMuted : colors.text }]}>
             {clock.date.slice(8, 10)}
           </AppText>
         </View>
       )}
       <View style={styles.main}>
-        <View style={styles.top}>
-          <AppText variant="bodyStrong" numberOfLines={1} style={[styles.flex, cancelled && { color: colors.textMuted }]}>
+        <View style={styles.line}>
+          <AppText variant="body-strong" numberOfLines={1} style={[styles.flex, cancelled && { color: colors.textMuted }]}>
             {showCustomer ? b.customerName : time}
           </AppText>
-          <AppText variant="bodyStrong" numeric tone={cancelled ? 'subtle' : 'default'} style={cancelled && styles.struck}>
+          <AppText variant="body-strong" numeric tone={cancelled ? 'subtle' : 'default'} style={cancelled && styles.struck}>
             {f.money(b.total)}
           </AppText>
         </View>
-        {showCustomer && (
-          <AppText variant="caption" tone="muted" numeric>
-            {time}
+        <View style={styles.line}>
+          <AppText variant="body-sm" tone="muted" numeric numberOfLines={1} style={styles.flex}>
+            {showCustomer ? `${time} · ${b.courtName}` : b.courtName}
           </AppText>
-        )}
-        <AppText variant="caption" tone="muted" numberOfLines={1}>
-          {b.courtName}
-        </AppText>
-        <View style={styles.badges}>
-          {b.status !== 'CONFIRMED' && <StatusBadge label={status.label} tone={status.tone} />}
-          {showPay && <StatusBadge label={pay.label} tone={pay.tone} />}
+          {tag && <StatusBadge label={tag.label} tone={tag.tone} />}
         </View>
       </View>
     </Pressable>
@@ -74,11 +75,11 @@ export const BookingRow = memo(function BookingRow({ booking: b, onPress, showDa
 });
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg, paddingHorizontal: spacing.xl, paddingVertical: spacing.lg },
-  date: { width: 56, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center', paddingVertical: spacing.sm },
-  main: { flex: 1, gap: spacing.xxs },
-  top: { flexDirection: 'row', alignItems: 'baseline', gap: spacing.md },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, minHeight: 80 },
+  date: { width: 54, height: 58, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  day: typography['display-sm'],
+  main: { flex: 1, gap: spacing.xs + 2 },
+  line: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   flex: { flex: 1 },
-  badges: { flexDirection: 'row', gap: spacing.xs + 2, marginTop: spacing.xs, flexWrap: 'wrap' },
   struck: { textDecorationLine: 'line-through' },
 });

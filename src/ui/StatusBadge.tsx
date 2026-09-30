@@ -7,7 +7,7 @@ import { AppText } from './AppText';
 
 export type BadgeTone = 'positive' | 'warning' | 'danger' | 'neutral';
 
-/** Text is always the primary signal; colour only reinforces it. */
+/** Status tag. Text is always the primary signal; colour only reinforces it. Sentence case, 14pt. */
 export function StatusBadge({ label, tone }: { label: string; tone: BadgeTone }) {
   const { colors } = useTheme();
   const map = {
@@ -19,7 +19,7 @@ export function StatusBadge({ label, tone }: { label: string; tone: BadgeTone })
 
   return (
     <View style={[styles.badge, { backgroundColor: map.bg }]}>
-      <AppText variant="badge" style={{ color: map.fg }} numberOfLines={1}>
+      <AppText variant="caption-uppercase" style={{ color: map.fg }} numberOfLines={1}>
         {label}
       </AppText>
     </View>
@@ -27,5 +27,5 @@ export function StatusBadge({ label, tone }: { label: string; tone: BadgeTone })
 }
 
 const styles = StyleSheet.create({
-  badge: { borderRadius: radius.badge, paddingHorizontal: spacing.sm + 2, paddingVertical: spacing.xs, alignSelf: 'flex-start' },
+  badge: { borderRadius: radius.badge, paddingHorizontal: spacing.sm + 2, paddingVertical: 3, alignSelf: 'flex-start' },
 });

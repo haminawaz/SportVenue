@@ -28,9 +28,9 @@ export function EmptyState({ icon: Icon, title, message, action, compact }: Empt
           <Icon size={22} color={colors.textMuted} />
         </View>
         <View style={styles.flex}>
-          <AppText variant="bodyStrong">{title}</AppText>
+          <AppText variant="body-strong">{title}</AppText>
           {message && (
-            <AppText variant="caption" tone="muted">
+            <AppText variant="body-sm" tone="muted">
               {message}
             </AppText>
           )}
@@ -45,7 +45,7 @@ export function EmptyState({ icon: Icon, title, message, action, compact }: Empt
       <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
         <Icon size={30} color={colors.accent} />
       </View>
-      <AppText variant="heading" style={styles.center}>
+      <AppText variant="title-md" style={styles.center}>
         {title}
       </AppText>
       {message && (

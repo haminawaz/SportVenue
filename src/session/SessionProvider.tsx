@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { apiRequest, configureApiAuth } from '@/api/client';
 
 import { tokenStorage } from './tokenStorage';
-import type { FacilityContext, MeResponse, Permission, Session } from './types';
+import type { FacilityContext, MeResponse, Session } from './types';
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
 
@@ -31,7 +31,6 @@ function toSession(me: MeResponse): Session {
       role: me.user.role,
     },
     facility: { id: me.facility.id, name: me.facility.name, timezone: me.facility.timezone, currency: me.facility.currency },
-    permissions: me.permissions,
   };
 }
 
@@ -133,12 +132,9 @@ export function useAuth() {
   return value;
 }
 
-/** For signed-in screens only. */
+/** For signed-in screens only. The signed-in user is always the facility owner. */
 export function useSession() {
   const { session } = useAuth();
-  const granted = session?.permissions;
-  const permissions = useMemo(() => new Set(granted ?? []), [granted]);
-  const can = useCallback((permission: Permission) => permissions.has(permission), [permissions]);
   if (!session) throw new Error('useSession used while signed out');
-  return { session, can };
+  return { session };
 }

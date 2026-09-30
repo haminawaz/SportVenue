@@ -1,12 +1,17 @@
 import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, Buildings, ChartLine, Gear, Lightbulb, Receipt, SignOut, Tag } from 'phosphor-react-native';
+import { Bell, Buildings, CaretRight, ChartLine, CourtBasketball, Gear, Lightbulb, SignOut, Tag } from 'phosphor-react-native';
 
 import { useUnreadCount } from '@/features/notifications/api';
 import { useOpportunities } from '@/features/opportunities/api';
 import { routes } from '@/navigation/routes';
 import { useAuth, useSession } from '@/session/SessionProvider';
+import { useTheme } from '@/theme/ThemeProvider';
+import { spacing } from '@/theme/tokens';
+import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
+import { PressableCard } from '@/ui/Card';
 import { ConfirmDialog } from '@/ui/Dialogs';
 import { LargeTitle } from '@/ui/LargeTitle';
 import { ListGroup, ListRow } from '@/ui/List';
@@ -15,37 +20,43 @@ import { StatusBadge } from '@/ui/StatusBadge';
 
 export function MoreScreen() {
   const router = useRouter();
-  const { session, can } = useSession();
+  const { colors } = useTheme();
+  const { session } = useSession();
   const unread = useUnreadCount();
   const open = useOpportunities(['OPEN']);
   const { user, facility } = session;
+  const name = `${user.firstName} ${user.lastName}`;
 
   return (
     <Screen topInset>
       <LargeTitle title="More" />
-      <ListGroup>
-        <ListRow
-          leading={<Avatar name={`${user.firstName} ${user.lastName}`} size={48} tone="accent" />}
-          title={`${user.firstName} ${user.lastName}`}
-          subtitle={facility.name}
-          onPress={() => router.push(routes.profile)}
-          hint="Opens your profile"
-        />
-      </ListGroup>
 
-      <ListGroup title="Business">
-        {can('payment.view') && <ListRow icon={Receipt} title="Payments" subtitle="Outstanding balances and received payments" onPress={() => router.push(routes.payments())} />}
-        {can('opportunity.view') && (
-          <ListRow
-            icon={Lightbulb}
-            title="Revenue opportunities"
-            subtitle="Suggested actions to fill courts and collect payments"
-            trailing={open.data?.length ? <StatusBadge label={`${open.data.length} open`} tone="warning" /> : undefined}
-            onPress={() => router.push(routes.opportunities)}
-          />
-        )}
-        {can('analytics.view') && <ListRow icon={ChartLine} title="Analytics" subtitle="Revenue, utilization, peak hours and customers" onPress={() => router.push(routes.analytics)} />}
-        {can('pricing.view') && <ListRow icon={Tag} title="Pricing" subtitle="Rates, peak pricing and discounts" onPress={() => router.push(routes.pricing())} />}
+      <PressableCard onPress={() => router.push(routes.profile)} aria-label={`${name}, owner of ${facility.name}`} accessibilityHint="Opens your profile">
+        <View style={styles.profile}>
+          <Avatar name={name} size={56} tone="accent" />
+          <View style={styles.flex}>
+            <AppText variant="title-md" numberOfLines={1}>
+              {name}
+            </AppText>
+            <AppText variant="body-sm" tone="muted" numberOfLines={2}>
+              Owner, {facility.name}
+            </AppText>
+          </View>
+          <CaretRight size={18} color={colors.textSubtle} weight="bold" />
+        </View>
+      </PressableCard>
+
+      <ListGroup title="Run the business">
+        <ListRow icon={CourtBasketball} title="Courts" subtitle="Status, schedules and base rates" onPress={() => router.push(routes.courts)} />
+        <ListRow icon={Tag} title="Pricing" subtitle="Rates, peak pricing and discounts" onPress={() => router.push(routes.pricing())} />
+        <ListRow
+          icon={Lightbulb}
+          title="Revenue opportunities"
+          subtitle="Ways to fill courts and collect payments"
+          trailing={open.data?.length ? <StatusBadge label={`${open.data.length} open`} tone="warning" /> : undefined}
+          onPress={() => router.push(routes.opportunities)}
+        />
+        <ListRow icon={ChartLine} title="Analytics" subtitle="Revenue, utilization and peak hours" onPress={() => router.push(routes.analytics)} />
       </ListGroup>
 
       <ListGroup title="Facility">
@@ -56,7 +67,7 @@ export function MoreScreen() {
           trailing={unread.data?.count ? <StatusBadge label={`${unread.data.count} new`} tone="positive" /> : undefined}
           onPress={() => router.push(routes.notifications)}
         />
-        <ListRow icon={Gear} title="Settings" subtitle="Account, notifications and billing" onPress={() => router.push(routes.settings)} />
+        <ListRow icon={Gear} title="Settings" subtitle="Account, appearance and billing" onPress={() => router.push(routes.settings)} />
       </ListGroup>
 
       <LogoutRow />
@@ -75,8 +86,8 @@ export function LogoutRow() {
       </ListGroup>
       <ConfirmDialog
         visible={confirm}
-        title="Log out of CoyoteOS?"
-        message="You'll need your email and password to sign back in on this phone."
+        title="Log out of SportVenue?"
+        message="You'll need your email and password to log back in on this device."
         confirmLabel="Log out"
         cancelLabel="Stay"
         destructive
@@ -90,3 +101,8 @@ export function LogoutRow() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  profile: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  flex: { flex: 1, gap: spacing.xxs },
+});

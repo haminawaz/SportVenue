@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CoyoteOS Owner",
-    "slug": "coyoteos-owner",
+    "name": "SportVenue",
+    "slug": "sportvenue",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,6 +28,6 @@
       "expo-font",
       "expo-secure-store"
     ],
-    "scheme": "coyoteos"
+    "scheme": "sportvenue"
   }
 }

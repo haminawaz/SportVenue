@@ -3,11 +3,21 @@ import { ActivityIndicator, Pressable, StyleSheet, View, type PressableProps } f
 import type { IconProps } from 'phosphor-react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing, touchTarget, typography } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 
 import { AppText } from './AppText';
+import { useReducedMotion } from './useReducedMotion';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'inverse';
+/**
+ * primary   ink pill (cream in dark mode), the one main action in a view
+ * secondary outlined pill, supporting actions
+ * ghost     soft neutral fill, low emphasis
+ * tertiary  text only, in-line links that need a full touch target
+ * danger    destructive confirmation
+ * inverse   cream-on-ink, for use on the ink surface
+ * accent    court green, reserved for marketing sign-up actions on the landing page
+ */
+type Variant = 'primary' | 'secondary' | 'ghost' | 'tertiary' | 'danger' | 'inverse' | 'accent';
 type Size = 'lg' | 'md' | 'sm';
 
 type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
@@ -15,29 +25,44 @@ type ButtonProps = Omit<PressableProps, 'children' | 'style'> & {
   variant?: Variant;
   size?: Size;
   icon?: ComponentType<IconProps>;
+  /** Icon after the label, for "continue" style buttons. */
+  trailingIcon?: ComponentType<IconProps>;
   loading?: boolean;
   /** Stretch to fill the parent row. */
   block?: boolean;
 };
 
-const HEIGHT: Record<Size, number> = { lg: 56, md: touchTarget, sm: 44 };
+/**
+ * Compact heights: the label sets the size, not the padding. Small buttons get
+ * extra hit area (hitSlop) so every button still has a 44pt+ touch target.
+ */
+const HEIGHT: Record<Size, number> = { lg: 50, md: 46, sm: 38 };
+const PAD: Record<Size, number> = { lg: spacing.xl + 2, md: spacing.lg + 2, sm: spacing.md };
 
-export function Button({ label, variant = 'primary', size = 'md', icon: Icon, loading, disabled, block, ...rest }: ButtonProps) {
+export function Button({ label, variant = 'primary', size = 'md', icon: Icon, trailingIcon: Trailing, loading, disabled, block, ...rest }: ButtonProps) {
   const { colors } = useTheme();
+  const reduced = useReducedMotion();
   const isDisabled = disabled || loading;
 
-  const fg =
-    variant === 'primary' || variant === 'danger' ? colors.onAccent : variant === 'inverse' ? colors.accentStrong : variant === 'ghost' ? colors.accent : colors.text;
-  const bg =
-    variant === 'primary'
-      ? colors.accent
-      : variant === 'danger'
-        ? colors.danger
-        : variant === 'inverse'
-          ? colors.heroText
-          : variant === 'secondary'
-            ? colors.surfaceMuted
-            : 'transparent';
+  const fg = {
+    primary: colors.onPrimary,
+    danger: colors.onAccent,
+    inverse: colors.ink,
+    secondary: colors.text,
+    ghost: colors.text,
+    tertiary: colors.accent,
+    accent: colors.onAccent,
+  }[variant];
+  const bg = {
+    primary: colors.primary,
+    danger: colors.danger,
+    inverse: colors.onInk,
+    secondary: colors.surface,
+    ghost: colors.surfaceMuted,
+    tertiary: 'transparent',
+    accent: colors.accent,
+  }[variant];
+  const iconSize = size === 'sm' ? 16 : 18;
 
   return (
     <Pressable
@@ -46,22 +71,27 @@ export function Button({ label, variant = 'primary', size = 'md', icon: Icon, lo
       aria-disabled={isDisabled}
       aria-busy={loading}
       disabled={isDisabled}
-      hitSlop={size === 'sm' ? 4 : 0}
+      hitSlop={size === 'sm' ? 6 : size === 'md' ? 2 : 0}
       style={({ pressed }) => [
         styles.base,
-        { minHeight: HEIGHT[size], paddingHorizontal: size === 'sm' ? spacing.lg : spacing.xl, backgroundColor: bg },
-        variant === 'ghost' && { borderWidth: 1.5, borderColor: colors.border },
+        {
+          minHeight: HEIGHT[size],
+          paddingHorizontal: variant === 'tertiary' ? spacing.sm : PAD[size],
+          backgroundColor: bg,
+        },
+        variant === 'secondary' && { borderWidth: 1.5, borderColor: colors.text },
         block && styles.block,
-        pressed && styles.pressed,
+        pressed && (reduced ? styles.pressedFlat : styles.pressed),
         isDisabled && !loading && styles.disabled,
       ]}
       {...rest}
     >
       <View style={styles.content}>
-        {loading ? <ActivityIndicator size="small" color={fg} /> : Icon && <Icon size={size === 'sm' ? 18 : 20} color={fg} weight="bold" />}
-        <AppText numberOfLines={1} style={[size === 'sm' ? typography.label : typography.bodyStrong, { color: fg }]}>
+        {loading ? <ActivityIndicator size="small" color={fg} /> : Icon && <Icon size={iconSize} color={fg} weight="bold" />}
+        <AppText variant={size === 'sm' ? 'nav-link' : 'button'} numberOfLines={1} style={[styles.label, { color: fg }]}>
           {label}
         </AppText>
+        {Trailing && !loading && <Trailing size={iconSize} color={fg} weight="bold" />}
       </View>
     </Pressable>
   );
@@ -69,8 +99,12 @@ export function Button({ label, variant = 'primary', size = 'md', icon: Icon, lo
 
 const styles = StyleSheet.create({
   base: { borderRadius: radius.control, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start' },
-  block: { alignSelf: 'stretch', flexGrow: 1 },
-  content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  pressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
-  disabled: { opacity: 0.45 },
+  // In a row, block buttons share the width; they also shrink so a pair never overflows.
+  block: { alignSelf: 'stretch', flexGrow: 1, flexShrink: 1 },
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs + 2 },
+  // The button style's 16pt line box is tight; a little vertical padding keeps descenders clear on Android.
+  label: { paddingVertical: 2, flexShrink: 1 },
+  pressed: { transform: [{ scale: 0.97 }], opacity: 0.9 },
+  pressedFlat: { opacity: 0.8 },
+  disabled: { opacity: 0.4 },
 });

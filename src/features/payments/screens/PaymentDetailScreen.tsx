@@ -7,7 +7,6 @@ import { useBooking } from '@/features/bookings/api';
 import { formatDayAndTime } from '@/lib/datetime';
 import { useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -37,7 +36,6 @@ export function PaymentDetailScreen() {
 function PaymentBody({ paymentId }: { paymentId: string }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { can } = useSession();
   const f = useFormat();
   const p = usePayment(paymentId).data!;
   const booking = useBooking(p.bookingId);
@@ -51,10 +49,10 @@ function PaymentBody({ paymentId }: { paymentId: string }) {
         <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
           <Icon size={24} color={colors.accent} />
         </View>
-        <AppText variant="label" tone="muted" style={styles.gapTop}>
+        <AppText variant="nav-link" tone="muted" style={styles.gapTop}>
           Received from {p.customerName}
         </AppText>
-        <AppText variant="title" numeric aria-label={f.moneyA11y(p.amount)} style={styles.amount}>
+        <AppText variant="display-xl" numeric aria-label={f.moneyA11y(p.amount)} style={styles.amount}>
           {f.money(p.amount)}
         </AppText>
         <AppText tone="muted">{formatDayAndTime(p.receivedAt, f.timeZone, f.today())}</AppText>
@@ -68,21 +66,19 @@ function PaymentBody({ paymentId }: { paymentId: string }) {
       </ListGroup>
 
       <ListGroup title="Related">
-        {can('booking.view') && (
-          <ListRow
-            icon={CalendarBlank}
-            title={`Booking ${p.bookingReference}`}
-            subtitle={b ? `${b.courtName} · ${formatDayAndTime(b.startAt, f.timeZone, f.today())}` : undefined}
-            trailing={b ? <StatusBadge label={PAYMENT_STATUS[b.paymentStatus].label} tone={PAYMENT_STATUS[b.paymentStatus].tone} /> : undefined}
-            onPress={() => router.push(routes.booking(p.bookingId))}
-          />
-        )}
-        {can('customer.view') && <ListRow icon={User} title={p.customerName} subtitle="Customer profile" onPress={() => router.push(routes.customer(p.customerId))} />}
-        {can('customer.view') && <ListRow icon={Receipt} title="All payments from this customer" onPress={() => router.push(routes.customerPayments(p.customerId))} />}
+        <ListRow
+          icon={CalendarBlank}
+          title={`Booking ${p.bookingReference}`}
+          subtitle={b ? `${b.courtName} · ${formatDayAndTime(b.startAt, f.timeZone, f.today())}` : undefined}
+          trailing={b ? <StatusBadge label={PAYMENT_STATUS[b.paymentStatus].label} tone={PAYMENT_STATUS[b.paymentStatus].tone} /> : undefined}
+          onPress={() => router.push(routes.booking(p.bookingId))}
+        />
+        <ListRow icon={User} title={p.customerName} subtitle="Customer profile" onPress={() => router.push(routes.customer(p.customerId))} />
+        <ListRow icon={Receipt} title="All payments from this customer" onPress={() => router.push(routes.customerPayments(p.customerId))} />
       </ListGroup>
 
       {b && b.outstanding > 0 && (
-        <AppText variant="caption" tone="muted" style={styles.note}>
+        <AppText variant="body-sm" tone="muted" style={styles.note}>
           {f.money(b.outstanding)} is still due on this booking.
         </AppText>
       )}
@@ -91,8 +87,8 @@ function PaymentBody({ paymentId }: { paymentId: string }) {
 }
 
 const styles = StyleSheet.create({
-  icon: { width: 48, height: 48, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   gapTop: { marginTop: spacing.lg },
-  amount: { fontSize: 32, lineHeight: 40, marginVertical: spacing.xs },
+  amount: { marginVertical: spacing.xs },
   note: { paddingHorizontal: spacing.xs },
 });

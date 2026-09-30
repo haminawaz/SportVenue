@@ -9,7 +9,6 @@ import { useBooking } from '@/features/bookings/api';
 import { formatDayAndTime } from '@/lib/datetime';
 import { useFormat } from '@/lib/format';
 import { parseMoney, rules, useForm } from '@/lib/useForm';
-import { useSession } from '@/session/SessionProvider';
 import { spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
@@ -40,7 +39,6 @@ type Values = { mode: 'full' | 'partial'; amount: string; method?: PaymentMethod
 
 function RecordForm({ booking: b }: { booking: BookingDetail }) {
   const router = useRouter();
-  const { can } = useSession();
   const f = useFormat();
   const record = useRecordPayment();
   const [saving, setSaving] = useState(false);
@@ -59,14 +57,6 @@ function RecordForm({ booking: b }: { booking: BookingDetail }) {
       [due, f],
     ),
   );
-
-  if (!can('payment.record')) {
-    return (
-      <Screen>
-        <EmptyState icon={CheckCircle} title="No access" message="You don't have permission to record payments." />
-      </Screen>
-    );
-  }
 
   if (due <= 0 || b.status === 'CANCELLED') {
     return (
@@ -92,8 +82,8 @@ function RecordForm({ booking: b }: { booking: BookingDetail }) {
         <View style={styles.who}>
           <Avatar name={b.customerName} />
           <View style={styles.flex}>
-            <AppText variant="bodyStrong">{b.customerName}</AppText>
-            <AppText variant="caption" tone="muted">
+            <AppText variant="body-strong">{b.customerName}</AppText>
+            <AppText variant="body-sm" tone="muted">
               {b.reference} · {b.courtName} · {formatDayAndTime(b.startAt, f.timeZone, f.today())}
             </AppText>
           </View>
@@ -143,10 +133,10 @@ function RecordForm({ booking: b }: { booking: BookingDetail }) {
 function Sum({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
   return (
     <View style={styles.sum}>
-      <AppText variant="caption" tone="muted">
+      <AppText variant="body-sm" tone="muted">
         {label}
       </AppText>
-      <AppText variant={strong ? 'bodyStrong' : 'body'} tone={strong ? 'warning' : 'default'} numeric numberOfLines={1} adjustsFontSizeToFit>
+      <AppText variant={strong ? 'body-strong' : 'body-md'} tone={strong ? 'warning' : 'default'} numeric numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </AppText>
     </View>

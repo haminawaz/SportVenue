@@ -21,7 +21,6 @@ export const notFound = (what: string) => new ApiError(404, `${what} not found.`
 export const conflict = (message: string, code?: string) => new ApiError(409, message, code);
 export const invalid = (fieldErrors: Record<string, string>) =>
   new ApiError(422, Object.values(fieldErrors)[0] ?? 'The request was not valid.', 'VALIDATION', fieldErrors);
-export const forbidden = () => new ApiError(403, "You don't have permission to do that.");
 
 export function paginate<T>(items: T[], query: Record<string, unknown>, defaultLimit = 20): Page<T> {
   const offset = Number(query.cursor ?? 0) || 0;

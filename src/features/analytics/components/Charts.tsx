@@ -24,10 +24,10 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
   return (
     <View>
       <View style={styles.readout} aria-live="polite">
-        <AppText variant="caption" tone="muted">
+        <AppText variant="body-sm" tone="muted">
           {shown ? shown.label : summary.label}
         </AppText>
-        <AppText variant="heading" numeric>
+        <AppText variant="title-md" numeric>
           {shown ? shown.valueLabel : summary.value}
         </AppText>
       </View>
@@ -64,7 +64,7 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
         {/* Each label spans a group of bars, so dates are never squeezed into one bar's width. */}
         {axisGroups(data).map((g) => (
           <View key={g.key} style={{ flex: g.span }}>
-            <AppText variant="badge" tone="muted" numberOfLines={1}>
+            <AppText variant="caption-uppercase" tone="muted" numberOfLines={1}>
               {g.label}
             </AppText>
           </View>
@@ -99,10 +99,10 @@ export function BarList({ data, max: fixedMax }: { data: BarDatum[]; max?: numbe
           style={({ pressed }) => [styles.barRow, pressed && { opacity: 0.7 }]}
         >
           <View style={styles.barHead}>
-            <AppText variant="label" numberOfLines={1} style={styles.flex}>
+            <AppText variant="nav-link" numberOfLines={1} style={styles.flex}>
               {d.label}
             </AppText>
-            <AppText variant="label" numeric tone="muted">
+            <AppText variant="nav-link" numeric tone="muted">
               {d.valueLabel}
             </AppText>
           </View>
@@ -155,11 +155,11 @@ export function Heatmap({
   return (
     <View>
       <View style={styles.readout} aria-live="polite">
-        <AppText variant="caption" tone="muted">
+        <AppText variant="body-sm" tone="muted">
           {active ? `${rowLabel(active.row)}, ${colLabel(active.col)}` : 'Tap a square to see how busy it is'}
         </AppText>
         {active && (
-          <AppText variant="heading" numeric>
+          <AppText variant="title-md" numeric>
             {valueLabel(active.value)}
           </AppText>
         )}
@@ -167,7 +167,7 @@ export function Heatmap({
       <View style={styles.heat}>
         {rows.map((r) => (
           <View key={r} style={styles.heatRow}>
-            <AppText variant="badge" tone="muted" style={styles.heatRowLabel}>
+            <AppText variant="caption-uppercase" tone="muted" style={styles.heatRowLabel}>
               {rowLabel(r)}
             </AppText>
             {cols.map((c) => {
@@ -193,7 +193,7 @@ export function Heatmap({
           {cols.map((c, i) => (
             <View key={c} style={styles.heatColLabel}>
               {i % 3 === 0 && (
-                <AppText variant="badge" tone="subtle" numberOfLines={1} style={styles.heatAxisText}>
+                <AppText variant="caption-uppercase" tone="subtle" numberOfLines={1} style={styles.heatAxisText}>
                   {colShort(c)}
                 </AppText>
               )}
@@ -202,7 +202,7 @@ export function Heatmap({
         </View>
       </View>
       <View style={styles.key} accessible aria-label="Colour key: lighter is quieter, darker is busier">
-        <AppText variant="caption" tone="muted">
+        <AppText variant="body-sm" tone="muted">
           Quiet
         </AppText>
         {steps.map((o) => (
@@ -210,7 +210,7 @@ export function Heatmap({
             <View style={[StyleSheet.absoluteFill, styles.heatFill, { backgroundColor: colors.accent, opacity: o }]} />
           </View>
         ))}
-        <AppText variant="caption" tone="muted">
+        <AppText variant="body-sm" tone="muted">
           Busy
         </AppText>
       </View>

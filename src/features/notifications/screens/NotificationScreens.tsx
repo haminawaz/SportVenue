@@ -116,14 +116,14 @@ const NotificationRow = memo(function NotificationRow({ notification: n, onPress
       </View>
       <View style={styles.flex}>
         <View style={styles.titleRow}>
-          <AppText variant={n.read ? 'body' : 'bodyStrong'} numberOfLines={1} style={styles.flex}>
+          <AppText variant={n.read ? 'body-md' : 'body-strong'} numberOfLines={1} style={styles.flex}>
             {n.title}
           </AppText>
-          <AppText variant="caption" tone="subtle" numeric>
+          <AppText variant="body-sm" tone="subtle" numeric>
             {when}
           </AppText>
         </View>
-        <AppText variant="caption" tone="muted" numberOfLines={2}>
+        <AppText variant="body-sm" tone="muted" numberOfLines={2}>
           {n.body}
         </AppText>
       </View>
@@ -173,14 +173,14 @@ function NotificationBody({ notification: n }: { notification: AppNotification }
           <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
             <Icon size={20} color={colors.accent} />
           </View>
-          <AppText variant="label" tone="muted" style={styles.flex}>
+          <AppText variant="nav-link" tone="muted" style={styles.flex}>
             {meta.label}
           </AppText>
         </View>
-        <AppText variant="title" style={styles.gapTop}>
+        <AppText variant="display-lg" style={styles.gapTop}>
           {n.title}
         </AppText>
-        <AppText variant="caption" tone="muted" style={styles.gapSmall}>
+        <AppText variant="body-sm" tone="muted" style={styles.gapSmall}>
           {formatDateTimeLocal(n.createdAt, f.today())}
         </AppText>
         <AppText style={styles.gapTop}>{n.body}</AppText>

@@ -22,7 +22,7 @@ type IconButtonProps = {
 export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default', variant = 'plain', disabled }: IconButtonProps) {
   const { colors } = useTheme();
   const surface = useSurface();
-  const color = variant === 'solid' ? colors.onAccent : tone === 'accent' ? colors.accent : tone === 'danger' ? colors.danger : colors.text;
+  const color = variant === 'solid' ? colors.onPrimary : tone === 'accent' ? colors.accent : tone === 'danger' ? colors.danger : colors.text;
   const spoken = badge ? `${label}, ${badge} unread` : label;
   return (
     <Pressable
@@ -35,7 +35,7 @@ export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default'
       style={({ pressed }) => [
         styles.btn,
         variant === 'filled' && [surface, styles.round],
-        variant === 'solid' && [styles.round, { backgroundColor: colors.accent }],
+        variant === 'solid' && [styles.round, { backgroundColor: colors.primary }],
         pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] },
         disabled && styles.disabled,
       ]}
@@ -43,7 +43,7 @@ export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default'
       <Icon size={24} color={color} weight={variant === 'solid' ? 'bold' : 'regular'} />
       {!!badge && badge > 0 && (
         <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.background }]}>
-          <AppText variant="badge" style={{ color: colors.onAccent }} numeric>
+          <AppText variant="caption-uppercase" style={{ color: colors.onAccent }} numeric>
             {badge > 99 ? '99+' : badge}
           </AppText>
         </View>

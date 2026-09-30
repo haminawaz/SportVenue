@@ -87,8 +87,8 @@ export function Notice({ tone = 'info', title, message, icon, action }: NoticePr
     <View style={[styles.notice, { backgroundColor: map.bg }]} role={tone === 'info' ? undefined : 'alert'}>
       <Icon size={24} color={map.fg} weight={tone === 'info' ? 'regular' : 'fill'} />
       <View style={styles.flex}>
-        {title && <AppText variant="bodyStrong">{title}</AppText>}
-        <AppText variant={title ? 'caption' : 'body'} tone={title ? 'muted' : 'default'}>
+        {title && <AppText variant="body-strong">{title}</AppText>}
+        <AppText variant={title ? 'body-sm' : 'body-md'} tone={title ? 'muted' : 'default'}>
           {message}
         </AppText>
         {action && <View style={styles.noticeAction}>{action}</View>}

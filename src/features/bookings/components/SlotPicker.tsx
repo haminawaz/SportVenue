@@ -110,14 +110,14 @@ export function SlotPicker({ value, onChange, ignoreBookingId, courtError, slotE
                   onPress={() => onChange({ ...value, startAt: s.startAt })}
                   style={({ pressed }) => [
                     styles.slot,
-                    { backgroundColor: on ? colors.accent : colors.surface, borderColor: on ? colors.accent : colors.border },
+                    { backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.border },
                     pressed && { transform: [{ scale: 0.97 }] },
                   ]}
                 >
-                  <AppText variant="bodyStrong" numeric style={{ color: on ? colors.onAccent : colors.text }}>
+                  <AppText variant="body-strong" numeric style={{ color: on ? colors.onPrimary : colors.text }}>
                     {label}
                   </AppText>
-                  <AppText variant="caption" numeric style={{ color: on ? colors.onAccent : colors.textMuted }}>
+                  <AppText variant="body-sm" numeric style={{ color: on ? colors.onPrimary : colors.textMuted }}>
                     to {end}
                   </AppText>
                 </Pressable>

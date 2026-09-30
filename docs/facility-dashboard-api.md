@@ -1,7 +1,7 @@
 # Facility dashboard: API contract and open decisions
 
 The owner dashboard screen (`src/screens/facility-dashboard`) was built without access to the
-CoyoteOS sports-facility backend. Everything below is a **proposal** the mobile client is coded
+SportVenue sports-facility backend. Everything below is a **proposal** the mobile client is coded
 against. Confirm or correct each item with the backend team; the mobile changes are isolated to
 the files listed.
 
@@ -43,8 +43,9 @@ Conventions:
 ## Session (not built here)
 
 `src/app/index.tsx` has a `TODO(auth)`. The real session must provide the signed-in user, the
-active facility (`id`, `name`, IANA `timezone`, ISO `currency`) and backend-resolved permissions:
-`dashboard.view`, `booking.create`, `booking.view`, `payment.view`, `payment.remind`.
+active facility (`id`, `name`, IANA `timezone`, ISO `currency`). SportVenue has a single role,
+the facility owner, so there are no client-side permissions: every signed-in screen and action is
+available, and the backend authorises each request against the access token.
 It should also call `configureApiAuth()` (`src/api/client.ts`) with the token getter and 401 handler.
 
 ## Navigation (not built here)

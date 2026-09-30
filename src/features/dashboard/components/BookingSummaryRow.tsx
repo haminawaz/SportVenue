@@ -28,15 +28,15 @@ export const BookingSummaryRow = memo(function BookingSummaryRow({ booking: b, c
   const content = (
     <>
       <View style={styles.left}>
-        <AppText variant="bodyStrong" numberOfLines={1}>
+        <AppText variant="body-strong" numberOfLines={1}>
           {b.customerName}
         </AppText>
-        <AppText variant="caption" tone="muted" numberOfLines={1}>
+        <AppText variant="body-sm" tone="muted" numberOfLines={1}>
           {b.courtName} · {time}
         </AppText>
       </View>
       <View style={styles.right}>
-        <AppText variant="label" numeric tone={cancelled ? 'subtle' : 'default'} style={cancelled && styles.struck}>
+        <AppText variant="body-strong" numeric tone={cancelled ? 'subtle' : 'default'} style={cancelled && styles.struck}>
           {formatMoney(b.amount, currency)}
         </AppText>
         <StatusBadge label={status.label} tone={status.tone} />
@@ -67,14 +67,14 @@ export const BookingSummaryRow = memo(function BookingSummaryRow({ booking: b, c
 
 const styles = StyleSheet.create({
   row: {
-    minHeight: touchTarget + 16,
+    minHeight: touchTarget + 24,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.lg,
   },
-  left: { flex: 1, gap: spacing.xxs },
-  right: { alignItems: 'flex-end', gap: spacing.xs },
+  left: { flex: 1, gap: spacing.xs + 2 },
+  right: { alignItems: 'flex-end', gap: spacing.xs + 2 },
   struck: { textDecorationLine: 'line-through' },
 });

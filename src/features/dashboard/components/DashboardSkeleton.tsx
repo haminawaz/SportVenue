@@ -3,12 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { Skeleton } from '@/ui/Skeleton';
-import { useSurface } from '@/ui/surface';
 
-/** Mirrors the loaded layout (hero, owed card, quick actions, a section) so nothing jumps. */
+/** Mirrors the loaded layout (summary card, main action, two supporting actions) so nothing jumps. */
 export function DashboardSkeleton() {
   const { colors } = useTheme();
-  const surface = useSurface();
 
   return (
     <View accessible role="progressbar" aria-label="Loading dashboard" aria-busy style={styles.root}>
@@ -26,17 +24,12 @@ export function DashboardSkeleton() {
             <Skeleton width="50%" height={30} />
           </View>
         </View>
+        <Skeleton height={68} radius={radius.control} />
       </View>
-      <View style={[surface, styles.card]}>
-        <Skeleton width={48} height={48} radius={radius.full} />
-        <View style={styles.flex}>
-          <Skeleton width="40%" height={16} />
-          <Skeleton width="60%" height={30} />
-        </View>
-      </View>
+      <Skeleton height={56} radius={radius.control} />
       <View style={styles.row}>
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} height={112} radius={radius.card} style={styles.flex} />
+        {[0, 1].map((i) => (
+          <Skeleton key={i} height={60} radius={radius.control} style={styles.flex} />
         ))}
       </View>
     </View>
@@ -44,10 +37,9 @@ export function DashboardSkeleton() {
 }
 
 const styles = StyleSheet.create({
-  root: { gap: spacing.lg },
-  hero: { borderRadius: radius.card, padding: spacing.xxl, gap: spacing.md },
+  root: { gap: spacing.md },
+  hero: { borderRadius: radius.card, padding: spacing.xl, gap: spacing.md, marginBottom: spacing.xl },
   split: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.md },
   flex: { flex: 1, gap: spacing.sm },
-  card: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, padding: spacing.xl },
   row: { flexDirection: 'row', gap: spacing.sm },
 });

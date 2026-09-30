@@ -60,7 +60,7 @@ export function CustomerPicker({ value, onChange, error, disabled, helper, onCre
             <View style={[styles.newIcon, { backgroundColor: colors.accentSoft }]}>
               <UserPlus size={18} color={colors.accent} />
             </View>
-            <AppText variant="bodyStrong" tone="accent">
+            <AppText variant="body-strong" tone="accent">
               Add a new customer
             </AppText>
           </Pressable>
@@ -95,10 +95,10 @@ export function CustomerPicker({ value, onChange, error, disabled, helper, onCre
               >
                 <Avatar name={item.name} size={36} />
                 <View style={styles.flex}>
-                  <AppText variant="bodyStrong" numberOfLines={1}>
+                  <AppText variant="body-strong" numberOfLines={1}>
                     {item.name}
                   </AppText>
-                  <AppText variant="caption" tone="muted" numberOfLines={1}>
+                  <AppText variant="body-sm" tone="muted" numberOfLines={1}>
                     {item.phone}
                     {item.isRegular ? ' · Regular' : ''}
                   </AppText>
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   search: { marginBottom: spacing.sm },
   list: { maxHeight: 380 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, borderRadius: radius.control, minHeight: 52 },
-  newIcon: { width: 36, height: 36, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  newIcon: { width: 36, height: 36, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   pad: { padding: spacing.lg, textAlign: 'center' },
 });

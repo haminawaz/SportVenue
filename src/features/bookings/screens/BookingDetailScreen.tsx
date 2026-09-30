@@ -20,7 +20,6 @@ import { facilityWallClock, formatCalendarDate, formatDayAndTime, formatTime, mi
 import { formatDuration, useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
 import { useRecordPayment } from '@/features/payments/api';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -66,7 +65,6 @@ export function BookingDetailScreen() {
 function BookingBody({ booking: b }: { booking: BookingDetail }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { can } = useSession();
   const f = useFormat();
   const tz = f.timeZone;
 
@@ -87,7 +85,6 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
   const pay = PAYMENT_STATUS[b.paymentStatus];
   const open = b.status === 'CONFIRMED' || b.status === 'PENDING';
   const started = b.startAt.slice(0, 16) <= nowLocalIn(tz).slice(0, 16);
-  const canManage = can('booking.manage');
 
   return (
     <>
@@ -96,10 +93,10 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
           <StatusBadge label={status.label} tone={status.tone} />
           {(b.status !== 'CANCELLED' || b.paymentStatus === 'REFUNDED') && <StatusBadge label={pay.label} tone={pay.tone} />}
         </View>
-        <AppText variant="title" style={styles.when}>
+        <AppText variant="display-lg" style={styles.when}>
           {formatCalendarDate(clock.date)}
         </AppText>
-        <AppText variant="heading" tone="muted" numeric>
+        <AppText variant="title-md" tone="muted" numeric>
           {formatTime(b.startAt, tz)} - {formatTime(b.endAt, tz)}
         </AppText>
         <View style={styles.metaRow}>
@@ -116,7 +113,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
           title={b.customerName}
           subtitle={b.customerPhone}
           leading={<Avatar name={b.customerName} />}
-          onPress={can('customer.view') ? () => router.push(routes.customer(b.customerId)) : undefined}
+          onPress={() => router.push(routes.customer(b.customerId))}
           hint="Opens customer profile"
         />
         {!!b.customerPhone && <ListRow title="Call" icon={Phone} onPress={() => Linking.openURL(`tel:${b.customerPhone.replace(/\s/g, '')}`)} label={`Call ${b.customerName}`} />}
@@ -131,21 +128,19 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
           <Line label="Paid" value={f.money(b.paid)} />
           {b.status !== 'CANCELLED' && (
             <View style={[styles.due, { borderTopColor: colors.border }]}>
-              <AppText variant="bodyStrong" style={styles.flex}>
+              <AppText variant="body-strong" style={styles.flex}>
                 {b.outstanding > 0 ? 'Still to pay' : 'Nothing to pay'}
               </AppText>
-              <AppText variant="heading" numeric tone={b.outstanding > 0 ? 'warning' : 'accent'} aria-label={f.moneyA11y(b.outstanding)}>
+              <AppText variant="title-md" numeric tone={b.outstanding > 0 ? 'warning' : 'accent'} aria-label={f.moneyA11y(b.outstanding)}>
                 {f.money(b.outstanding)}
               </AppText>
             </View>
           )}
-          {b.outstanding > 0 && (can('payment.record') || can('payment.remind')) && (
+          {b.outstanding > 0 && (
             <View style={styles.actions}>
-              {can('payment.record') && <Button size="sm" label="Record payment" icon={Receipt} onPress={() => router.push(routes.recordPayment(b.id))} />}
-              {can('payment.record') && <Button size="sm" variant="secondary" label="Mark as paid" icon={CheckCircle} onPress={() => setDialog('paid')} />}
-              {can('payment.remind') && (
-                <Button size="sm" variant="secondary" label="Remind" icon={Bell} loading={remind.isPending} onPress={() => remind.mutate(b.id)} aria-label={`Remind ${b.customerName} to pay`} />
-              )}
+              <Button size="sm" label="Record payment" icon={Receipt} onPress={() => router.push(routes.recordPayment(b.id))} />
+              <Button size="sm" variant="secondary" label="Mark as paid" icon={CheckCircle} onPress={() => setDialog('paid')} />
+              <Button size="sm" variant="secondary" label="Remind" icon={Bell} loading={remind.isPending} onPress={() => remind.mutate(b.id)} aria-label={`Remind ${b.customerName} to pay`} />
             </View>
           )}
         </Card>
@@ -171,7 +166,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
         </ListGroup>
       )}
 
-      {canManage && b.status !== 'CANCELLED' && (
+      {b.status !== 'CANCELLED' && (
         <ListGroup title="Manage">
           {open && <ListRow title="Edit details" subtitle="Customer and notes" icon={NotePencil} onPress={() => router.push(routes.bookingEdit(b.id))} />}
           {open && <ListRow title="Reschedule" subtitle="Change court, day or time" icon={ArrowsLeftRight} onPress={() => router.push(routes.bookingReschedule(b.id))} />}
@@ -257,7 +252,7 @@ function Meta({ icon: Icon, text }: { icon: typeof Clock; text: string }) {
   return (
     <View style={styles.meta}>
       <Icon size={16} color={colors.textMuted} />
-      <AppText variant="label" tone="muted">
+      <AppText variant="nav-link" tone="muted">
         {text}
       </AppText>
     </View>
@@ -267,10 +262,10 @@ function Meta({ icon: Icon, text }: { icon: typeof Clock; text: string }) {
 function Line({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: 'accent' }) {
   return (
     <View style={styles.line}>
-      <AppText variant={strong ? 'bodyStrong' : 'body'} tone={strong ? 'default' : 'muted'} style={styles.flex}>
+      <AppText variant={strong ? 'body-strong' : 'body-md'} tone={strong ? 'default' : 'muted'} style={styles.flex}>
         {label}
       </AppText>
-      <AppText variant={strong ? 'bodyStrong' : 'body'} numeric tone={tone}>
+      <AppText variant={strong ? 'body-strong' : 'body-md'} numeric tone={tone}>
         {value}
       </AppText>
     </View>

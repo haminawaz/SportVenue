@@ -16,7 +16,7 @@ export function QuoteSummary({ quote, loading, previousTotal, error }: QuoteSumm
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]} aria-live="polite">
-      <AppText variant="label" tone="muted">
+      <AppText variant="nav-link" tone="muted">
         Price
       </AppText>
       {error ? (
@@ -43,15 +43,15 @@ export function QuoteSummary({ quote, loading, previousTotal, error }: QuoteSumm
             </View>
           ))}
           <View style={[styles.line, styles.total, { borderTopColor: colors.border }]}>
-            <AppText variant="bodyStrong" style={styles.flex}>
+            <AppText variant="body-strong" style={styles.flex}>
               Total
             </AppText>
-            <AppText variant="heading" numeric aria-label={`Total ${f.moneyA11y(quote.total)}`}>
+            <AppText variant="title-md" numeric aria-label={`Total ${f.moneyA11y(quote.total)}`}>
               {f.money(quote.total)}
             </AppText>
           </View>
           {previousTotal !== undefined && previousTotal !== quote.total && (
-            <AppText variant="caption" tone="muted">
+            <AppText variant="body-sm" tone="muted">
               Was {f.money(previousTotal)}. {quote.total > previousTotal ? `The customer will owe ${f.money(quote.total - previousTotal)} more.` : `The price drops by ${f.money(previousTotal - quote.total)}.`}
             </AppText>
           )}

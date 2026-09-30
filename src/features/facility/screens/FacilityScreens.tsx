@@ -8,7 +8,6 @@ import type { BusinessHoursDay, Facility } from '@/domain/types';
 import { clockOptions, formatClock, formatDuration, WEEK_ORDER, WEEKDAY_LONG, WEEKDAY_SHORT } from '@/lib/format';
 import { rules, useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -29,16 +28,14 @@ import { useFacility, useUpdateFacility, useUpdateHours } from '../api';
 
 export function FacilityScreen() {
   const router = useRouter();
-  const { can } = useSession();
   const query = useFacility();
   const [refreshing, setRefreshing] = useState(false);
-  const canManage = can('facility.manage');
   return (
     <>
       <Stack.Screen
         options={{
           title: 'Facility',
-          headerRight: canManage ? () => <IconButton icon={PencilSimple} label="Edit facility" onPress={() => router.push(routes.facilityEdit)} /> : undefined,
+          headerRight: () => <IconButton icon={PencilSimple} label="Edit facility" onPress={() => router.push(routes.facilityEdit)} />,
         }}
       />
       <Screen
@@ -50,14 +47,14 @@ export function FacilityScreen() {
         }}
       >
         <QueryView query={query} errorTitle="Couldn't load facility">
-          {(fac) => <FacilityBody facility={fac} canManage={canManage} />}
+          {(fac) => <FacilityBody facility={fac} />}
         </QueryView>
       </Screen>
     </>
   );
 }
 
-function FacilityBody({ facility: fac, canManage }: { facility: Facility; canManage: boolean }) {
+function FacilityBody({ facility: fac }: { facility: Facility }) {
   const router = useRouter();
   const { colors } = useTheme();
   const open = (url: string) => Linking.openURL(url);
@@ -66,11 +63,11 @@ function FacilityBody({ facility: fac, canManage }: { facility: Facility; canMan
     <>
       <Card>
         <View style={[styles.mark, { backgroundColor: colors.accent }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-          <AppText variant="title" style={{ color: colors.onAccent }}>
+          <AppText variant="display-lg" style={{ color: colors.onAccent }}>
             {fac.name.trim()[0]?.toUpperCase()}
           </AppText>
         </View>
-        <AppText variant="title" style={styles.gapTop}>
+        <AppText variant="display-lg" style={styles.gapTop}>
           {fac.name}
         </AppText>
         <AppText tone="muted">{fac.city}</AppText>
@@ -78,7 +75,7 @@ function FacilityBody({ facility: fac, canManage }: { facility: Facility; canMan
         <View style={styles.sports}>
           {fac.sports.map((s) => (
             <View key={s} style={[styles.sport, { backgroundColor: colors.surfaceMuted }]}>
-              <AppText variant="label" tone="muted">
+              <AppText variant="nav-link" tone="muted">
                 {s}
               </AppText>
             </View>
@@ -98,7 +95,7 @@ function FacilityBody({ facility: fac, canManage }: { facility: Facility; canMan
           const h = fac.businessHours.find((x) => x.weekday === d)!;
           return <ListRow key={d} title={WEEKDAY_LONG[d]} value={h.closed ? 'Closed' : `${formatClock(h.open)} - ${formatClock(h.close)}`} />;
         })}
-        {canManage && <ListRow icon={Clock} title="Edit business hours" onPress={() => router.push(routes.facilityHours)} />}
+        <ListRow icon={Clock} title="Edit business hours" onPress={() => router.push(routes.facilityHours)} />
       </ListGroup>
 
       <ListGroup title="Settings">
@@ -107,7 +104,7 @@ function FacilityBody({ facility: fac, canManage }: { facility: Facility; canMan
         <ListRow title="Default slot length" value={formatDuration(fac.settings.defaultSlotMinutes)} />
         <ListRow title="Free cancellation until" value={`${fac.settings.cancellationWindowHours} h before`} />
         <ListRow title="Bookings open" value={`${fac.settings.bookingLeadDays} days ahead`} />
-        {canManage && <ListRow icon={Gear} title="Edit settings" onPress={() => router.push(routes.facilitySettings)} />}
+        <ListRow icon={Gear} title="Edit settings" onPress={() => router.push(routes.facilitySettings)} />
       </ListGroup>
     </>
   );
@@ -388,7 +385,7 @@ function SettingsForm({ facility: fac }: { facility: Facility }) {
 }
 
 const styles = StyleSheet.create({
-  mark: { width: 56, height: 56, borderRadius: radius.card, alignItems: 'center', justifyContent: 'center' },
+  mark: { width: 56, height: 56, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   gapTop: { marginTop: spacing.md },
   sports: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs + 2, marginTop: spacing.md },
   sport: { borderRadius: radius.badge, paddingHorizontal: spacing.sm, paddingVertical: spacing.xxs + 1 },

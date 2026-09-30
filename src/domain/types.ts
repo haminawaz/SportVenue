@@ -1,5 +1,5 @@
 /**
- * CoyoteOS sports-facility domain types (API contract).
+ * SportVenue sports-facility domain types (API contract).
  *
  * Conventions:
  * - Money is in major units of the facility currency (2500 = Rs 2,500).
@@ -312,7 +312,7 @@ export type NotificationPreferences = {
 
 /* ---------- Team & account ---------- */
 
-/** CoyoteOS is currently owner-only: one account runs the facility. */
+/** SportVenue is currently owner-only: one account runs the facility. */
 export type Role = 'OWNER';
 
 

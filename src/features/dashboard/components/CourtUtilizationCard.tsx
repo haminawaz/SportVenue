@@ -36,16 +36,16 @@ export const CourtUtilizationCard = memo(function CourtUtilizationCard({ court, 
     <PressableCard aria-label={a11y} accessibilityHint="Opens this court's bookings" onPress={() => onPress(court.id)}>
       <View style={styles.top}>
         <View style={styles.name}>
-          <AppText variant="bodyStrong" numberOfLines={1}>
+          <AppText variant="body-strong" numberOfLines={1}>
             {court.name}
           </AppText>
           {court.sport && (
-            <AppText variant="caption" tone="muted" numberOfLines={1}>
+            <AppText variant="body-sm" tone="muted" numberOfLines={1}>
               {court.sport}
             </AppText>
           )}
         </View>
-        <AppText variant="heading" numeric>
+        <AppText variant="title-md" numeric>
           {formatPercent(court.utilizationPercentage)}
         </AppText>
         <CaretRight size={16} color={colors.textSubtle} />
@@ -54,11 +54,11 @@ export const CourtUtilizationCard = memo(function CourtUtilizationCard({ court, 
         <ProgressBar value={court.utilizationPercentage} />
       </View>
       <View style={styles.bottom}>
-        <AppText variant="caption" tone="muted" numeric style={styles.flex}>
+        <AppText variant="body-sm" tone="muted" numeric style={styles.flex}>
           {slots}
         </AppText>
         {court.revenue !== undefined && (
-          <AppText variant="label" numeric>
+          <AppText variant="nav-link" numeric>
             {formatMoney(court.revenue, currency)}
           </AppText>
         )}

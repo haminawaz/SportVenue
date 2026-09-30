@@ -46,12 +46,12 @@ export function DateStrip({ value, today, onChange, daysBefore = 14, daysAfter =
             aria-checked={on}
             aria-label={`${isToday ? 'Today, ' : ''}${formatCalendarDate(item)}`}
             onPress={() => onChange(item)}
-            style={[styles.day, { backgroundColor: on ? colors.accent : colors.surface, borderColor: on ? colors.accent : colors.border }]}
+            style={[styles.day, { backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.border }]}
           >
-            <AppText variant="badge" style={{ color: on ? colors.onAccent : colors.textMuted }}>
+            <AppText variant="caption-uppercase" style={{ color: on ? colors.onPrimary : colors.textMuted }}>
               {isToday ? 'TODAY' : weekday.toUpperCase()}
             </AppText>
-            <AppText variant="heading" numeric style={{ color: on ? colors.onAccent : colors.text }}>
+            <AppText variant="title-md" numeric style={{ color: on ? colors.onPrimary : colors.text }}>
               {item.slice(8, 10)}
             </AppText>
           </Pressable>

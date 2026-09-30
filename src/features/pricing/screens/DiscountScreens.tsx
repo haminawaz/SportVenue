@@ -12,7 +12,6 @@ import { formatCalendarDate } from '@/lib/datetime';
 import { clockOptions, formatClock, formatDateTimeLocal, formatWeekdays, useFormat } from '@/lib/format';
 import { parseMoney, useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -39,14 +38,13 @@ import { discountValueLabel } from './PricingScreen';
 export function DiscountDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { can } = useSession();
   const query = useDiscount(id);
   return (
     <>
       <Stack.Screen
         options={{
           title: 'Discount',
-          headerRight: can('pricing.manage') ? () => <IconButton icon={PencilSimple} label="Edit discount" onPress={() => router.push(routes.discountEdit(id))} /> : undefined,
+          headerRight: () => <IconButton icon={PencilSimple} label="Edit discount" onPress={() => router.push(routes.discountEdit(id))} />,
         }}
       />
       <Screen>
@@ -61,13 +59,11 @@ export function DiscountDetailScreen() {
 function DiscountBody({ discount: d }: { discount: Discount }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { can } = useSession();
   const f = useFormat();
   const courts = useCourts();
   const toggle = useToggleDiscount(d.id);
   const remove = useDeleteDiscount();
   const [confirm, setConfirm] = useState<'delete' | 'toggle' | null>(null);
-  const canManage = can('pricing.manage');
   const courtNames = d.courtIds.length ? d.courtIds.map((id) => courts.data?.find((c) => c.id === id)?.name ?? 'Deleted court').join(', ') : 'All courts';
   const expired = !!d.validTo && d.validTo < f.today();
 
@@ -80,12 +76,12 @@ function DiscountBody({ discount: d }: { discount: Discount }) {
           </View>
           <StatusBadge label={expired ? 'Ended' : d.active ? 'Active' : 'Off'} tone={d.active && !expired ? 'positive' : 'neutral'} />
         </View>
-        <AppText variant="title" numeric style={styles.value}>
+        <AppText variant="display-xl" numeric style={styles.value}>
           {discountValueLabel(d, f.money)}
         </AppText>
-        <AppText variant="bodyStrong">{d.name}</AppText>
+        <AppText variant="body-strong">{d.name}</AppText>
         {d.code && (
-          <AppText variant="label" tone="muted">
+          <AppText variant="nav-link" tone="muted">
             Code {d.code}
           </AppText>
         )}
@@ -106,13 +102,11 @@ function DiscountBody({ discount: d }: { discount: Discount }) {
         <ListRow title="Change history" icon={ClockCounterClockwise} onPress={() => router.push(routes.pricingHistory)} />
       </ListGroup>
 
-      {canManage && (
-        <ListGroup title="Manage">
-          <ListRow title="Edit discount" icon={PencilSimple} onPress={() => router.push(routes.discountEdit(d.id))} />
-          <ListRow title={d.active ? 'Turn off' : 'Turn on'} subtitle={d.active ? 'Stops applying to new bookings' : 'Starts applying to new bookings'} icon={d.active ? PauseCircle : PlayCircle} onPress={() => setConfirm('toggle')} />
-          <ListRow title="Delete discount" icon={Trash} destructive onPress={() => setConfirm('delete')} />
-        </ListGroup>
-      )}
+      <ListGroup title="Manage">
+        <ListRow title="Edit discount" icon={PencilSimple} onPress={() => router.push(routes.discountEdit(d.id))} />
+        <ListRow title={d.active ? 'Turn off' : 'Turn on'} subtitle={d.active ? 'Stops applying to new bookings' : 'Starts applying to new bookings'} icon={d.active ? PauseCircle : PlayCircle} onPress={() => setConfirm('toggle')} />
+        <ListRow title="Delete discount" icon={Trash} destructive onPress={() => setConfirm('delete')} />
+      </ListGroup>
 
       <ConfirmDialog
         visible={confirm === 'toggle'}
@@ -284,7 +278,7 @@ function DiscountForm({ discount }: { discount?: Discount }) {
         error={form.errors.code}
         autoCapitalize="characters"
         placeholder="STUDENT10"
-        helper="Leave empty to let staff apply it without a code."
+        helper="Leave empty to apply it to bookings without a code."
         maxLength={16}
       />
 
@@ -367,8 +361,8 @@ export function PricingHistoryScreen() {
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  icon: { width: 44, height: 44, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
-  value: { fontSize: 32, lineHeight: 40, marginTop: spacing.lg },
+  icon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  value: { marginTop: spacing.lg },
   group: { borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   row: { flexDirection: 'row', gap: spacing.md },
   flex: { flex: 1 },

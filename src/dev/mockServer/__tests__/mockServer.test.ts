@@ -9,7 +9,7 @@ jest.setTimeout(30_000);
 type Method = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
 async function signIn(email: string) {
-  const { accessToken } = (await handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email, password: 'coyote123' }, token: null })) as {
+  const { accessToken } = (await handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email, password: 'sportvenue123' }, token: null })) as {
     accessToken: string;
   };
   return <T,>(method: Method, path: string, body?: unknown, query: Record<string, unknown> = {}) =>

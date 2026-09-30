@@ -16,10 +16,10 @@ export const PaymentRow = memo(function PaymentRow({ payment: p, onPress, showCu
     <ListRow
       icon={method.icon}
       title={showCustomer ? p.customerName : `${method.label} · ${p.bookingReference}`}
-      subtitle={showCustomer ? `${method.label} · ${p.bookingReference} · ${when}` : when}
+      subtitle={showCustomer ? `${method.label} · ${when}` : when}
       value={f.money(p.amount)}
       valueTone="default"
-      label={`${f.moneyA11y(p.amount)} from ${p.customerName}, ${method.label}, ${when}`}
+      label={`${f.moneyA11y(p.amount)} from ${p.customerName}, ${method.label}, booking ${p.bookingReference}, ${when}`}
       onPress={() => onPress(p.id)}
       titleLines={1}
     />

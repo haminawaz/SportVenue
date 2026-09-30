@@ -31,7 +31,7 @@ export function ConfirmDialog({ visible, title, message, confirmLabel, cancelLab
     <Modal visible={visible} transparent animationType={reduced ? 'none' : 'fade'} onRequestClose={onCancel} statusBarTranslucent>
       <View style={[styles.backdrop, { backgroundColor: colors.backdrop }]}>
         <View role="alert" aria-modal aria-label={title} style={[styles.dialog, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
-          <AppText variant="title" role="heading" style={{ fontSize: 24, lineHeight: 30 }}>
+          <AppText variant="display-md" role="heading">
             {title}
           </AppText>
           {message && <AppText tone="muted">{message}</AppText>}
@@ -69,11 +69,11 @@ export function ActionSheet({ visible, title, actions, onClose }: { visible: boo
             >
               {Icon && <Icon size={24} color={color} />}
               <View style={styles.flex}>
-                <AppText variant="bodyStrong" style={{ color }}>
+                <AppText variant="body-strong" style={{ color }}>
                   {a.label}
                 </AppText>
                 {a.description && (
-                  <AppText variant="caption" tone="muted">
+                  <AppText variant="body-sm" tone="muted">
                     {a.description}
                   </AppText>
                 )}

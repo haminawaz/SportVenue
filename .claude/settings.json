@@ -1,5 +1,32 @@
 {
-  "enabledPlugins": {
-    "expo@claude-plugins-official": true
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm install*)",
+      "Bash(npm run dev*)",
+      "Bash(npm run build*)",
+      "Bash(npm run start*)",
+      "Bash(npm run lint*)",
+      "Bash(npx tsc --noEmit*)",
+      "Bash(npx shadcn*)",
+      "Bash(curl -s -i http://localhost:3000*)",
+      "Bash(curl -s -I http://localhost:3000*)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git branch*)"
+    ],
+    "deny": [
+      "Bash(rm -rf*)",
+      "Bash(git push --force*)",
+      "Edit(.env*)",
+      "Write(.env*)"
+    ],
+    "ask": [
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(npm install --save*)",
+      "Bash(npm uninstall*)"
+    ]
   }
 }

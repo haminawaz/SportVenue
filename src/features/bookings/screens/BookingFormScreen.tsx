@@ -9,14 +9,11 @@ import { useFormat } from '@/lib/format';
 import { selectionBus } from '@/lib/selectionBus';
 import { useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { Button } from '@/ui/Button';
 import { TextField } from '@/ui/Fields';
 import { Screen } from '@/ui/Screen';
 import { SectionHeader } from '@/ui/SectionHeader';
 import { SelectField } from '@/ui/Select';
-import { EmptyState } from '@/ui/EmptyState';
-import { LockKey } from 'phosphor-react-native';
 import { View } from 'react-native';
 
 import { useBookingQuote, useCreateBooking } from '../api';
@@ -30,7 +27,6 @@ export function BookingFormScreen() {
   const params = useLocalSearchParams<{ courtId?: string; date?: string; startAt?: string; customerId?: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { can } = useSession();
   const f = useFormat();
   const create = useCreateBooking();
   const discounts = useDiscounts();
@@ -74,14 +70,6 @@ export function BookingFormScreen() {
   const activeDiscounts = (discounts.data ?? []).filter((d) => d.active);
   const discountMissed = !!discountId && !!quote.data && quote.data.discountAmount === 0 && !quote.isFetching;
 
-  if (!can('booking.create')) {
-    return (
-      <Screen>
-        <EmptyState icon={LockKey} title="No access" message="You don't have permission to create bookings." />
-      </Screen>
-    );
-  }
-
   const submit = async () => {
     setSaving(true);
     await form.submit(async (v) => {
@@ -112,7 +100,7 @@ export function BookingFormScreen() {
           value={form.values.customerId}
           onChange={(id) => form.set('customerId', id)}
           error={form.errors.customerId}
-          onCreateNew={can('customer.manage') ? () => router.push(routes.customerNew({ returnTo: 'booking' })) : undefined}
+          onCreateNew={() => router.push(routes.customerNew({ returnTo: 'booking' }))}
         />
 
         <View>

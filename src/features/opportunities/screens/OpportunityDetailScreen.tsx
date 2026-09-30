@@ -10,7 +10,6 @@ import { recommendationText } from '@/features/dashboard/utils/dashboardFormatte
 import { facilityWallClock, formatDayAndTime, formatTime } from '@/lib/datetime';
 import { formatClock, useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -52,7 +51,6 @@ export function OpportunityDetailScreen() {
 function Body({ opportunity: o }: { opportunity: Opportunity }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { can } = useSession();
   const f = useFormat();
   const transition = useOpportunityTransition(o.id);
   const remind = useSendReminder();
@@ -64,7 +62,6 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
   const Icon = type.icon;
   const status = OPPORTUNITY_STATUS[o.status];
   const closed = o.status === 'RESOLVED' || o.status === 'DISMISSED';
-  const canManage = can('opportunity.manage');
   const suggestion = recommendationText(o.recommendedAction, (n) => f.money(n));
   const action = o.recommendedAction;
 
@@ -73,47 +70,43 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
     const window = action.window;
     switch (action.type) {
       case 'DISCOUNT':
-        return can('pricing.manage')
-          ? {
-              label: 'Create this discount',
-              icon: Tag,
-              run: () =>
-                router.push(
-                  routes.discountNew({
-                    courtId: o.courtId,
-                    value: action.value !== undefined ? String(action.value) : undefined,
-                    kind: action.unit === 'AMOUNT' ? 'AMOUNT' : 'PERCENT',
-                    weekdays: window?.weekdays.join(','),
-                    startTime: window?.startTime,
-                    endTime: window?.endTime,
-                    name: o.courtName ? `${o.courtName} off-peak` : 'Off-peak offer',
-                    opportunityId: o.id,
-                  }),
-                ),
-            }
-          : null;
+        return {
+          label: 'Create this discount',
+          icon: Tag,
+          run: () =>
+            router.push(
+              routes.discountNew({
+                courtId: o.courtId,
+                value: action.value !== undefined ? String(action.value) : undefined,
+                kind: action.unit === 'AMOUNT' ? 'AMOUNT' : 'PERCENT',
+                weekdays: window?.weekdays.join(','),
+                startTime: window?.startTime,
+                endTime: window?.endTime,
+                name: o.courtName ? `${o.courtName} off-peak` : 'Off-peak offer',
+                opportunityId: o.id,
+              }),
+            ),
+        };
       case 'PRICE_INCREASE':
-        return can('pricing.manage')
-          ? {
-              label: 'Add a peak rate',
-              icon: Tag,
-              run: () =>
-                router.push(
-                  routes.pricingRuleNew({
-                    courtId: o.courtId,
-                    weekdays: window?.weekdays.join(','),
-                    startTime: window?.startTime,
-                    endTime: window?.endTime,
-                    name: 'Peak demand',
-                    opportunityId: o.id,
-                  }),
-                ),
-            }
-          : null;
+        return {
+          label: 'Add a peak rate',
+          icon: Tag,
+          run: () =>
+            router.push(
+              routes.pricingRuleNew({
+                courtId: o.courtId,
+                weekdays: window?.weekdays.join(','),
+                startTime: window?.startTime,
+                endTime: window?.endTime,
+                name: 'Peak demand',
+                opportunityId: o.id,
+              }),
+            ),
+        };
       case 'REMIND':
-        return o.bookingId && can('payment.remind') ? { label: 'Send reminder', icon: Bell, run: () => remind.mutate(o.bookingId!) } : null;
+        return o.bookingId ? { label: 'Send reminder', icon: Bell, run: () => remind.mutate(o.bookingId!) } : null;
       case 'CONTACT':
-        return o.customerId && can('customer.view') ? { label: `Open ${o.customerName?.split(' ')[0] ?? 'customer'}'s profile`, icon: User, run: () => router.push(routes.customer(o.customerId!)) } : null;
+        return o.customerId ? { label: `Open ${o.customerName?.split(' ')[0] ?? 'customer'}'s profile`, icon: User, run: () => router.push(routes.customer(o.customerId!)) } : null;
       default:
         return null;
     }
@@ -130,30 +123,30 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
           <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
             <Icon size={22} color={colors.accent} />
           </View>
-          <AppText variant="label" tone="muted" style={styles.flex}>
+          <AppText variant="nav-link" tone="muted" style={styles.flex}>
             {type.label}
           </AppText>
           <StatusBadge label={status.label} tone={status.tone} />
         </View>
-        <AppText variant="title" style={styles.title}>
+        <AppText variant="display-lg" style={styles.title}>
           {o.title}
         </AppText>
         {o.description && <AppText tone="muted">{o.description}</AppText>}
-        <AppText variant="caption" tone="subtle" style={styles.found}>
+        <AppText variant="body-sm" tone="subtle" style={styles.found}>
           Found {formatDayAndTime(o.createdAt, f.timeZone, f.today())}
         </AppText>
       </Card>
 
       {o.potentialRevenue ? (
         <Card tint="accent">
-          <AppText variant="label" tone="muted">
+          <AppText variant="nav-link" tone="muted">
             Revenue at stake
           </AppText>
-          <AppText variant="title" numeric aria-label={f.moneyA11y(o.potentialRevenue)}>
+          <AppText variant="display-lg" numeric aria-label={f.moneyA11y(o.potentialRevenue)}>
             {f.money(o.potentialRevenue)}
           </AppText>
-          <AppText variant="caption" tone="muted">
-            CoyoteOS’s estimate for the next 4 weeks if acted on.
+          <AppText variant="body-sm" tone="muted">
+            SportVenue’s estimate for the next 4 weeks if acted on.
           </AppText>
         </Card>
       ) : null}
@@ -162,13 +155,13 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
         <View style={[styles.suggest, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.suggestHead}>
             <Lightbulb size={18} color={colors.accent} weight="fill" />
-            <AppText variant="bodyStrong" style={styles.flex}>
+            <AppText variant="body-strong" style={styles.flex}>
               Recommended action
             </AppText>
           </View>
           <AppText>{suggestion.replace(/^Suggested: /, '').replace(/^./, (c) => c.toUpperCase())}.</AppText>
           {action?.window && (
-            <AppText variant="caption" tone="muted">
+            <AppText variant="body-sm" tone="muted">
               Applies {action.window.weekdays.length === 5 ? 'on weekdays' : 'on selected days'}, {formatClock(action.window.startTime)} - {formatClock(action.window.endTime)}.
             </AppText>
           )}
@@ -186,8 +179,8 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
           {o.courtId && window && o.startAt && (
             <ListRow icon={CalendarBlank} title={window} subtitle="Open this day in the calendar" onPress={() => router.push(routes.courtCalendar(o.courtId!, facilityWallClock(o.startAt!, f.timeZone).date))} />
           )}
-          {o.bookingId && can('booking.view') && <ListRow icon={CalendarBlank} title={`Booking ${o.bookingReference ?? ''}`.trim()} subtitle="Booking details" onPress={() => router.push(routes.booking(o.bookingId!))} />}
-          {o.customerId && can('customer.view') && <ListRow icon={User} title={o.customerName ?? 'Customer'} subtitle="Customer profile" onPress={() => router.push(routes.customer(o.customerId!))} />}
+          {o.bookingId && <ListRow icon={CalendarBlank} title={`Booking ${o.bookingReference ?? ''}`.trim()} subtitle="Booking details" onPress={() => router.push(routes.booking(o.bookingId!))} />}
+          {o.customerId && <ListRow icon={User} title={o.customerName ?? 'Customer'} subtitle="Customer profile" onPress={() => router.push(routes.customer(o.customerId!))} />}
         </ListGroup>
       )}
 
@@ -200,14 +193,12 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
         />
       )}
 
-      {canManage && (
-        <ListGroup title="Status">
-          {o.status === 'OPEN' && <ListRow icon={PlayCircle} title="Start working on it" subtitle="Shows the team someone is on it" onPress={() => transition.mutate({ action: 'start' })} />}
-          {!closed && <ListRow icon={CheckCircle} title="Mark as resolved" onPress={() => setDialog('resolve')} />}
-          {!closed && <ListRow icon={XCircle} title="Dismiss" subtitle="Not relevant or not worth doing" onPress={() => setDialog('dismiss')} />}
-          {closed && <ListRow icon={ArrowCounterClockwise} title="Reopen" onPress={() => transition.mutate({ action: 'reopen' })} />}
-        </ListGroup>
-      )}
+      <ListGroup title="Status">
+        {o.status === 'OPEN' && <ListRow icon={PlayCircle} title="Start working on it" subtitle="Shows the team someone is on it" onPress={() => transition.mutate({ action: 'start' })} />}
+        {!closed && <ListRow icon={CheckCircle} title="Mark as resolved" onPress={() => setDialog('resolve')} />}
+        {!closed && <ListRow icon={XCircle} title="Dismiss" subtitle="Not relevant or not worth doing" onPress={() => setDialog('dismiss')} />}
+        {closed && <ListRow icon={ArrowCounterClockwise} title="Reopen" onPress={() => transition.mutate({ action: 'reopen' })} />}
+      </ListGroup>
 
       <ConfirmDialog
         visible={dialog !== null}
@@ -256,7 +247,7 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  icon: { width: 40, height: 40, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 40, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   title: { marginTop: spacing.lg, marginBottom: spacing.sm },
   found: { marginTop: spacing.md },

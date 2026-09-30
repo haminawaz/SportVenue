@@ -1,6 +1,6 @@
 import { memo, useState, type ReactElement } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle, Receipt, SortAscending } from 'phosphor-react-native';
 
 import { PAYMENT_STATUS } from '@/domain/labels';
@@ -14,7 +14,8 @@ import { Card } from '@/ui/Card';
 import { Chip, ChipRow, SegmentedControl } from '@/ui/Chips';
 import { EmptyState } from '@/ui/EmptyState';
 import { InfiniteList } from '@/ui/InfiniteList';
-import { ListRow } from '@/ui/List';
+import { LargeTitle } from '@/ui/LargeTitle';
+import { SummaryRow } from '@/ui/List';
 import { OptionSheet } from '@/ui/Select';
 import { StatusBadge } from '@/ui/StatusBadge';
 
@@ -26,23 +27,27 @@ type Tab = 'outstanding' | 'history';
 export function PaymentsScreen() {
   const params = useLocalSearchParams<{ tab?: Tab }>();
   const [tab, setTab] = useState<Tab>(params.tab === 'history' ? 'history' : 'outstanding');
+  // Payments is a tab now, so it stays mounted: follow links that ask for a specific view.
+  const [linkedTab, setLinkedTab] = useState(params.tab);
+  if (params.tab !== linkedTab) {
+    setLinkedTab(params.tab);
+    if (params.tab === 'history' || params.tab === 'outstanding') setTab(params.tab);
+  }
   const tabs = (
-    <SegmentedControl
-      label="Payments view"
-      value={tab}
-      onChange={setTab}
-      options={[
-        { value: 'outstanding', label: 'Outstanding' },
-        { value: 'history', label: 'Received' },
-      ]}
-    />
+    <View style={styles.header}>
+      <LargeTitle title="Payments" />
+      <SegmentedControl
+        label="Payments view"
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'outstanding', label: 'Outstanding' },
+          { value: 'history', label: 'Received' },
+        ]}
+      />
+    </View>
   );
-  return (
-    <>
-      <Stack.Screen options={{ title: 'Payments' }} />
-      {tab === 'outstanding' ? <OutstandingList tabs={tabs} /> : <HistoryList tabs={tabs} />}
-    </>
-  );
+  return tab === 'outstanding' ? <OutstandingList tabs={tabs} /> : <HistoryList tabs={tabs} />;
 }
 
 function OutstandingList({ tabs }: { tabs: ReactElement }) {
@@ -56,6 +61,7 @@ function OutstandingList({ tabs }: { tabs: ReactElement }) {
   return (
     <>
       <InfiniteList
+        topInset
         query={query}
         keyExtractor={(b) => b.id}
         renderItem={({ item }) => <BalanceRow balance={item} onPress={() => router.push(routes.booking(item.id))} />}
@@ -63,15 +69,17 @@ function OutstandingList({ tabs }: { tabs: ReactElement }) {
           <View style={styles.header}>
             {tabs}
             {first && first.total > 0 && (
-              <Card tint="warning">
-                <AppText variant="label" tone="muted">
-                  Owed to you
-                </AppText>
-                <AppText variant="title" numeric aria-label={f.moneyA11y(first.totalAmount)}>
-                  {f.money(first.totalAmount)}
-                </AppText>
-                <AppText variant="caption" tone="muted">
-                  Across {first.total} {first.total === 1 ? 'booking' : 'bookings'} up to today. Tap one to record a payment or send a reminder.
+              <Card tint="warning" style={styles.owed}>
+                <View style={styles.flex}>
+                  <AppText variant="body-sm" tone="muted">
+                    Owed to you
+                  </AppText>
+                  <AppText variant="display-lg" numeric aria-label={f.moneyA11y(first.totalAmount)}>
+                    {f.money(first.totalAmount)}
+                  </AppText>
+                </View>
+                <AppText variant="body-strong" tone="warning" numeric>
+                  {first.total} {first.total === 1 ? 'booking' : 'bookings'}
                 </AppText>
               </Card>
             )}
@@ -103,21 +111,15 @@ const BalanceRow = memo(function BalanceRow({ balance: b, onPress }: { balance: 
   const when = formatDayAndTime(b.startAt, f.timeZone, f.today());
   const age = b.daysOverdue === 0 ? 'Today' : b.daysOverdue === 1 ? '1 day ago' : `${b.daysOverdue} days ago`;
   return (
-    <ListRow
+    <SummaryRow
       title={b.customerName}
-      subtitle={`${b.courtName} · ${when}\n${age} · ${b.paid > 0 ? `paid ${f.money(b.paid)} of ${f.money(b.total)}` : 'nothing paid yet'}`}
-      trailing={
-        <View style={styles.trail}>
-          <AppText variant="bodyStrong" tone="warning" numeric>
-            {f.money(b.outstanding)}
-          </AppText>
-          <StatusBadge label={status.label} tone={status.tone} />
-        </View>
-      }
-      label={`${b.customerName} owes ${f.moneyA11y(b.outstanding)}, ${b.courtName}, ${when}, ${age}`}
-      hint="Opens the booking to record a payment"
+      value={f.money(b.outstanding)}
+      valueTone="warning"
+      meta={`${age} · ${b.courtName}`}
+      tag={<StatusBadge label={status.label} tone={status.tone} />}
+      label={`${b.customerName} owes ${f.moneyA11y(b.outstanding)}, ${status.label}, ${b.courtName}, ${when}, ${age}${b.paid > 0 ? `, paid ${f.moneyA11y(b.paid)} of ${f.moneyA11y(b.total)}` : ''}`}
+      hint="Opens the booking to record a payment or send a reminder"
       onPress={onPress}
-      titleLines={1}
     />
   );
 });
@@ -127,6 +129,7 @@ function HistoryList({ tabs }: { tabs: ReactElement }) {
   const query = usePayments({});
   return (
     <InfiniteList
+      topInset
       query={query}
       keyExtractor={(p) => p.id}
       renderItem={({ item }) => <PaymentRow payment={item} onPress={(id) => router.push(routes.payment(id))} />}
@@ -138,5 +141,6 @@ function HistoryList({ tabs }: { tabs: ReactElement }) {
 
 const styles = StyleSheet.create({
   header: { gap: spacing.lg },
-  trail: { alignItems: 'flex-end', gap: spacing.xs },
+  owed: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  flex: { flex: 1, gap: spacing.xxs },
 });

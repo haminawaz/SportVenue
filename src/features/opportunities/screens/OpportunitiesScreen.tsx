@@ -38,7 +38,7 @@ export function OpportunitiesScreen() {
           setRefreshing(false);
         }}
       >
-        <AppText tone="muted">Patterns CoyoteOS found in your bookings and payments, with a suggested next step for each.</AppText>
+        <AppText tone="muted">Patterns SportVenue found in your bookings and payments, with a suggested next step for each.</AppText>
         <QueryView query={query} skeleton={<DetailSkeleton />} errorTitle="Couldn't load opportunities">
           {(all) => <List all={all} status={status} setStatus={setStatus} onOpen={(id) => router.push(routes.opportunity(id))} />}
         </QueryView>
@@ -89,26 +89,26 @@ function OpportunityCard({ opportunity: o, onPress }: { opportunity: Opportunity
         <View style={[styles.icon, { backgroundColor: closed ? colors.surfaceMuted : colors.accentSoft }]}>
           <Icon size={20} color={closed ? colors.textMuted : colors.accent} />
         </View>
-        <AppText variant="label" tone="muted" style={styles.flex}>
+        <AppText variant="nav-link" tone="muted" style={styles.flex}>
           {type.label}
         </AppText>
         <StatusBadge label={status.label} tone={status.tone} />
       </View>
-      <AppText variant="bodyStrong" style={styles.title}>
+      <AppText variant="body-strong" style={styles.title}>
         {o.title}
       </AppText>
       {o.description && (
-        <AppText variant="caption" tone="muted" numberOfLines={2}>
+        <AppText variant="body-sm" tone="muted" numberOfLines={2}>
           {o.description}
         </AppText>
       )}
       {(related || o.potentialRevenue) && (
         <View style={[styles.foot, { borderTopColor: colors.border }]}>
-          <AppText variant="caption" tone="muted" style={styles.flex} numberOfLines={1}>
+          <AppText variant="body-sm" tone="muted" style={styles.flex} numberOfLines={1}>
             {related}
           </AppText>
           {o.potentialRevenue ? (
-            <AppText variant="label" tone={closed ? 'muted' : 'accent'} numeric>
+            <AppText variant="nav-link" tone={closed ? 'muted' : 'accent'} numeric>
               Up to {f.compactMoney(o.potentialRevenue)}
             </AppText>
           ) : null}
@@ -121,7 +121,7 @@ function OpportunityCard({ opportunity: o, onPress }: { opportunity: Opportunity
 const styles = StyleSheet.create({
   list: { gap: spacing.md },
   head: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  icon: { width: 34, height: 34, borderRadius: radius.control - 2, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 34, height: 34, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
   title: { marginTop: spacing.md, marginBottom: spacing.xxs },
   foot: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, marginTop: spacing.md, paddingTop: spacing.sm },

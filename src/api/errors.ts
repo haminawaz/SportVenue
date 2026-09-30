@@ -3,7 +3,7 @@ import { ApiError, NetworkError } from './client';
 export type UserFacingError = {
   title: string;
   message: string;
-  /** False when retrying cannot help (for example, missing permission). */
+  /** False when retrying cannot help (for example, the item was deleted). */
   retryable: boolean;
 };
 
@@ -14,14 +14,15 @@ export type UserFacingError = {
  */
 export function toUserFacingError(error: unknown, fallbackTitle = 'Something went wrong'): UserFacingError {
   if (error instanceof NetworkError) {
-    return { title: "Can't reach CoyoteOS", message: 'Check your connection and try again.', retryable: true };
+    return { title: "Can't reach SportVenue", message: 'Check your connection and try again.', retryable: true };
   }
   if (error instanceof ApiError) {
     switch (error.status) {
       case 401:
         return { title: 'Session expired', message: 'Sign in again to continue.', retryable: false };
       case 403:
-        return { title: 'No access', message: "You don't have permission to do that.", retryable: false };
+        // Owner accounts can do everything; a 403 means this account no longer runs the facility.
+        return { title: 'No access', message: 'This account no longer has access to this facility. Log out and back in to continue.', retryable: false };
       case 404:
         return { title: 'Not found', message: 'This item no longer exists. It may have been deleted.', retryable: false };
       case 409:

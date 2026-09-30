@@ -21,8 +21,8 @@ export function Timeline({ items }: { items: TimelineItem[] }) {
             {i < items.length - 1 && <View style={[styles.rail, { backgroundColor: colors.border }]} />}
           </View>
           <View style={[styles.text, i === items.length - 1 && styles.lastText]}>
-            <AppText variant="bodyStrong">{item.title}</AppText>
-            <AppText variant="caption" tone="muted">
+            <AppText variant="body-strong">{item.title}</AppText>
+            <AppText variant="body-sm" tone="muted">
               {item.meta}
             </AppText>
           </View>

@@ -15,7 +15,7 @@ export function Avatar({ name, size = 44, tone = 'neutral' }: { name: string; si
       importantForAccessibility="no-hide-descendants"
       style={[styles.box, { width: size, height: size, borderRadius: radius.full, backgroundColor: tone === 'accent' ? colors.accentSoft : colors.surfaceMuted }]}
     >
-      <AppText variant={size >= 56 ? 'heading' : 'label'} style={{ color: tone === 'accent' ? colors.accent : colors.textMuted, fontFamily: 'Geist_600SemiBold' }}>
+      <AppText variant={size >= 56 ? 'title-md' : 'nav-link'} style={{ color: tone === 'accent' ? colors.accent : colors.textMuted }}>
         {initials(name)}
       </AppText>
     </View>

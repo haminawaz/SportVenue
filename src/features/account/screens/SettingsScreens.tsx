@@ -7,9 +7,10 @@ import type { NotificationPreferences } from '@/domain/types';
 import { rules, useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
 import { useAuth, useSession } from '@/session/SessionProvider';
-import { useTheme } from '@/theme/ThemeProvider';
+import { useTheme, type Appearance } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
+import { SegmentedControl } from '@/ui/Chips';
 import { SwitchRow, TextField } from '@/ui/Fields';
 import { ListGroup, ListRow } from '@/ui/List';
 import { Screen } from '@/ui/Screen';
@@ -24,7 +25,7 @@ import { LogoutRow } from './MoreScreen';
 
 export function SettingsScreen() {
   const router = useRouter();
-  const { can } = useSession();
+  const { appearance, setAppearance } = useTheme();
   return (
     <>
       <Stack.Screen options={{ title: 'Settings' }} />
@@ -33,9 +34,27 @@ export function SettingsScreen() {
           <ListRow icon={UserCircle} title="Profile" subtitle="Name, email and phone" onPress={() => router.push(routes.profile)} />
           <ListRow icon={Bell} title="Notification preferences" subtitle="Reminders and alerts you receive" onPress={() => router.push(routes.notificationPreferences)} />
         </ListGroup>
+        <View style={styles.appearance}>
+          <AppText variant="display-sm" role="heading">
+            Appearance
+          </AppText>
+          <SegmentedControl<Appearance>
+            label="Appearance"
+            value={appearance}
+            onChange={setAppearance}
+            options={[
+              { value: 'system', label: 'System' },
+              { value: 'light', label: 'Light' },
+              { value: 'dark', label: 'Dark' },
+            ]}
+          />
+          <AppText variant="body-sm" tone="muted">
+            System follows your device setting.
+          </AppText>
+        </View>
         <ListGroup title="Facility">
           <ListRow icon={Buildings} title="Facility settings" subtitle="Profile, hours, currency and timezone" onPress={() => router.push(routes.facility)} />
-          {can('billing.manage') && <ListRow icon={CreditCard} title="Subscription and billing" onPress={() => router.push(routes.billing)} />}
+          <ListRow icon={CreditCard} title="Subscription and billing" onPress={() => router.push(routes.billing)} />
         </ListGroup>
         <LogoutRow />
       </Screen>
@@ -131,7 +150,7 @@ function PreferencesForm({ initial }: { initial: NotificationPreferences }) {
   return (
     <>
       <View>
-        <AppText variant="label" tone="muted" style={styles.label}>
+        <AppText variant="nav-link" tone="muted" style={styles.label}>
           Send to
         </AppText>
         <View style={box}>
@@ -139,13 +158,13 @@ function PreferencesForm({ initial }: { initial: NotificationPreferences }) {
           <SwitchRow label="Email" description="To your account email" value={prefs.email} onChange={(v) => change('email', v)} />
         </View>
         {off && (
-          <AppText variant="caption" tone="warning" style={styles.label}>
+          <AppText variant="body-sm" tone="warning" style={styles.label}>
             Everything below is paused until push or email is on.
           </AppText>
         )}
       </View>
       <View>
-        <AppText variant="label" tone="muted" style={styles.label}>
+        <AppText variant="nav-link" tone="muted" style={styles.label}>
           Bookings
         </AppText>
         <View style={box}>
@@ -168,7 +187,7 @@ function PreferencesForm({ initial }: { initial: NotificationPreferences }) {
         />
       )}
       <View>
-        <AppText variant="label" tone="muted" style={styles.label}>
+        <AppText variant="nav-link" tone="muted" style={styles.label}>
           Payments and summaries
         </AppText>
         <View style={box}>
@@ -186,4 +205,5 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   group: { borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
   label: { paddingHorizontal: spacing.xs, marginBottom: spacing.sm },
+  appearance: { gap: spacing.md },
 });

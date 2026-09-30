@@ -37,12 +37,12 @@ export function BillingScreen() {
               <>
                 <Card tint="accent">
                   <View style={styles.head}>
-                    <AppText variant="label" tone="muted" style={styles.flex}>
+                    <AppText variant="nav-link" tone="muted" style={styles.flex}>
                       Current plan
                     </AppText>
                     <StatusBadge label={status.label} tone={status.tone} />
                   </View>
-                  <AppText variant="title">{s.plan}</AppText>
+                  <AppText variant="display-lg">{s.plan}</AppText>
                   <AppText numeric>
                     {money(s.price)} per {s.interval === 'MONTH' ? 'month' : 'year'} · renews {formatCalendarDate(s.renewsOn)}
                   </AppText>
@@ -50,7 +50,7 @@ export function BillingScreen() {
                 {s.status === 'PAST_DUE' && <Notice tone="danger" title="Payment failed" message="Update your card to keep bookings running." />}
 
                 <Card>
-                  <AppText variant="label" tone="muted" style={styles.gap}>
+                  <AppText variant="nav-link" tone="muted" style={styles.gap}>
                     Usage
                   </AppText>
                   <BarList
@@ -82,7 +82,7 @@ export function BillingScreen() {
                   ))}
                 </ListGroup>
 
-                <Notice message="Plan changes and card updates are made in the CoyoteOS web dashboard." />
+                <Notice message="Plan changes and card updates are made in the SportVenue web dashboard." />
               </>
             );
           }}

@@ -1,9 +1,9 @@
 import { useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Switch, TextInput, View, type TextInputProps } from 'react-native';
-import { CaretDown, Eye, EyeSlash } from 'phosphor-react-native';
+import { CaretDown, Eye, EyeSlash, WarningCircle } from 'phosphor-react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { fontFamily, radius, spacing, touchTarget } from '@/theme/tokens';
+import { radius, spacing, touchTarget, typography } from '@/theme/tokens';
 
 import { AppText } from './AppText';
 
@@ -11,22 +11,26 @@ type FieldShellProps = { label: string; helper?: string; error?: string; childre
 
 /** Label above, helper and error below. */
 export function FieldShell({ label, helper, error, children, optional }: FieldShellProps) {
+  const { colors } = useTheme();
   return (
     <View style={styles.field}>
-      <AppText variant="bodyStrong">
+      <AppText variant="body-strong">
         {label}
-        {optional ? <AppText variant="label" tone="muted">{'  Optional'}</AppText> : null}
+        {optional ? <AppText variant="nav-link" tone="muted">{'  Optional'}</AppText> : null}
       </AppText>
       {children}
       {helper && !error ? (
-        <AppText variant="caption" tone="muted">
+        <AppText variant="body-sm" tone="muted">
           {helper}
         </AppText>
       ) : null}
       {error ? (
-        <AppText variant="label" tone="danger" role="alert">
-          {error}
-        </AppText>
+        <View style={styles.errorRow}>
+          <WarningCircle size={18} color={colors.danger} weight="fill" style={styles.errorIcon} />
+          <AppText variant="body-sm" tone="danger" role="alert" style={styles.flex}>
+            {error}
+          </AppText>
+        </View>
       ) : null}
     </View>
   );
@@ -46,13 +50,13 @@ export function TextField({ label, helper, error, optional, prefix, suffix, secu
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(!!secureTextEntry);
-  const borderColor = error ? colors.danger : focused ? colors.accent : colors.border;
+  const borderColor = error ? colors.danger : focused ? colors.text : colors.borderStrong;
 
   return (
     <FieldShell label={label} helper={helper} error={error} optional={optional}>
-      <View style={[styles.inputBox, multiline && styles.multiline, { backgroundColor: colors.surface, borderColor }]}>
+      <View style={[styles.inputBox, multiline && styles.multiline, { backgroundColor: colors.surface, borderColor }, (focused || error) && styles.inputFocused]}>
         {prefix && (
-          <AppText variant="bodyStrong" tone="muted">
+          <AppText variant="body-strong" tone="muted">
             {prefix}
           </AppText>
         )}
@@ -72,11 +76,11 @@ export function TextField({ label, helper, error, optional, prefix, suffix, secu
             setFocused(false);
             rest.onBlur?.(e);
           }}
-          style={[styles.input, { color: colors.text, fontFamily: fontFamily.regular }, multiline && styles.inputMultiline]}
+          style={[styles.input, { color: colors.text }, multiline && styles.inputMultiline]}
           maxFontSizeMultiplier={1.5}
         />
         {suffix && (
-          <AppText variant="bodyStrong" tone="muted">
+          <AppText variant="body-strong" tone="muted">
             {suffix}
           </AppText>
         )}
@@ -115,12 +119,12 @@ export function PickerField({ label, value, placeholder, onPress, helper, error,
         onPress={onPress}
         style={({ pressed }) => [
           styles.inputBox,
-          { backgroundColor: pressed ? colors.surfaceMuted : colors.surface, borderColor: error ? colors.danger : colors.border },
+          { backgroundColor: pressed ? colors.surfaceMuted : colors.surface, borderColor: error ? colors.danger : colors.borderStrong },
           disabled && { opacity: 0.55 },
         ]}
       >
         {leading}
-        <AppText variant="body" tone={value ? 'default' : 'subtle'} numberOfLines={1} style={styles.flex}>
+        <AppText variant="body-md" tone={value ? 'default' : 'subtle'} numberOfLines={1} style={styles.flex}>
           {value ?? placeholder}
         </AppText>
         <CaretDown size={18} color={colors.textMuted} weight="bold" />
@@ -136,9 +140,9 @@ export function SwitchRow({ label, description, value, onChange, disabled }: Swi
   return (
     <View style={[styles.switchRow, disabled && { opacity: 0.5 }]}>
       <View style={styles.flex}>
-        <AppText variant="bodyStrong">{label}</AppText>
+        <AppText variant="body-strong">{label}</AppText>
         {description && (
-          <AppText variant="caption" tone="muted">
+          <AppText variant="body-sm" tone="muted">
             {description}
           </AppText>
         )}
@@ -158,6 +162,9 @@ export function SwitchRow({ label, description, value, onChange, disabled }: Swi
 
 const styles = StyleSheet.create({
   field: { gap: spacing.sm },
+  errorRow: { flexDirection: 'row', gap: spacing.xs + 2, alignItems: 'flex-start' },
+  errorIcon: { marginTop: 2 },
+  inputFocused: { borderWidth: 2, paddingHorizontal: spacing.lg - 0.5 },
   inputBox: {
     minHeight: touchTarget + 4,
     borderRadius: radius.control,
@@ -168,7 +175,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   multiline: { alignItems: 'flex-start', paddingVertical: spacing.sm },
-  input: { flex: 1, fontSize: 17, paddingVertical: spacing.md, minHeight: touchTarget },
+  input: { ...typography['body-md'], flex: 1, paddingVertical: spacing.md, minHeight: touchTarget },
   inputMultiline: { minHeight: 112, textAlignVertical: 'top' },
   flex: { flex: 1 },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, minHeight: 68, paddingHorizontal: spacing.xl, paddingVertical: spacing.md },

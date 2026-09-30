@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AppState, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { CloudSlash, LockKey } from 'phosphor-react-native';
+import { CloudSlash } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { toUserFacingError } from '@/api/errors';
@@ -10,24 +10,22 @@ import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
-import { EmptyState } from '@/ui/EmptyState';
 import { ErrorState } from '@/ui/ErrorState';
 
 import { CourtUtilizationSection } from './components/CourtUtilizationSection';
 import { DashboardHeader } from './components/DashboardHeader';
 import { DashboardMetricGrid, SCREEN_GUTTER } from './components/DashboardMetricGrid';
 import { DashboardSkeleton } from './components/DashboardSkeleton';
-import { OutstandingPaymentsSection } from './components/OutstandingPaymentsSection';
+import { NeedsAttentionSection } from './components/NeedsAttentionSection';
 import { QuickActions } from './components/QuickActions';
 import { RecentBookingsSection } from './components/RecentBookingsSection';
-import { RevenueOpportunitySection } from './components/RevenueOpportunitySection';
 import { useDashboardNavigation } from './hooks/useDashboardNavigation';
 import { useFacilityDashboard, useSendPaymentReminder } from './hooks/useFacilityDashboard';
 import type { DateRange } from './types/facilityDashboard.types';
 import { buildPresetRange, greetingFor, isSameRange } from './utils/dashboardFormatters';
 
 export function FacilityDashboardScreen() {
-  const { session, can } = useSession();
+  const { session } = useSession();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const nav = useDashboardNavigation();
@@ -56,18 +54,13 @@ export function FacilityDashboardScreen() {
     return () => sub.remove();
   }, [syncToday]);
 
-  const canViewDashboard = can('dashboard.view');
-  const query = useFacilityDashboard(range, canViewDashboard);
+  const query = useFacilityDashboard(range);
   const unread = useUnreadCount();
   const reminder = useSendPaymentReminder();
   const data = query.data;
 
-  const canCreateBooking = can('booking.create');
-  const canViewBooking = can('booking.view');
-  const canViewPayments = can('payment.view');
-  const canRecord = can('payment.record');
-  const canRemind = can('payment.remind') && data?.capabilities?.paymentReminders === true;
-  const canViewOpportunities = can('opportunity.view');
+  // Reminders depend on the facility's plan, not on who is signed in.
+  const canRemind = data?.capabilities?.paymentReminders === true;
   const remindingBookingId = reminder.isPending ? (reminder.variables ?? null) : null;
 
   const onRangeChange = useCallback((next: DateRange) => {
@@ -101,16 +94,14 @@ export function FacilityDashboardScreen() {
   const onCourtPress = useCallback((courtId: string) => nav.openCourtDay(courtId, range.endDate), [nav, range.endDate]);
 
   let body: ReactNode;
-  if (!canViewDashboard) {
-    body = <EmptyState icon={LockKey} title="No access" message="You don't have permission to view this dashboard." />;
-  } else if (query.isPending) {
+  if (query.isPending) {
     body = <DashboardSkeleton />;
   } else if (query.isError && !data) {
     const err = toUserFacingError(query.error, 'Unable to load dashboard');
     body = (
       <ErrorState
         title={err.title}
-        message={err.retryable ? "We couldn't retrieve your facility data. " + err.message : err.title === 'No access' ? "You don't have permission to view this dashboard." : err.message}
+        message={err.retryable ? "We couldn't retrieve your facility data. " + err.message : err.message}
         onRetry={err.retryable ? () => query.refetch() : undefined}
         retrying={query.isFetching}
       />
@@ -121,66 +112,45 @@ export function FacilityDashboardScreen() {
         {query.isRefetchError && !pullRefreshing && (
           <View role="alert" style={[styles.stale, { backgroundColor: colors.surfaceMuted }]}>
             <CloudSlash size={16} color={colors.textMuted} />
-            <AppText variant="caption" tone="muted" style={styles.flex}>
+            <AppText variant="body-sm" tone="muted" style={styles.flex}>
               {`Couldn't refresh. Showing data from ${formatTime(new Date(query.dataUpdatedAt).toISOString(), tz)}.`}
             </AppText>
           </View>
         )}
 
-        <DashboardMetricGrid summary={data.summary} currency={data.currency} preset={range.preset} onOutstanding={canViewPayments ? nav.openOutstanding : undefined} />
+        <DashboardMetricGrid summary={data.summary} currency={data.currency} preset={range.preset} onOutstanding={nav.openOutstanding} />
 
-        <QuickActions
-          onNewBooking={canCreateBooking ? nav.openNewBooking : undefined}
-          onRecordPayment={canRecord ? nav.openOutstanding : undefined}
-          onNewCustomer={can('customer.manage') ? nav.openNewCustomer : undefined}
+        <QuickActions onNewBooking={nav.openNewBooking} onRecordPayment={nav.openOutstanding} onNewCustomer={nav.openNewCustomer} />
+
+        <NeedsAttentionSection
+          payments={data.outstandingPayments}
+          opportunities={data.opportunities}
+          currency={data.currency}
+          timeZone={tz}
+          today={today}
+          fallbackDate={range.endDate}
+          canRemind={canRemind}
+          remindingBookingId={remindingBookingId}
+          handlers={opportunityHandlers}
+          onRecord={nav.openRecordPayment}
+          onSeeAll={nav.openOpportunities}
         />
 
-        {canViewOpportunities && (
-          <RevenueOpportunitySection
-            opportunities={data.opportunities}
-            currency={data.currency}
-            timeZone={tz}
-            today={today}
-            fallbackDate={range.endDate}
-            canViewBooking={canViewBooking}
-            canRemind={canRemind}
-            remindingBookingId={remindingBookingId}
-            handlers={opportunityHandlers}
-            onSeeAll={nav.openOpportunities}
-          />
-        )}
-
         <CourtUtilizationSection
-          title={range.preset === 'today' ? "Today's courts" : 'Courts'}
+          title={range.preset === 'today' ? 'Courts today' : 'Courts'}
           courts={data.courts}
           currency={data.currency}
           onCourtPress={onCourtPress}
-          onSeeAll={can('court.view') ? nav.openCourts : undefined}
+          onSeeAll={nav.openCourts}
         />
-
-        {canViewPayments && (
-          <OutstandingPaymentsSection
-            payments={data.outstandingPayments}
-            timeZone={tz}
-            today={today}
-            canViewBooking={canViewBooking}
-            canRecord={canRecord}
-            canRemind={canRemind}
-            remindingBookingId={remindingBookingId}
-            onViewBooking={nav.openBooking}
-            onRecord={nav.openRecordPayment}
-            onRemind={onRemind}
-            onSeeAll={nav.openOutstanding}
-          />
-        )}
 
         <RecentBookingsSection
           bookings={data.recentBookings}
           currency={data.currency}
           timeZone={tz}
-          onBookingPress={canViewBooking ? nav.openBooking : undefined}
-          onNewBooking={canCreateBooking ? nav.openNewBooking : undefined}
-          onSeeAll={canViewBooking ? nav.openBookings : undefined}
+          onBookingPress={nav.openBooking}
+          onNewBooking={nav.openNewBooking}
+          onSeeAll={nav.openBookings}
         />
       </View>
     );
@@ -194,9 +164,7 @@ export function FacilityDashboardScreen() {
         { paddingTop: insets.top + spacing.lg, paddingBottom: spacing.huge, paddingLeft: insets.left + SCREEN_GUTTER, paddingRight: insets.right + SCREEN_GUTTER },
       ]}
       refreshControl={
-        canViewDashboard ? (
-          <RefreshControl refreshing={pullRefreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} />
-        ) : undefined
+        <RefreshControl refreshing={pullRefreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} />
       }
       aria-label="Facility dashboard"
     >
@@ -217,7 +185,7 @@ export function FacilityDashboardScreen() {
 const styles = StyleSheet.create({
   content: { flexGrow: 1, width: '100%', maxWidth: 760, alignSelf: 'center' },
   body: { marginTop: spacing.xxl },
-  sections: { gap: spacing.huge },
+  sections: { gap: spacing.xxxl + spacing.xs },
   stale: {
     flexDirection: 'row',
     alignItems: 'center',

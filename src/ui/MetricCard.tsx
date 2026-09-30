@@ -44,22 +44,22 @@ export function MetricCard({ label, value, valueA11y, trend, upIsGood = true, su
             <Icon size={20} color={iconFg} weight="bold" />
           </View>
         )}
-        <AppText variant="label" tone="muted" numberOfLines={2}>
+        <AppText variant="nav-link" tone="muted" numberOfLines={2}>
           {label}
         </AppText>
-        <AppText variant="metric" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={fitValue(value, width)}>
+        <AppText variant="display-lg" numeric numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={fitValue(value, width)}>
           {value}
         </AppText>
         {trend && (
           <View style={styles.trendRow}>
             <TrendIcon size={16} color={trendColor} weight="bold" />
-            <AppText variant="label" numeric style={[styles.trendText, { color: trendColor }]} numberOfLines={2}>
+            <AppText variant="nav-link" numeric style={[styles.trendText, { color: trendColor }]} numberOfLines={2}>
               {trend.text}
             </AppText>
           </View>
         )}
         {supporting && (
-          <AppText variant="caption" tone="muted" numeric numberOfLines={2}>
+          <AppText variant="body-sm" tone="muted" numeric numberOfLines={2}>
             {supporting}
           </AppText>
         )}

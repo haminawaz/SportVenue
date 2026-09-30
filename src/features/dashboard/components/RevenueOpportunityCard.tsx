@@ -48,7 +48,7 @@ type RevenueOpportunityCardProps = {
   today: CalendarDate;
   /** Used for "View court" when the opportunity has a court but no time. */
   fallbackDate: CalendarDate;
-  canViewBooking: boolean;
+  /** The facility's plan includes payment reminders. */
   canRemind: boolean;
   reminding: boolean;
   handlers: OpportunityHandlers;
@@ -67,7 +67,6 @@ export function RevenueOpportunityCard({
   timeZone,
   today,
   fallbackDate,
-  canViewBooking,
   canRemind,
   reminding,
   handlers,
@@ -89,7 +88,7 @@ export function RevenueOpportunityCard({
     const date = o.startAt ? facilityWallClock(o.startAt, timeZone).date : fallbackDate;
     actions.push({ key: 'slot', label: o.startAt ? 'View slot' : 'View court', onPress: () => handlers.onViewSlot(courtId, date) });
   }
-  if (o.bookingId && canViewBooking) {
+  if (o.bookingId) {
     const bookingId = o.bookingId;
     actions.push({ key: 'booking', label: 'View booking', onPress: () => handlers.onViewBooking(bookingId) });
   }
@@ -115,12 +114,12 @@ export function RevenueOpportunityCard({
       >
         <View style={styles.head}>
           <View style={[styles.iconWrap, { backgroundColor: colors.accentSoft }]}>
-            <Icon size={18} color={colors.accent} />
+            <Icon size={22} color={colors.accent} weight="bold" />
           </View>
           <View style={styles.headText}>
-            <AppText variant="bodyStrong">{o.title}</AppText>
+            <AppText variant="body-strong">{o.title}</AppText>
             {meta ? (
-              <AppText variant="caption" tone="muted">
+              <AppText variant="body-sm" tone="muted">
                 {meta}
               </AppText>
             ) : null}
@@ -129,8 +128,8 @@ export function RevenueOpportunityCard({
         {o.description ? <AppText tone="muted">{o.description}</AppText> : null}
         {suggestion && (
           <View style={[styles.suggestion, { backgroundColor: colors.surfaceMuted }]}>
-            <Lightbulb size={16} color={colors.accent} weight="fill" />
-            <AppText variant="label" style={styles.flex}>
+            <Lightbulb size={18} color={colors.accent} weight="fill" />
+            <AppText variant="body-strong" style={styles.flex}>
               {suggestion}
             </AppText>
           </View>
@@ -139,7 +138,7 @@ export function RevenueOpportunityCard({
       {actions.length > 0 && (
         <View style={styles.actions}>
           {actions.slice(0, 2).map((a, i) => (
-            <Button key={a.key} size="sm" variant={i === 0 ? 'primary' : 'secondary'} label={a.label} icon={a.icon} onPress={a.onPress} loading={a.loading} />
+            <Button key={a.key} size="sm" block variant={i === 0 ? 'secondary' : 'ghost'} label={a.label} icon={a.icon} onPress={a.onPress} loading={a.loading} />
           ))}
         </View>
       )}
@@ -148,18 +147,18 @@ export function RevenueOpportunityCard({
 }
 
 const styles = StyleSheet.create({
-  body: { gap: spacing.sm },
+  body: { gap: spacing.md },
   head: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
-  iconWrap: { width: 36, height: 36, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
-  headText: { flex: 1, gap: spacing.xxs },
+  iconWrap: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  headText: { flex: 1, gap: spacing.xs },
   suggestion: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     borderRadius: radius.control,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   flex: { flex: 1 },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  actions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
 });

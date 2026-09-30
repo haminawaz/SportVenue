@@ -32,7 +32,7 @@ type InfiniteListProps<T> = {
  * "loading more" states. Rows sit on one elevated surface.
  */
 export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty, skeleton, errorTitle = "Couldn't load this list", topInset }: InfiniteListProps<T>) {
-  const { colors, scheme } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [pulling, setPulling] = useState(false);
   const items = useMemo(() => query.data?.pages.flatMap((p) => p.items) ?? [], [query.data]);
@@ -63,12 +63,10 @@ export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty
     <View
       style={[
         styles.cell,
-        { backgroundColor: colors.surface },
-        scheme === 'dark' && { borderColor: colors.border, borderLeftWidth: StyleSheet.hairlineWidth, borderRightWidth: StyleSheet.hairlineWidth },
+        { backgroundColor: colors.surface, borderColor: colors.border },
+        styles.sides,
         info.index === 0 && styles.first,
-        info.index === 0 && scheme === 'dark' && { borderTopWidth: StyleSheet.hairlineWidth },
         info.index === last && styles.last,
-        info.index === last && scheme === 'dark' && { borderBottomWidth: StyleSheet.hairlineWidth },
       ]}
     >
       {info.index > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
@@ -96,7 +94,7 @@ export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty
           {header}
           {body}
           {!body && total !== undefined && total > 0 && (
-            <AppText variant="label" tone="muted" numeric>
+            <AppText variant="body-sm" tone="muted" numeric style={styles.count}>
               {total === 1 ? '1 result' : `${total} results`}
             </AppText>
           )}
@@ -123,10 +121,12 @@ export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty
 }
 
 const styles = StyleSheet.create({
-  header: { gap: spacing.xl, marginBottom: spacing.lg },
+  header: { gap: spacing.xl, marginBottom: spacing.md },
+  count: { paddingHorizontal: spacing.xxs, marginBottom: -spacing.sm },
   cell: { overflow: 'hidden' },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: spacing.xl },
-  first: { borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card },
-  last: { borderBottomLeftRadius: radius.card, borderBottomRightRadius: radius.card },
+  divider: { height: StyleSheet.hairlineWidth * 2, marginLeft: spacing.xl },
+  sides: { borderLeftWidth: StyleSheet.hairlineWidth * 2, borderRightWidth: StyleSheet.hairlineWidth * 2 },
+  first: { borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, borderTopWidth: StyleSheet.hairlineWidth * 2 },
+  last: { borderBottomLeftRadius: radius.card, borderBottomRightRadius: radius.card, borderBottomWidth: StyleSheet.hairlineWidth * 2 },
   more: { paddingVertical: spacing.xl, alignItems: 'center' },
 });

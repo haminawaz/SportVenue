@@ -4,7 +4,6 @@ import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-rou
 import { selectionBus } from '@/lib/selectionBus';
 import { useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { Button } from '@/ui/Button';
 import { TextField } from '@/ui/Fields';
 import { Screen } from '@/ui/Screen';
@@ -29,7 +28,6 @@ export function BookingEditScreen() {
 
 function EditForm({ booking: b }: { booking: BookingDetail }) {
   const router = useRouter();
-  const { can } = useSession();
   const update = useUpdateBooking(b.id);
   const [saving, setSaving] = useState(false);
   const form = useForm(
@@ -67,7 +65,7 @@ function EditForm({ booking: b }: { booking: BookingDetail }) {
         onChange={(id) => form.set('customerId', id)}
         disabled={locked}
         error={form.errors.customerId}
-        onCreateNew={can('customer.manage') ? () => router.push(routes.customerNew({ returnTo: 'booking' })) : undefined}
+        onCreateNew={() => router.push(routes.customerNew({ returnTo: 'booking' }))}
       />
       <TextField label="Notes" optional multiline value={form.values.notes} onChangeText={(t) => form.set('notes', t)} error={form.errors.notes} maxLength={500} />
     </Screen>

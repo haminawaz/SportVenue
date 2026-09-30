@@ -22,7 +22,7 @@ export type AppTextProps = TextProps & {
   numeric?: boolean;
 };
 
-export function AppText({ variant = 'body', tone = 'default', numeric, style, ...rest }: AppTextProps) {
+export function AppText({ variant = 'body-md', tone = 'default', numeric, style, ...rest }: AppTextProps) {
   const { colors } = useTheme();
   return (
     <Text

@@ -9,7 +9,6 @@ import { usePricingRules } from '@/features/pricing/api';
 import { DayTimeline } from '@/features/bookings/components/DayTimeline';
 import { formatClock, formatWeekdays, useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { Card } from '@/ui/Card';
@@ -28,7 +27,6 @@ import { useAvailability, useCourt, useDeleteCourt, useUpdateCourt } from '../ap
 export function CourtDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { can } = useSession();
   const query = useCourt(id);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -37,7 +35,7 @@ export function CourtDetailScreen() {
       <Stack.Screen
         options={{
           title: query.data?.name ?? 'Court',
-          headerRight: can('court.manage') ? () => <IconButton icon={PencilSimple} label="Edit court" onPress={() => router.push(routes.courtEdit(id))} /> : undefined,
+          headerRight: () => <IconButton icon={PencilSimple} label="Edit court" onPress={() => router.push(routes.courtEdit(id))} />,
         }}
       />
       <Screen
@@ -58,7 +56,6 @@ export function CourtDetailScreen() {
 
 function CourtBody({ court: c }: { court: CourtSummary }) {
   const router = useRouter();
-  const { can } = useSession();
   const f = useFormat();
   const today = f.today();
   const availability = useAvailability(c.id, today);
@@ -68,13 +65,12 @@ function CourtBody({ court: c }: { court: CourtSummary }) {
   const [dialog, setDialog] = useState<CourtStatus | 'delete' | null>(null);
   const status = COURT_STATUS[c.status];
   const { half: tile, full: fullTile } = useTileWidth();
-  const canManage = can('court.manage');
 
   const upcomingSlots = (availability.data?.slots ?? []).filter((s) => s.status !== 'PAST').slice(0, 6);
   const courtRules = (rules.data ?? []).filter((r) => r.courtId === c.id || r.courtId === null);
 
   const statusCopy: Record<CourtStatus, { title: string; message: string; confirm: string }> = {
-    ACTIVE: { title: `Reopen ${c.name}?`, message: 'Customers and staff can book it again straight away.', confirm: 'Set active' },
+    ACTIVE: { title: `Reopen ${c.name}?`, message: 'You can take bookings on it again straight away.', confirm: 'Set active' },
     MAINTENANCE: {
       title: `Put ${c.name} into maintenance?`,
       message: `New bookings pause until you reopen it.${c.upcomingBookings ? ` ${c.upcomingBookings} upcoming bookings stay in place; move or cancel them if the court can't be used.` : ''}`,
@@ -92,7 +88,7 @@ function CourtBody({ court: c }: { court: CourtSummary }) {
       <Card>
         <View style={styles.titleRow}>
           <View style={styles.flex}>
-            <AppText variant="title">{c.name}</AppText>
+            <AppText variant="display-lg">{c.name}</AppText>
             <AppText tone="muted">
               {c.sport} · {c.indoor ? 'Indoor' : 'Outdoor'}
               {c.surface ? ` · ${c.surface}` : ''}
@@ -122,13 +118,13 @@ function CourtBody({ court: c }: { court: CourtSummary }) {
           <DayTimeline
             slots={upcomingSlots}
             onOpenBooking={(id) => router.push(routes.booking(id))}
-            onBook={can('booking.create') && c.status === 'ACTIVE' ? (s) => router.push(routes.bookingNew({ courtId: c.id, date: today, startAt: s.startAt })) : undefined}
+            onBook={c.status === 'ACTIVE' ? (s) => router.push(routes.bookingNew({ courtId: c.id, date: today, startAt: s.startAt })) : undefined}
           />
         )}
       </View>
 
       <ListGroup title="Pricing">
-        <ListRow title="Base rate" value={`${f.money(c.hourlyRate)} / h`} icon={CurrencyCircleDollar} onPress={canManage ? () => router.push(routes.courtEdit(c.id)) : undefined} />
+        <ListRow title="Base rate" value={`${f.money(c.hourlyRate)} / h`} icon={CurrencyCircleDollar} onPress={() => router.push(routes.courtEdit(c.id))} />
         {courtRules.map((r) => (
           <ListRow
             key={r.id}
@@ -149,15 +145,13 @@ function CourtBody({ court: c }: { court: CourtSummary }) {
         {c.notes && <ListRow title="Notes" subtitle={c.notes} />}
       </ListGroup>
 
-      {canManage && (
-        <ListGroup title="Manage">
-          <ListRow title="Open calendar" icon={CalendarBlank} onPress={() => router.push(routes.courtCalendar(c.id, today))} />
-          {c.status !== 'ACTIVE' && <ListRow title="Set active" subtitle="Open for bookings" icon={PlayCircle} onPress={() => setDialog('ACTIVE')} />}
-          {c.status !== 'MAINTENANCE' && <ListRow title="Start maintenance" subtitle="Pause new bookings for now" icon={PauseCircle} onPress={() => setDialog('MAINTENANCE')} />}
-          {c.status !== 'INACTIVE' && <ListRow title="Deactivate" subtitle="Hide from booking, keep history" icon={Prohibit} onPress={() => setDialog('INACTIVE')} />}
-          <ListRow title="Delete court" icon={Trash} destructive onPress={() => setDialog('delete')} />
-        </ListGroup>
-      )}
+      <ListGroup title="Manage">
+        <ListRow title="Open calendar" icon={CalendarBlank} onPress={() => router.push(routes.courtCalendar(c.id, today))} />
+        {c.status !== 'ACTIVE' && <ListRow title="Set active" subtitle="Open for bookings" icon={PlayCircle} onPress={() => setDialog('ACTIVE')} />}
+        {c.status !== 'MAINTENANCE' && <ListRow title="Start maintenance" subtitle="Pause new bookings for now" icon={PauseCircle} onPress={() => setDialog('MAINTENANCE')} />}
+        {c.status !== 'INACTIVE' && <ListRow title="Deactivate" subtitle="Hide from booking, keep history" icon={Prohibit} onPress={() => setDialog('INACTIVE')} />}
+        <ListRow title="Delete court" icon={Trash} destructive onPress={() => setDialog('delete')} />
+      </ListGroup>
 
       {dialog && dialog !== 'delete' && (
         <ConfirmDialog

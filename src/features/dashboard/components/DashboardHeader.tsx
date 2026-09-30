@@ -25,10 +25,10 @@ export function DashboardHeader({ greeting, facilityName, range, today, onRangeC
     <View style={styles.root}>
       <View style={styles.top}>
         <View style={styles.titles}>
-          <AppText variant="bodyStrong" tone="muted">
+          <AppText variant="body-strong" tone="muted">
             {greeting}
           </AppText>
-          <AppText variant="display" role="heading" numberOfLines={2}>
+          <AppText variant="display-xl" role="heading" numberOfLines={2}>
             {facilityName}
           </AppText>
         </View>

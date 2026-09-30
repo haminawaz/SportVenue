@@ -1,5 +1,5 @@
 import { useTheme } from '@/theme/ThemeProvider';
-import { fontFamily, radius, spacing, touchTarget } from '@/theme/tokens';
+import { radius, spacing, touchTarget, typography } from '@/theme/tokens';
 
 import type { InlineDatePickerProps } from './InlineDatePicker';
 
@@ -23,8 +23,8 @@ export function InlineDatePicker({ value, minimumDate, maximumDate, accentColor,
         color: colors.text,
         accentColor,
         colorScheme: scheme,
-        fontFamily: fontFamily.regular,
-        fontSize: 16,
+        fontFamily: typography['body-md'].fontFamily,
+        fontSize: typography['body-md'].fontSize,
       }}
     />
   );

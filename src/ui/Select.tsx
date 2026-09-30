@@ -85,9 +85,9 @@ export function OptionSheet<V extends string>({ visible, title, options, selecte
               style={({ pressed }) => [styles.option, pressed && { backgroundColor: colors.surfaceMuted }, item.disabled && { opacity: 0.45 }]}
             >
               <View style={styles.flex}>
-                <AppText variant="bodyStrong">{item.label}</AppText>
+                <AppText variant="body-strong">{item.label}</AppText>
                 {item.description && (
-                  <AppText variant="caption" tone="muted">
+                  <AppText variant="body-sm" tone="muted">
                     {item.description}
                   </AppText>
                 )}

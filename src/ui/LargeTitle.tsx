@@ -11,11 +11,11 @@ export function LargeTitle({ title, subtitle, actions }: { title: string; subtit
     <View style={styles.row}>
       <View style={styles.text}>
         {subtitle && (
-          <AppText variant="label" tone="muted" numberOfLines={1}>
+          <AppText variant="nav-link" tone="muted" numberOfLines={1}>
             {subtitle}
           </AppText>
         )}
-        <AppText variant="display" role="heading" numberOfLines={2}>
+        <AppText variant="display-xl" role="heading" numberOfLines={2}>
           {title}
         </AppText>
       </View>

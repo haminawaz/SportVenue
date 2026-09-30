@@ -3,10 +3,11 @@ import { StyleSheet, View } from 'react-native';
 import { CalendarBlank, Plus } from 'phosphor-react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius } from '@/theme/tokens';
+import { radius, spacing } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { EmptyState } from '@/ui/EmptyState';
 import { SectionHeader } from '@/ui/SectionHeader';
+import { useSurface } from '@/ui/surface';
 
 import type { RecentBooking } from '../types/facilityDashboard.types';
 
@@ -23,6 +24,7 @@ type RecentBookingsSectionProps = {
 
 export function RecentBookingsSection({ bookings, currency, timeZone, onBookingPress, onNewBooking, onSeeAll }: RecentBookingsSectionProps) {
   const { colors } = useTheme();
+  const surface = useSurface();
 
   return (
     <View>
@@ -35,13 +37,15 @@ export function RecentBookingsSection({ bookings, currency, timeZone, onBookingP
           action={onNewBooking && <Button label="New booking" icon={Plus} onPress={onNewBooking} />}
         />
       ) : (
-        <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {bookings.map((b, i) => (
-            <Fragment key={b.bookingId}>
-              {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-              <BookingSummaryRow booking={b} currency={currency} timeZone={timeZone} onPress={onBookingPress} />
-            </Fragment>
-          ))}
+        <View style={surface}>
+          <View style={styles.group}>
+            {bookings.map((b, i) => (
+              <Fragment key={b.bookingId}>
+                {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+                <BookingSummaryRow booking={b} currency={currency} timeZone={timeZone} onPress={onBookingPress} />
+              </Fragment>
+            ))}
+          </View>
         </View>
       )}
     </View>
@@ -49,6 +53,6 @@ export function RecentBookingsSection({ bookings, currency, timeZone, onBookingP
 }
 
 const styles = StyleSheet.create({
-  group: { borderRadius: radius.card, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden' },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: 16 },
+  group: { overflow: 'hidden', borderRadius: radius.card },
+  divider: { height: StyleSheet.hairlineWidth, marginLeft: spacing.xl },
 });

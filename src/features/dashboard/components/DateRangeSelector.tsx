@@ -78,9 +78,9 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
         style={({ pressed }) => [styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}
       >
         <CalendarBlank size={20} color={colors.accent} weight="bold" />
-        <AppText variant="bodyStrong" numberOfLines={1} style={styles.chipText}>
+        <AppText variant="body-strong" numberOfLines={1} style={styles.chipText}>
           {label.title}
-          {label.detail ? <AppText variant="body" tone="muted">{`  ${label.detail}`}</AppText> : null}
+          {label.detail ? <AppText variant="body-md" tone="muted">{`  ${label.detail}`}</AppText> : null}
         </AppText>
         <CaretDown size={16} color={colors.textMuted} weight="bold" />
       </Pressable>
@@ -90,7 +90,7 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
           <View style={styles.custom}>
             <InlineDatePicker value={draftDate} maximumDate={maxDate} accentColor={colors.accent} onChange={setDraftDate} />
             {error && (
-              <AppText variant="caption" tone="danger" role="alert">
+              <AppText variant="body-sm" tone="danger" role="alert">
                 {error}
               </AppText>
             )}
@@ -112,7 +112,7 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
                   onPress={() => apply(buildPresetRange(preset, today))}
                   style={({ pressed }) => [styles.option, pressed && { backgroundColor: colors.surfaceMuted }]}
                 >
-                  <AppText variant="bodyStrong">{text}</AppText>
+                  <AppText variant="body-strong">{text}</AppText>
                   {selected && <Check size={18} color={colors.accent} weight="bold" />}
                 </Pressable>
               );
@@ -124,9 +124,9 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
               style={({ pressed }) => [styles.option, pressed && { backgroundColor: colors.surfaceMuted }]}
             >
               <View>
-                <AppText variant="bodyStrong">Pick a date</AppText>
+                <AppText variant="body-strong">Pick a date</AppText>
                 {value.preset === 'custom' && (
-                  <AppText variant="caption" tone="muted">
+                  <AppText variant="body-sm" tone="muted">
                     {formatCalendarDate(value.startDate)}
                   </AppText>
                 )}
@@ -134,7 +134,7 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
               {value.preset === 'custom' ? <Check size={18} color={colors.accent} weight="bold" /> : <CaretRight size={16} color={colors.textMuted} />}
             </Pressable>
             {error && (
-              <AppText variant="caption" tone="danger" role="alert" style={styles.error}>
+              <AppText variant="body-sm" tone="danger" role="alert" style={styles.error}>
                 {error}
               </AppText>
             )}

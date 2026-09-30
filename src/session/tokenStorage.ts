@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-const KEY = 'coyoteos.accessToken';
+const KEY = 'sportvenue.accessToken';
 
 /**
  * Access token storage. Uses the device keychain/keystore on iOS and Android.

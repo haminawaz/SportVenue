@@ -11,7 +11,6 @@ import { usePayments } from '@/features/payments/api';
 import { formatDayAndTime } from '@/lib/datetime';
 import { formatClock, formatDuration, useFormat, WEEKDAY_LONG } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -34,7 +33,6 @@ import { useAddNote, useCustomer, useDeleteCustomer, useDeleteNote, useSetCustom
 export function CustomerDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { can } = useSession();
   const query = useCustomer(id);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -43,7 +41,7 @@ export function CustomerDetailScreen() {
       <Stack.Screen
         options={{
           title: 'Customer',
-          headerRight: can('customer.manage') ? () => <IconButton icon={PencilSimple} label="Edit customer" onPress={() => router.push(routes.customerEdit(id))} /> : undefined,
+          headerRight: () => <IconButton icon={PencilSimple} label="Edit customer" onPress={() => router.push(routes.customerEdit(id))} />,
         }}
       />
       <Screen
@@ -66,10 +64,9 @@ export function CustomerDetailScreen() {
 function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
   const router = useRouter();
   const { colors } = useTheme();
-  const { can } = useSession();
   const f = useFormat();
   const { half: tile, full: fullTile } = useTileWidth();
-  const bookings = useBookings({ customerId: c.id, order: 'desc' }, can('booking.view'));
+  const bookings = useBookings({ customerId: c.id, order: 'desc' });
   const payments = usePayments({ customerId: c.id });
   const addNote = useAddNote(c.id);
   const deleteNote = useDeleteNote(c.id);
@@ -78,7 +75,6 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState<string>();
   const [dialog, setDialog] = useState<'deactivate' | 'delete' | { note: string } | null>(null);
-  const canManage = can('customer.manage');
   const recent = bookings.data?.pages[0]?.items.slice(0, 4) ?? [];
   const recentPayments = payments.data?.pages[0]?.items.slice(0, 4) ?? [];
   const inactive = c.status === 'INACTIVE';
@@ -89,11 +85,11 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
         <View style={styles.profile}>
           <Avatar name={c.name} size={60} tone="accent" />
           <View style={styles.flex}>
-            <AppText variant="title">{c.name}</AppText>
+            <AppText variant="display-lg">{c.name}</AppText>
             <View style={styles.badges}>
               {c.isRegular && <StatusBadge label="Regular" tone="positive" />}
               {inactive && <StatusBadge label="Inactive" tone="neutral" />}
-              <AppText variant="caption" tone="muted">
+              <AppText variant="body-sm" tone="muted">
                 Customer since {c.createdAt.slice(0, 4)}
               </AppText>
             </View>
@@ -101,7 +97,7 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
         </View>
         <View style={styles.actions}>
           <Button size="sm" variant="secondary" label="Call" icon={Phone} onPress={() => Linking.openURL(`tel:${c.phone.replace(/\s/g, '')}`)} aria-label={`Call ${c.name}`} />
-          {can('booking.create') && !inactive && <Button size="sm" label="New booking" icon={CalendarPlus} onPress={() => router.push(routes.bookingNew({ customerId: c.id }))} />}
+          {!inactive && <Button size="sm" label="New booking" icon={CalendarPlus} onPress={() => router.push(routes.bookingNew({ customerId: c.id }))} />}
         </View>
       </Card>
 
@@ -144,34 +140,32 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
       <View>
         <SectionHeader title="Notes" count={c.notes.length} />
         <View style={styles.notes}>
-          {canManage && (
-            <View style={styles.noteInput}>
-              <TextField
-                label="Add a note"
-                multiline
-                value={note}
-                onChangeText={(t) => {
-                  setNote(t);
-                  setNoteError(undefined);
-                }}
-                placeholder="For example: prefers evening slots"
-                error={noteError}
-                maxLength={1000}
-              />
-              <Button
-                size="sm"
-                label="Save note"
-                loading={addNote.isPending}
-                onPress={() => {
-                  if (!note.trim()) {
-                    setNoteError('Write a note first.');
-                    return;
-                  }
-                  addNote.mutate(note.trim(), { onSuccess: () => setNote('') });
-                }}
-              />
-            </View>
-          )}
+          <View style={styles.noteInput}>
+            <TextField
+              label="Add a note"
+              multiline
+              value={note}
+              onChangeText={(t) => {
+                setNote(t);
+                setNoteError(undefined);
+              }}
+              placeholder="For example: prefers evening slots"
+              error={noteError}
+              maxLength={1000}
+            />
+            <Button
+              size="sm"
+              label="Save note"
+              loading={addNote.isPending}
+              onPress={() => {
+                if (!note.trim()) {
+                  setNoteError('Write a note first.');
+                  return;
+                }
+                addNote.mutate(note.trim(), { onSuccess: () => setNote('') });
+              }}
+            />
+          </View>
           {c.notes.length === 0 ? (
             <AppText tone="muted">No notes yet.</AppText>
           ) : (
@@ -179,10 +173,10 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
               <View key={n.id} style={[styles.note, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <AppText>{n.body}</AppText>
                 <View style={styles.noteMeta}>
-                  <AppText variant="caption" tone="muted" style={styles.flex}>
+                  <AppText variant="body-sm" tone="muted" style={styles.flex}>
                     {n.author} · {formatDayAndTime(n.createdAt, f.timeZone, f.today())}
                   </AppText>
-                  {canManage && <IconButton icon={Trash} label="Delete note" onPress={() => setDialog({ note: n.id })} />}
+                  <IconButton icon={Trash} label="Delete note" onPress={() => setDialog({ note: n.id })} />
                 </View>
               </View>
             ))
@@ -190,52 +184,46 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
         </View>
       </View>
 
-      {can('booking.view') && (
-        <View>
-          <SectionHeader title="Bookings" onLink={() => router.push(routes.customerBookings(c.id))} />
-          {bookings.isPending ? (
-            <ListSkeleton rows={3} withAvatar={false} />
-          ) : recent.length === 0 ? (
-            <AppText tone="muted">No bookings yet.</AppText>
-          ) : (
-            <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              {recent.map((b, i) => (
-                <View key={b.id} style={i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
-                  <BookingRow booking={b} showCustomer={false} onPress={(id) => router.push(routes.booking(id))} />
-                </View>
-              ))}
-            </View>
-          )}
-        </View>
-      )}
+      <View>
+        <SectionHeader title="Bookings" onLink={() => router.push(routes.customerBookings(c.id))} />
+        {bookings.isPending ? (
+          <ListSkeleton rows={3} withAvatar={false} />
+        ) : recent.length === 0 ? (
+          <AppText tone="muted">No bookings yet.</AppText>
+        ) : (
+          <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {recent.map((b, i) => (
+              <View key={b.id} style={i > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
+                <BookingRow booking={b} showCustomer={false} onPress={(id) => router.push(routes.booking(id))} />
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
 
-      {can('payment.view') && (
-        <View>
-          <SectionHeader title="Payments" onLink={() => router.push(routes.customerPayments(c.id))} />
-          {payments.isPending ? (
-            <ListSkeleton rows={3} withAvatar={false} />
-          ) : recentPayments.length === 0 ? (
-            <AppText tone="muted">No payments recorded.</AppText>
-          ) : (
-            <ListGroup>
-              {recentPayments.map((p) => (
-                <PaymentRow key={p.id} payment={p} showCustomer={false} onPress={(id) => router.push(routes.payment(id))} />
-              ))}
-            </ListGroup>
-          )}
-        </View>
-      )}
+      <View>
+        <SectionHeader title="Payments" onLink={() => router.push(routes.customerPayments(c.id))} />
+        {payments.isPending ? (
+          <ListSkeleton rows={3} withAvatar={false} />
+        ) : recentPayments.length === 0 ? (
+          <AppText tone="muted">No payments recorded.</AppText>
+        ) : (
+          <ListGroup>
+            {recentPayments.map((p) => (
+              <PaymentRow key={p.id} payment={p} showCustomer={false} onPress={(id) => router.push(routes.payment(id))} />
+            ))}
+          </ListGroup>
+        )}
+      </View>
 
-      {canManage && (
-        <ListGroup title="Manage">
-          {inactive ? (
-            <ListRow title="Reactivate customer" icon={ArrowCounterClockwise} onPress={() => setStatus.mutate('ACTIVE')} />
-          ) : (
-            <ListRow title="Deactivate customer" subtitle="Stop new bookings, keep history" icon={Prohibit} onPress={() => setDialog('deactivate')} />
-          )}
-          <ListRow title="Delete customer" icon={Trash} destructive onPress={() => setDialog('delete')} />
-        </ListGroup>
-      )}
+      <ListGroup title="Manage">
+        {inactive ? (
+          <ListRow title="Reactivate customer" icon={ArrowCounterClockwise} onPress={() => setStatus.mutate('ACTIVE')} />
+        ) : (
+          <ListRow title="Deactivate customer" subtitle="Stop new bookings, keep history" icon={Prohibit} onPress={() => setDialog('deactivate')} />
+        )}
+        <ListRow title="Delete customer" icon={Trash} destructive onPress={() => setDialog('delete')} />
+      </ListGroup>
 
       <ConfirmDialog
         visible={dialog === 'deactivate'}

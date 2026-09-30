@@ -4,7 +4,7 @@
  * Answers apiRequest() in place of the network when USE_MOCKS is on
  * (__DEV__ and EXPO_PUBLIC_USE_MOCKS=1). Implements the proposed REST
  * contract in docs/facility-dashboard-api.md with server-side validation,
- * permission checks and calculations, so every app flow can be exercised.
+ * owner authentication and calculations, so every app flow can be exercised.
  */
 
 import { ApiError } from '@/api/client';
@@ -20,11 +20,10 @@ import type {
   PricingRuleInput,
   Weekday,
 } from '@/domain/types';
-import type { Permission } from '@/session/types';
 
-import { DEMO_PASSWORD, OWNER_PERMISSIONS, db, type StoredBooking, type StoredCustomer } from './db';
+import { DEMO_PASSWORD, db, type StoredBooking, type StoredCustomer } from './db';
 import { quote } from './pricing';
-import { conflict, forbidden, invalid, newId, notFound, paginate, round2, toEpoch, dateOf, minutesOf, clockOf, overlaps, weekdayOf, wait, rng } from './util';
+import { conflict, invalid, newId, notFound, paginate, round2, toEpoch, dateOf, minutesOf, clockOf, overlaps, weekdayOf, wait, rng } from './util';
 import {
   analyticsView,
   availability,
@@ -44,15 +43,16 @@ import {
 type Req = { method: string; path: string; query: Record<string, unknown>; body: unknown; token: string | null };
 type Ctx = { req: Req; params: Record<string, string>; user: (typeof db.users)[number]; body: Record<string, any>; q: Record<string, string> };
 type Handler = (ctx: Ctx) => unknown;
-type Route = { method: string; pattern: RegExp; keys: string[]; permission: Permission | null; handler: Handler };
+type Route = { method: string; pattern: RegExp; keys: string[]; handler: Handler };
 
 const routes: Route[] = [];
 const publicRoutes: Route[] = [];
 
-function route(method: string, path: string, permission: Permission | null, handler: Handler, isPublic = false) {
+/** SportVenue has one role, the facility owner, so every signed-in route is open to the session user. */
+function route(method: string, path: string, handler: Handler, isPublic = false) {
   const keys: string[] = [];
   const pattern = new RegExp(`^${path.replace(/:([a-zA-Z]+)/g, (_m, k) => (keys.push(k), '([^/]+)'))}$`);
-  (isPublic ? publicRoutes : routes).push({ method, pattern, keys, permission, handler });
+  (isPublic ? publicRoutes : routes).push({ method, pattern, keys, handler });
 }
 
 const jitter = rng(7);
@@ -87,7 +87,6 @@ export async function handleMockRequest(req: Req): Promise<unknown> {
 
   const found = match(routes);
   if (!found) throw new ApiError(404, `No mock route for ${req.method} ${req.path}`);
-  if (found.r.permission && !OWNER_PERMISSIONS.includes(found.r.permission)) throw forbidden();
   return clone(found.r.handler({ req, params: found.params, user, body, q }));
 }
 
@@ -162,7 +161,7 @@ function notify(n: Omit<(typeof db.notifications)[number], 'id' | 'createdAt' | 
 
 /* ------------------------------------------------------------------ auth & me */
 
-route('POST', '/api/auth/sign-in', null, ({ body }) => {
+route('POST', '/api/auth/sign-in', ({ body }) => {
   const email = String(body.email ?? '').toLowerCase();
   const errors: Record<string, string> = {};
   if (!EMAIL.test(email)) errors.email = 'Enter a valid email address.';
@@ -175,7 +174,7 @@ route('POST', '/api/auth/sign-in', null, ({ body }) => {
   return { accessToken: token };
 }, true);
 
-route('POST', '/api/leads', null, ({ body }) => {
+route('POST', '/api/leads', ({ body }) => {
   const errors: Record<string, string> = {};
   if (String(body.name ?? '').trim().length < 2) errors.name = 'Enter your name.';
   if (String(body.facilityName ?? '').trim().length < 2) errors.facilityName = 'Enter your facility name.';
@@ -185,14 +184,14 @@ route('POST', '/api/leads', null, ({ body }) => {
   return { id: newId('lead') };
 }, true);
 
-route('POST', '/api/auth/sign-out', null, ({ req }) => {
+route('POST', '/api/auth/sign-out', ({ req }) => {
   if (req.token) db.sessions.delete(req.token);
   return undefined;
 });
 
-const me = (ctx: Ctx) => ({ user: ctx.user, facility: db.facility, permissions: OWNER_PERMISSIONS });
-route('GET', '/api/me', null, me);
-route('PATCH', '/api/me', null, (ctx) => {
+const me = (ctx: Ctx) => ({ user: ctx.user, facility: db.facility });
+route('GET', '/api/me', me);
+route('PATCH', '/api/me', (ctx) => {
   const { firstName, lastName, email, phone } = ctx.body;
   const errors: Record<string, string> = {};
   if (!String(firstName ?? '').trim()) errors.firstName = 'Enter your first name.';
@@ -204,20 +203,20 @@ route('PATCH', '/api/me', null, (ctx) => {
   Object.assign(ctx.user, { firstName: firstName.trim(), lastName: lastName.trim(), email: email.toLowerCase(), phone: phone || undefined });
   return me(ctx);
 });
-route('GET', '/api/me/notification-preferences', null, () => db.preferences);
-route('PUT', '/api/me/notification-preferences', null, ({ body }) => {
+route('GET', '/api/me/notification-preferences', () => db.preferences);
+route('PUT', '/api/me/notification-preferences', ({ body }) => {
   db.preferences = { ...db.preferences, ...body };
   return db.preferences;
 });
 
 /* ------------------------------------------------------------------ dashboard & analytics */
 
-route('GET', '/api/owner/dashboard', 'dashboard.view', ({ q }) => {
+route('GET', '/api/owner/dashboard', ({ q }) => {
   if (!DATE.test(q.startDate ?? '') || !DATE.test(q.endDate ?? '')) throw invalid({ startDate: 'Choose a valid period.' });
   return dashboardView(q.startDate, q.endDate);
 });
 
-route('GET', '/api/analytics', 'analytics.view', ({ q }) => {
+route('GET', '/api/analytics', ({ q }) => {
   if (!DATE.test(q.startDate ?? '') || !DATE.test(q.endDate ?? '')) throw invalid({ startDate: 'Choose a valid period.' });
   if (daysBetween(q.startDate, q.endDate) > 366) throw invalid({ startDate: 'Choose a period of one year or less.' });
   return analyticsView(q.startDate, q.endDate);
@@ -225,8 +224,8 @@ route('GET', '/api/analytics', 'analytics.view', ({ q }) => {
 
 /* ------------------------------------------------------------------ facility */
 
-route('GET', '/api/facility', null, () => db.facility);
-route('PATCH', '/api/facility', 'facility.manage', ({ body }) => {
+route('GET', '/api/facility', () => db.facility);
+route('PATCH', '/api/facility', ({ body }) => {
   const errors: Record<string, string> = {};
   if ('name' in body && !String(body.name).trim()) errors.name = 'Enter the facility name.';
   if ('email' in body && !EMAIL.test(String(body.email))) errors.email = 'Enter a valid email address.';
@@ -250,7 +249,7 @@ route('PATCH', '/api/facility', 'facility.manage', ({ body }) => {
   db.facility = { ...db.facility, ...rest, settings: settings ? { ...db.facility.settings, ...settings } : db.facility.settings };
   return db.facility;
 });
-route('PUT', '/api/facility/hours', 'facility.manage', ({ body }) => {
+route('PUT', '/api/facility/hours', ({ body }) => {
   const hours = body.businessHours as typeof db.facility.businessHours;
   if (!Array.isArray(hours) || hours.length !== 7) throw invalid({ businessHours: 'Provide hours for all 7 days.' });
   const errors: Record<string, string> = {};
@@ -277,11 +276,11 @@ function validateCourt(body: Record<string, any>, id?: string) {
   if (Object.keys(errors).length) throw invalid(errors);
 }
 
-route('GET', '/api/courts', 'court.view', ({ q }) => {
+route('GET', '/api/courts', ({ q }) => {
   const list = db.courts.filter((c) => !q.status || q.status.split(',').includes(c.status));
   return list.map(courtSummaryView);
 });
-route('POST', '/api/courts', 'court.manage', (ctx) => {
+route('POST', '/api/courts', (ctx) => {
   validateCourt(ctx.body);
   if (db.courts.length >= db.subscription.courtsLimit) throw conflict(`Your plan includes ${db.subscription.courtsLimit} courts. Upgrade to add more.`, 'PLAN_LIMIT');
   const court: Court = {
@@ -301,8 +300,8 @@ route('POST', '/api/courts', 'court.manage', (ctx) => {
   logPricing(ctx, 'COURT_RATE', court.name, `Created with a base rate of ${fmtMoney(court.hourlyRate)} per hour`);
   return courtSummaryView(court);
 });
-route('GET', '/api/courts/:id', 'court.view', ({ params }) => courtSummaryView(findCourt(params.id)));
-route('PATCH', '/api/courts/:id', 'court.manage', (ctx) => {
+route('GET', '/api/courts/:id', ({ params }) => courtSummaryView(findCourt(params.id)));
+route('PATCH', '/api/courts/:id', (ctx) => {
   const court = findCourt(ctx.params.id);
   const next = { ...court, ...ctx.body };
   validateCourt(next, court.id);
@@ -324,7 +323,7 @@ route('PATCH', '/api/courts/:id', 'court.manage', (ctx) => {
   });
   return courtSummaryView(court);
 });
-route('DELETE', '/api/courts/:id', 'court.manage', ({ params }) => {
+route('DELETE', '/api/courts/:id', ({ params }) => {
   const court = findCourt(params.id);
   const count = db.bookings.filter((b) => b.courtId === court.id).length;
   if (count > 0) throw conflict(`${court.name} has ${count} bookings on record, so it can't be deleted. Deactivate it instead to keep its history.`, 'HAS_BOOKINGS');
@@ -333,14 +332,14 @@ route('DELETE', '/api/courts/:id', 'court.manage', ({ params }) => {
   db.subscription.courtsUsed = db.courts.length;
   return undefined;
 });
-route('GET', '/api/courts/:id/availability', 'booking.view', ({ params, q }) => {
+route('GET', '/api/courts/:id/availability', ({ params, q }) => {
   if (!DATE.test(q.date ?? '')) throw invalid({ date: 'Choose a date.' });
   return availability(findCourt(params.id), q.date);
 });
 
 /* ------------------------------------------------------------------ bookings */
 
-route('GET', '/api/bookings', 'booking.view', ({ q }) => {
+route('GET', '/api/bookings', ({ q }) => {
   const statuses = q.status ? q.status.split(',') : null;
   const search = (q.q ?? '').trim().toLowerCase();
   let views = db.bookings
@@ -358,14 +357,14 @@ route('GET', '/api/bookings', 'booking.view', ({ q }) => {
   return paginate(views, q);
 });
 
-route('POST', '/api/bookings/quote', 'booking.view', (ctx) => {
+route('POST', '/api/bookings/quote', (ctx) => {
   const { courtId, startAt, endAt, discountId } = ctx.body;
   const court = findCourt(courtId);
   if (!LOCAL.test(startAt ?? '') || !LOCAL.test(endAt ?? '')) throw invalid({ startAt: 'Choose a time slot.' });
   return quote(court, db.rules, startAt, endAt, discountFor(discountId));
 });
 
-route('POST', '/api/bookings', 'booking.create', (ctx) => {
+route('POST', '/api/bookings', (ctx) => {
   const { courtId, customerId, startAt, endAt, discountId, notes } = ctx.body;
   if (!customerId) throw invalid({ customerId: 'Choose a customer.' });
   const customer = findCustomer(customerId);
@@ -397,9 +396,9 @@ route('POST', '/api/bookings', 'booking.create', (ctx) => {
   return bookingDetailView(b);
 });
 
-route('GET', '/api/bookings/:id', 'booking.view', ({ params }) => bookingDetailView(findBooking(params.id)));
+route('GET', '/api/bookings/:id', ({ params }) => bookingDetailView(findBooking(params.id)));
 
-route('PATCH', '/api/bookings/:id', 'booking.manage', (ctx) => {
+route('PATCH', '/api/bookings/:id', (ctx) => {
   const b = findBooking(ctx.params.id);
   if (b.status === 'CANCELLED') throw conflict('Cancelled bookings cannot be edited.');
   const changes: string[] = [];
@@ -418,7 +417,7 @@ route('PATCH', '/api/bookings/:id', 'booking.manage', (ctx) => {
   return bookingDetailView(b);
 });
 
-route('POST', '/api/bookings/:id/reschedule', 'booking.manage', (ctx) => {
+route('POST', '/api/bookings/:id/reschedule', (ctx) => {
   const b = findBooking(ctx.params.id);
   if (b.status === 'CANCELLED' || b.status === 'COMPLETED' || b.status === 'NO_SHOW') throw conflict('Only upcoming bookings can be rescheduled.');
   const { courtId, startAt, endAt } = ctx.body;
@@ -431,7 +430,7 @@ route('POST', '/api/bookings/:id/reschedule', 'booking.manage', (ctx) => {
   return bookingDetailView(b);
 });
 
-route('POST', '/api/bookings/:id/cancel', 'booking.manage', (ctx) => {
+route('POST', '/api/bookings/:id/cancel', (ctx) => {
   const b = findBooking(ctx.params.id);
   if (b.status !== 'CONFIRMED' && b.status !== 'PENDING') throw conflict('This booking can no longer be cancelled.');
   const reason = String(ctx.body.reason ?? '').trim();
@@ -445,7 +444,7 @@ route('POST', '/api/bookings/:id/cancel', 'booking.manage', (ctx) => {
   return bookingDetailView(b);
 });
 
-route('POST', '/api/bookings/:id/status', 'booking.manage', (ctx) => {
+route('POST', '/api/bookings/:id/status', (ctx) => {
   const b = findBooking(ctx.params.id);
   const status = ctx.body.status as BookingStatus;
   if (!['COMPLETED', 'NO_SHOW', 'CONFIRMED'].includes(status)) throw invalid({ status: 'Choose a valid status.' });
@@ -456,7 +455,7 @@ route('POST', '/api/bookings/:id/status', 'booking.manage', (ctx) => {
   return bookingDetailView(b);
 });
 
-route('POST', '/api/bookings/:id/payment-reminders', 'payment.remind', (ctx) => {
+route('POST', '/api/bookings/:id/payment-reminders', (ctx) => {
   const b = findBooking(ctx.params.id);
   const view = bookingView(b);
   if (view.outstanding <= 0) throw conflict('This booking is already paid.', 'ALREADY_PAID');
@@ -466,25 +465,25 @@ route('POST', '/api/bookings/:id/payment-reminders', 'payment.remind', (ctx) => 
 
 /* ------------------------------------------------------------------ payments */
 
-route('GET', '/api/payments', 'payment.view', ({ q }) => {
+route('GET', '/api/payments', ({ q }) => {
   const list = db.payments
     .filter((p) => (!q.customerId || p.customerId === q.customerId) && (!q.bookingId || p.bookingId === q.bookingId))
     .sort((a, b) => toEpoch(b.receivedAt) - toEpoch(a.receivedAt))
     .map(paymentView);
   return paginate(list, q);
 });
-route('GET', '/api/payments/outstanding', 'payment.view', ({ q }) => {
+route('GET', '/api/payments/outstanding', ({ q }) => {
   const list = outstandingBalances()
     .filter((b) => !q.customerId || b.customerId === q.customerId)
     .sort((a, b) => (q.sort === 'oldest' ? b.daysOverdue - a.daysOverdue : b.outstanding - a.outstanding));
   return { ...paginate(list, q), totalAmount: round2(list.reduce((s, b) => s + b.outstanding, 0)) };
 });
-route('GET', '/api/payments/:id', 'payment.view', ({ params }) => {
+route('GET', '/api/payments/:id', ({ params }) => {
   const p = db.payments.find((x) => x.id === params.id);
   if (!p) throw notFound('Payment');
   return paymentView(p);
 });
-route('POST', '/api/payments', 'payment.record', (ctx) => {
+route('POST', '/api/payments', (ctx) => {
   const { bookingId, method, note } = ctx.body;
   const amount = round2(Number(ctx.body.amount));
   const b = findBooking(bookingId);
@@ -543,7 +542,7 @@ function applyCustomer(c: StoredCustomer, body: Record<string, any>) {
   c.regularSlot = body.isRegular && body.regularSlot ? { ...body.regularSlot, weekday: Number(body.regularSlot.weekday) as Weekday } : undefined;
 }
 
-route('GET', '/api/customers', 'customer.view', ({ q }) => {
+route('GET', '/api/customers', ({ q }) => {
   const search = (q.q ?? '').trim().toLowerCase();
   let list = db.customers
     .filter((c) => !search || c.name.toLowerCase().includes(search) || c.phone.replace(/\D/g, '').includes(search.replace(/\D/g, '') || '\u0000') || (c.email ?? '').includes(search))
@@ -558,7 +557,7 @@ route('GET', '/api/customers', 'customer.view', ({ q }) => {
   else list.sort((a, b) => a.name.localeCompare(b.name));
   return paginate(list, q, 25);
 });
-route('POST', '/api/customers', 'customer.manage', (ctx) => {
+route('POST', '/api/customers', (ctx) => {
   validateCustomer(ctx.body);
   const c: StoredCustomer = { id: newId('cust'), name: '', phone: '', status: 'ACTIVE', isRegular: false, createdAt: now(), notes: [] };
   applyCustomer(c, ctx.body);
@@ -566,8 +565,8 @@ route('POST', '/api/customers', 'customer.manage', (ctx) => {
   db.customers.push(c);
   return customerDetailView(c);
 });
-route('GET', '/api/customers/:id', 'customer.view', ({ params }) => customerDetailView(findCustomer(params.id)));
-route('PATCH', '/api/customers/:id', 'customer.manage', (ctx) => {
+route('GET', '/api/customers/:id', ({ params }) => customerDetailView(findCustomer(params.id)));
+route('PATCH', '/api/customers/:id', (ctx) => {
   const c = findCustomer(ctx.params.id);
   if ('status' in ctx.body && Object.keys(ctx.body).length === 1) {
     c.status = ctx.body.status === 'INACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -577,14 +576,14 @@ route('PATCH', '/api/customers/:id', 'customer.manage', (ctx) => {
   applyCustomer(c, ctx.body);
   return customerDetailView(c);
 });
-route('DELETE', '/api/customers/:id', 'customer.manage', ({ params }) => {
+route('DELETE', '/api/customers/:id', ({ params }) => {
   const c = findCustomer(params.id);
   const count = db.bookings.filter((b) => b.customerId === c.id).length;
   if (count > 0) throw conflict(`${c.name} has ${count} bookings on record, so they can't be deleted. Deactivate them instead to keep the history.`, 'HAS_BOOKINGS');
   db.customers = db.customers.filter((x) => x.id !== c.id);
   return undefined;
 });
-route('POST', '/api/customers/:id/notes', 'customer.manage', (ctx) => {
+route('POST', '/api/customers/:id/notes', (ctx) => {
   const c = findCustomer(ctx.params.id);
   const body = String(ctx.body.body ?? '').trim();
   if (!body) throw invalid({ body: 'Write a note first.' });
@@ -592,7 +591,7 @@ route('POST', '/api/customers/:id/notes', 'customer.manage', (ctx) => {
   c.notes.push({ id: newId('note'), body, createdAt: now(), author: actorName(ctx) });
   return customerDetailView(c);
 });
-route('DELETE', '/api/customers/:id/notes/:noteId', 'customer.manage', ({ params }) => {
+route('DELETE', '/api/customers/:id/notes/:noteId', ({ params }) => {
   const c = findCustomer(params.id);
   c.notes = c.notes.filter((n) => n.id !== params.noteId);
   return customerDetailView(c);
@@ -600,13 +599,13 @@ route('DELETE', '/api/customers/:id/notes/:noteId', 'customer.manage', ({ params
 
 /* ------------------------------------------------------------------ opportunities */
 
-route('GET', '/api/opportunities', 'opportunity.view', ({ q }) => {
+route('GET', '/api/opportunities', ({ q }) => {
   const statuses = q.status ? q.status.split(',') : null;
   return db.opportunities
     .filter((o) => !statuses || statuses.includes(o.status))
     .sort((a, b) => toEpoch(b.createdAt) - toEpoch(a.createdAt));
 });
-route('GET', '/api/opportunities/:id', 'opportunity.view', ({ params }) => {
+route('GET', '/api/opportunities/:id', ({ params }) => {
   const o = db.opportunities.find((x) => x.id === params.id);
   if (!o) throw notFound('Opportunity');
   return o;
@@ -623,10 +622,10 @@ function transition(ctx: Ctx, next: 'IN_PROGRESS' | 'RESOLVED' | 'DISMISSED' | '
       : undefined;
   return o;
 }
-route('POST', '/api/opportunities/:id/start', 'opportunity.manage', (ctx) => transition(ctx, 'IN_PROGRESS'));
-route('POST', '/api/opportunities/:id/resolve', 'opportunity.manage', (ctx) => transition(ctx, 'RESOLVED'));
-route('POST', '/api/opportunities/:id/dismiss', 'opportunity.manage', (ctx) => transition(ctx, 'DISMISSED'));
-route('POST', '/api/opportunities/:id/reopen', 'opportunity.manage', (ctx) => transition(ctx, 'OPEN'));
+route('POST', '/api/opportunities/:id/start', (ctx) => transition(ctx, 'IN_PROGRESS'));
+route('POST', '/api/opportunities/:id/resolve', (ctx) => transition(ctx, 'RESOLVED'));
+route('POST', '/api/opportunities/:id/dismiss', (ctx) => transition(ctx, 'DISMISSED'));
+route('POST', '/api/opportunities/:id/reopen', (ctx) => transition(ctx, 'OPEN'));
 
 /* ------------------------------------------------------------------ pricing */
 
@@ -656,13 +655,13 @@ function validateRule(body: PricingRuleInput, id?: string) {
   }
 }
 
-route('GET', '/api/pricing/rules', 'pricing.view', ({ q }) => db.rules.filter((r) => !q.courtId || r.courtId === q.courtId || r.courtId === null).map(ruleView));
-route('GET', '/api/pricing/rules/:id', 'pricing.view', ({ params }) => {
+route('GET', '/api/pricing/rules', ({ q }) => db.rules.filter((r) => !q.courtId || r.courtId === q.courtId || r.courtId === null).map(ruleView));
+route('GET', '/api/pricing/rules/:id', ({ params }) => {
   const r = db.rules.find((x) => x.id === params.id);
   if (!r) throw notFound('Pricing rule');
   return ruleView(r);
 });
-route('POST', '/api/pricing/rules', 'pricing.manage', (ctx) => {
+route('POST', '/api/pricing/rules', (ctx) => {
   const body = ctx.body as PricingRuleInput;
   validateRule(body);
   const r: PricingRule = { id: newId('rule'), name: body.name.trim(), courtId: body.courtId ?? null, weekdays: [...body.weekdays].sort(), startTime: body.startTime, endTime: body.endTime, hourlyRate: round2(Number(body.hourlyRate)), active: !!body.active, updatedAt: now() };
@@ -670,7 +669,7 @@ route('POST', '/api/pricing/rules', 'pricing.manage', (ctx) => {
   logPricing(ctx, 'RULE', r.name, `Created: ${courtLabel(r.courtId)}, ${fmtClock(r.startTime)} - ${fmtClock(r.endTime)}, ${fmtMoney(r.hourlyRate)} per hour`);
   return ruleView(r);
 });
-route('PATCH', '/api/pricing/rules/:id', 'pricing.manage', (ctx) => {
+route('PATCH', '/api/pricing/rules/:id', (ctx) => {
   const r = db.rules.find((x) => x.id === ctx.params.id);
   if (!r) throw notFound('Pricing rule');
   const next = { ...r, ...ctx.body } as PricingRule;
@@ -684,7 +683,7 @@ route('PATCH', '/api/pricing/rules/:id', 'pricing.manage', (ctx) => {
   if (changes.length) logPricing(ctx, 'RULE', r.name, changes.join(', ').replace(/^./, (s) => s.toUpperCase()));
   return ruleView(r);
 });
-route('DELETE', '/api/pricing/rules/:id', 'pricing.manage', (ctx) => {
+route('DELETE', '/api/pricing/rules/:id', (ctx) => {
   const r = db.rules.find((x) => x.id === ctx.params.id);
   if (!r) throw notFound('Pricing rule');
   db.rules = db.rules.filter((x) => x.id !== r.id);
@@ -713,13 +712,13 @@ function validateDiscount(body: DiscountInput, id?: string) {
 const describeDiscount = (d: DiscountInput) =>
   `${d.kind === 'PERCENT' ? `${d.value}%` : fmtMoney(d.value)} off${d.courtIds.length ? ` on ${d.courtIds.map((c) => courtLabel(c)).join(', ')}` : ''}${d.startTime ? `, ${fmtClock(d.startTime)} - ${fmtClock(d.endTime!)}` : ''}`;
 
-route('GET', '/api/pricing/discounts', 'pricing.view', () => [...db.discounts].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name)));
-route('GET', '/api/pricing/discounts/:id', 'pricing.view', ({ params }) => {
+route('GET', '/api/pricing/discounts', () => [...db.discounts].sort((a, b) => Number(b.active) - Number(a.active) || a.name.localeCompare(b.name)));
+route('GET', '/api/pricing/discounts/:id', ({ params }) => {
   const d = db.discounts.find((x) => x.id === params.id);
   if (!d) throw notFound('Discount');
   return d;
 });
-route('POST', '/api/pricing/discounts', 'pricing.manage', (ctx) => {
+route('POST', '/api/pricing/discounts', (ctx) => {
   const body = ctx.body as DiscountInput;
   validateDiscount(body);
   const d: Discount = { ...body, id: newId('disc'), name: body.name.trim(), value: round2(Number(body.value)), usageCount: 0, updatedAt: now(), maxUses: body.maxUses ? Number(body.maxUses) : undefined };
@@ -727,7 +726,7 @@ route('POST', '/api/pricing/discounts', 'pricing.manage', (ctx) => {
   logPricing(ctx, 'DISCOUNT', d.name, `Created: ${describeDiscount(d)}`);
   return d;
 });
-route('PATCH', '/api/pricing/discounts/:id', 'pricing.manage', (ctx) => {
+route('PATCH', '/api/pricing/discounts/:id', (ctx) => {
   const d = db.discounts.find((x) => x.id === ctx.params.id);
   if (!d) throw notFound('Discount');
   const next = { ...d, ...ctx.body } as Discount;
@@ -737,7 +736,7 @@ route('PATCH', '/api/pricing/discounts/:id', 'pricing.manage', (ctx) => {
   logPricing(ctx, 'DISCOUNT', d.name, onlyToggle ? (d.active ? 'Activated' : 'Deactivated') : `Updated: ${describeDiscount(d)}`);
   return d;
 });
-route('DELETE', '/api/pricing/discounts/:id', 'pricing.manage', (ctx) => {
+route('DELETE', '/api/pricing/discounts/:id', (ctx) => {
   const d = db.discounts.find((x) => x.id === ctx.params.id);
   if (!d) throw notFound('Discount');
   if (d.usageCount > 0) throw conflict(`"${d.name}" has been used on ${d.usageCount} bookings, so it can't be deleted. Deactivate it instead.`, 'IN_USE');
@@ -745,7 +744,7 @@ route('DELETE', '/api/pricing/discounts/:id', 'pricing.manage', (ctx) => {
   logPricing(ctx, 'DISCOUNT', d.name, 'Deleted');
   return undefined;
 });
-route('GET', '/api/pricing/history', 'pricing.view', ({ q }) => paginate(db.pricingHistory, q));
+route('GET', '/api/pricing/history', ({ q }) => paginate(db.pricingHistory, q));
 
 /* ------------------------------------------------------------------ notifications */
 
@@ -754,29 +753,29 @@ const typeGroup: Record<string, string[]> = {
   PAYMENT: ['PAYMENT_REMINDER', 'PAYMENT_RECEIVED'],
   SYSTEM: ['SYSTEM'],
 };
-route('GET', '/api/notifications', null, ({ q }) => {
+route('GET', '/api/notifications', ({ q }) => {
   const list = db.notifications
     .filter((n) => (q.filter !== 'unread' || !n.read) && (!q.type || typeGroup[q.type]?.includes(n.type)))
     .sort((a, b) => toEpoch(b.createdAt) - toEpoch(a.createdAt));
   return paginate(list, q);
 });
-route('GET', '/api/notifications/unread-count', null, () => ({ count: db.notifications.filter((n) => !n.read).length }));
-route('POST', '/api/notifications/read-all', null, () => {
+route('GET', '/api/notifications/unread-count', () => ({ count: db.notifications.filter((n) => !n.read).length }));
+route('POST', '/api/notifications/read-all', () => {
   db.notifications.forEach((n) => (n.read = true));
   return undefined;
 });
-route('GET', '/api/notifications/:id', null, ({ params }) => {
+route('GET', '/api/notifications/:id', ({ params }) => {
   const n = db.notifications.find((x) => x.id === params.id);
   if (!n) throw notFound('Notification');
   return n;
 });
-route('POST', '/api/notifications/:id/read', null, ({ params }) => {
+route('POST', '/api/notifications/:id/read', ({ params }) => {
   const n = db.notifications.find((x) => x.id === params.id);
   if (!n) throw notFound('Notification');
   n.read = true;
   return n;
 });
-route('POST', '/api/notifications/:id/unread', null, ({ params }) => {
+route('POST', '/api/notifications/:id/unread', ({ params }) => {
   const n = db.notifications.find((x) => x.id === params.id);
   if (!n) throw notFound('Notification');
   n.read = false;
@@ -785,4 +784,4 @@ route('POST', '/api/notifications/:id/unread', null, ({ params }) => {
 
 /* ------------------------------------------------------------------ billing */
 
-route('GET', '/api/billing/subscription', 'billing.manage', () => db.subscription);
+route('GET', '/api/billing/subscription', () => db.subscription);

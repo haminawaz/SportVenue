@@ -7,7 +7,6 @@ import type { Discount } from '@/domain/types';
 import { useCourts } from '@/features/courts/api';
 import { formatClock, formatWeekdays, useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
 import { Chip, ChipRow } from '@/ui/Chips';
@@ -27,18 +26,16 @@ export function discountValueLabel(d: Pick<Discount, 'kind' | 'value'>, money: (
 export function PricingScreen() {
   const params = useLocalSearchParams<{ courtId?: string }>();
   const router = useRouter();
-  const { can } = useSession();
   const f = useFormat();
   const [courtId, setCourtId] = useState<string | undefined>(params.courtId);
   const courts = useCourts();
   const rules = usePricingRules(courtId);
   const discounts = useDiscounts();
   const [refreshing, setRefreshing] = useState(false);
-  const canManage = can('pricing.manage');
 
   const courtList = (courts.data ?? []).filter((c) => !courtId || c.id === courtId);
   const shownDiscounts = (discounts.data ?? []).filter((d) => !courtId || d.courtIds.length === 0 || d.courtIds.includes(courtId));
-  const addButton = (label: string, onPress: () => void) => (canManage ? <ListRow title={label} icon={Plus} onPress={onPress} /> : null);
+  const addButton = (label: string, onPress: () => void) => <ListRow title={label} icon={Plus} onPress={onPress} />;
 
   return (
     <>
@@ -73,7 +70,7 @@ export function PricingScreen() {
                   title={c.name}
                   subtitle={c.status === 'ACTIVE' ? c.sport : `${c.sport} · not taking bookings`}
                   value={`${f.money(c.hourlyRate)} / h`}
-                  onPress={() => router.push(canManage ? routes.courtEdit(c.id) : routes.court(c.id))}
+                  onPress={() => router.push(routes.courtEdit(c.id))}
                 />
               ))}
             </ListGroup>
@@ -90,7 +87,7 @@ export function PricingScreen() {
               icon={Tag}
               title="No time-based rates"
               message="Charge more at peak times or less when courts are quiet."
-              action={canManage ? <Button size="sm" variant="secondary" label="Add a rate" icon={Plus} onPress={() => router.push(routes.pricingRuleNew({ courtId }))} /> : undefined}
+              action={<Button size="sm" variant="secondary" label="Add a rate" icon={Plus} onPress={() => router.push(routes.pricingRuleNew({ courtId }))} />}
             />
           ) : (
             <ListGroup>
@@ -120,7 +117,7 @@ export function PricingScreen() {
               icon={Percent}
               title="No discounts"
               message="Offer a percentage or fixed amount off, with or without a code."
-              action={canManage ? <Button size="sm" variant="secondary" label="Create a discount" icon={Plus} onPress={() => router.push(routes.discountNew({ courtId }))} /> : undefined}
+              action={<Button size="sm" variant="secondary" label="Create a discount" icon={Plus} onPress={() => router.push(routes.discountNew({ courtId }))} />}
             />
           ) : (
             <ListGroup>

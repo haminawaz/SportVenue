@@ -1,20 +1,18 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, LockKey, Receipt, Table, UserPlus, Users, XCircle } from 'phosphor-react-native';
+import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, Receipt, Table, UserPlus, Users, XCircle } from 'phosphor-react-native';
 
 import type { Analytics } from '@/domain/types';
 import { addDays, daysBetween, formatCalendarDate, formatMonthDay, type CalendarDate } from '@/lib/datetime';
 import { formatNumber, useFormat, WEEK_ORDER, WEEKDAY_SHORT } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Chip, ChipRow } from '@/ui/Chips';
 import { DatePickerSheet } from '@/ui/DateField';
-import { EmptyState } from '@/ui/EmptyState';
 import { ListGroup, ListRow } from '@/ui/List';
 import { MetricCard } from '@/ui/MetricCard';
 import { Screen } from '@/ui/Screen';
@@ -59,7 +57,6 @@ const hourLabel = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' 
 const hourShort = (h: number) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}`;
 
 export function AnalyticsScreen() {
-  const { can } = useSession();
   const f = useFormat();
   const today = f.today();
   const [preset, setPreset] = useState<Preset>('30d');
@@ -85,15 +82,6 @@ export function AnalyticsScreen() {
     setCustom(next);
   };
 
-  if (!can('analytics.view')) {
-    return (
-      <Screen>
-        <Stack.Screen options={{ title: 'Analytics' }} />
-        <EmptyState icon={LockKey} title="No access" message="Ask the facility owner for analytics access." />
-      </Screen>
-    );
-  }
-
   return (
     <>
       <Stack.Screen options={{ title: 'Analytics' }} />
@@ -118,11 +106,11 @@ export function AnalyticsScreen() {
             </ChipRow>
           )}
           {rangeError ? (
-            <AppText variant="caption" tone="danger" role="alert">
+            <AppText variant="body-sm" tone="danger" role="alert">
               {rangeError}
             </AppText>
           ) : (
-            <AppText variant="caption" tone="muted">
+            <AppText variant="body-sm" tone="muted">
               {formatCalendarDate(range.start)} - {formatCalendarDate(range.end)}, compared with the {daysBetween(range.start, range.end) + 1} days before
             </AppText>
           )}
@@ -264,10 +252,10 @@ function Report({ a, fetching }: { a: Analytics; fetching: boolean }) {
       <View>
         <SectionHeader title="Outstanding payments" onLink={() => router.push(routes.payments('outstanding'))} />
         <Card tint={a.outstanding.total > 0 ? 'warning' : 'surface'}>
-          <AppText variant="title" numeric aria-label={f.moneyA11y(a.outstanding.total)}>
+          <AppText variant="display-lg" numeric aria-label={f.moneyA11y(a.outstanding.total)}>
             {f.money(a.outstanding.total)}
           </AppText>
-          <AppText variant="caption" tone="muted" style={styles.gapBottom}>
+          <AppText variant="body-sm" tone="muted" style={styles.gapBottom}>
             Owed across {a.outstanding.bookingCount} bookings, by how long it has been due
           </AppText>
           <BarList data={a.outstanding.aging.map((b) => ({ key: b.label, label: b.label, value: b.amount, valueLabel: f.money(b.amount) }))} />
@@ -282,7 +270,7 @@ function Report({ a, fetching }: { a: Analytics; fetching: boolean }) {
         </View>
         {a.cancellations.reasons.length > 0 && (
           <Card style={styles.gapTop}>
-            <AppText variant="label" tone="muted" style={styles.gapBottom}>
+            <AppText variant="nav-link" tone="muted" style={styles.gapBottom}>
               Reasons given
             </AppText>
             <BarList data={a.cancellations.reasons.map((r) => ({ key: r.reason, label: r.reason, value: r.count, valueLabel: String(r.count) }))} />

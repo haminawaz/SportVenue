@@ -70,7 +70,7 @@ function ToastView({ toast, onDone }: { toast: ToastMessage; onDone: () => void 
         ]}
       >
         <Icon size={24} color={iconColor} weight="fill" />
-        <AppText variant="bodyStrong" style={[styles.text, { color: colors.background }]}>
+        <AppText variant="body-strong" style={[styles.text, { color: colors.background }]}>
           {toast.text}
         </AppText>
       </Animated.View>

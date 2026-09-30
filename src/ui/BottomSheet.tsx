@@ -40,7 +40,7 @@ export function BottomSheet({ visible, title, onClose, onShow, children }: Botto
           aria-label={title}
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <AppText variant="heading" role="heading" style={styles.title}>
+          <AppText variant="title-md" role="heading" style={styles.title}>
             {title}
           </AppText>
           {children}

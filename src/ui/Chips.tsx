@@ -20,7 +20,7 @@ type ChipProps = {
 
 export function Chip({ label, selected, onPress, dropdown, icon: Icon, count }: ChipProps) {
   const { colors } = useTheme();
-  const fg = selected ? colors.onAccent : colors.text;
+  const fg = selected ? colors.onPrimary : colors.text;
   return (
     <Pressable
       role={dropdown ? 'button' : 'checkbox'}
@@ -30,17 +30,17 @@ export function Chip({ label, selected, onPress, dropdown, icon: Icon, count }: 
       hitSlop={{ top: 4, bottom: 4 }}
       style={({ pressed }) => [
         styles.chip,
-        { backgroundColor: selected ? colors.accent : colors.surface, borderColor: selected ? colors.accent : colors.border },
+        { backgroundColor: selected ? colors.primary : colors.surface, borderColor: selected ? colors.primary : colors.border },
         pressed && styles.pressed,
       ]}
     >
       {Icon && <Icon size={17} color={fg} weight="bold" />}
-      <AppText variant="label" style={{ color: fg }} numberOfLines={1}>
+      <AppText variant="nav-link" style={{ color: fg }} numberOfLines={1}>
         {label}
       </AppText>
       {count !== undefined && (
-        <View style={[styles.count, { backgroundColor: selected ? 'rgba(255,255,255,0.22)' : colors.surfaceMuted }]}>
-          <AppText variant="badge" numeric style={{ color: selected ? colors.onAccent : colors.textMuted }}>
+        <View style={[styles.count, { backgroundColor: selected ? colors.inkLine : colors.surfaceMuted }]}>
+          <AppText variant="caption-uppercase" numeric style={{ color: selected ? colors.onPrimary : colors.textMuted }}>
             {count}
           </AppText>
         </View>
@@ -82,7 +82,7 @@ export function SegmentedControl<V extends string>({ value, options, onChange, l
             onPress={() => onChange(o.value)}
             style={[styles.segment, on && [styles.segmentOn, { backgroundColor: colors.surface, shadowColor: colors.shadow }]]}
           >
-            <AppText variant="label" tone={on ? 'default' : 'muted'} numberOfLines={1} style={on && styles.segmentOnText}>
+            <AppText variant="nav-link" tone={on ? 'default' : 'muted'} numberOfLines={1}>
               {o.label}
             </AppText>
           </Pressable>
@@ -109,9 +109,9 @@ export function DayToggles({ value, onChange, label }: { value: number[]; onChan
             aria-checked={on}
             aria-label={long[d]}
             onPress={() => onChange(on ? value.filter((x) => x !== d) : [...value, d])}
-            style={[styles.day, { backgroundColor: on ? colors.accent : colors.surface, borderColor: on ? colors.accent : colors.border }]}
+            style={[styles.day, { backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.border }]}
           >
-            <AppText variant="label" style={{ color: on ? colors.onAccent : colors.text }}>
+            <AppText variant="nav-link" style={{ color: on ? colors.onPrimary : colors.text }}>
               {names[d]}
             </AppText>
           </Pressable>
@@ -124,20 +124,19 @@ export function DayToggles({ value, onChange, label }: { value: number[]; onChan
 const styles = StyleSheet.create({
   row: { gap: spacing.sm, alignItems: 'center', paddingVertical: 2 },
   chip: {
-    minHeight: 44,
+    minHeight: 46,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.lg + 2,
     borderRadius: radius.full,
-    borderWidth: 1.5,
+    borderWidth: 1,
   },
   count: { borderRadius: radius.full, paddingHorizontal: 7, paddingVertical: 1, minWidth: 24, alignItems: 'center' },
   pressed: { transform: [{ scale: 0.97 }] },
-  segmented: { flexDirection: 'row', borderRadius: radius.full, padding: 4, gap: 4 },
-  segment: { flex: 1, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, paddingHorizontal: spacing.md },
+  segmented: { flexDirection: 'row', borderRadius: radius.full, padding: 5, gap: 4 },
+  segment: { flex: 1, minHeight: 46, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full, paddingHorizontal: spacing.md },
   segmentOn: { shadowOpacity: 0.1, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 2 },
-  segmentOnText: { fontFamily: 'Geist_600SemiBold' },
   days: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  day: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5 },
+  day: { width: 46, height: 46, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
 });

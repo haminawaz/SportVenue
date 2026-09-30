@@ -7,16 +7,18 @@ export type SurfaceTint = 'surface' | 'accent' | 'warning' | 'muted';
 
 /**
  * One elevation language for every card-like surface.
- * Light: soft tinted shadow, no border. Dark: hairline border, no shadow.
+ * Light: lifted surface on the stone canvas with a hairline edge and a wide,
+ * soft shadow. Dark: a surface step plus a hairline edge, no shadow.
+ * Tinted surfaces (accent, warning, muted) are flat: colour already groups them.
  */
 export function useSurface(tint: SurfaceTint = 'surface'): ViewStyle {
   const { colors, scheme } = useTheme();
   const bg =
     tint === 'accent' ? colors.accentSoft : tint === 'warning' ? colors.warningSoft : tint === 'muted' ? colors.surfaceMuted : colors.surface;
-  if (scheme === 'dark' || tint !== 'surface') {
-    return { backgroundColor: bg, borderRadius: radius.card, borderWidth: scheme === 'dark' && tint === 'surface' ? StyleSheet.hairlineWidth : 0, borderColor: colors.border };
-  }
-  return { backgroundColor: bg, borderRadius: radius.card, shadowColor: colors.shadow, ...elevation.card };
+  if (tint !== 'surface') return { backgroundColor: bg, borderRadius: radius.card };
+  const edge = { borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border };
+  if (scheme === 'dark') return { backgroundColor: bg, borderRadius: radius.card, ...edge };
+  return { backgroundColor: bg, borderRadius: radius.card, ...edge, shadowColor: colors.shadow, ...elevation.card };
 }
 
 export const GUTTER = spacing.xl;

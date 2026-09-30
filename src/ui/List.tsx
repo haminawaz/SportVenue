@@ -17,20 +17,23 @@ export function ListGroup({ children, title, footer }: { children: ReactNode; ti
   return (
     <View style={styles.groupWrap}>
       {title && (
-        <AppText variant="heading" style={styles.groupTitle} role="heading">
+        <AppText variant="display-sm" style={styles.groupTitle} role="heading">
           {title}
         </AppText>
       )}
-      <View style={[surface, styles.group]}>
-        {items.map((child, i) => (
-          <Fragment key={child.key ?? i}>
-            {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
-            {child}
-          </Fragment>
-        ))}
+      {/* Outer view carries the shadow; the inner one clips pressed-row backgrounds to the corners (iOS clips shadows on overflow: hidden). */}
+      <View style={surface}>
+        <View style={styles.group}>
+          {items.map((child, i) => (
+            <Fragment key={child.key ?? i}>
+              {i > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+              {child}
+            </Fragment>
+          ))}
+        </View>
       </View>
       {footer && (
-        <AppText variant="caption" tone="muted" style={styles.groupFooter}>
+        <AppText variant="body-sm" tone="muted" style={styles.groupFooter}>
           {footer}
         </AppText>
       )}
@@ -64,27 +67,27 @@ export function ListRow({ title, subtitle, value, valueTone = 'muted', icon: Ico
     <>
       {leading}
       {Icon && !leading && (
-        <View style={[styles.icon, { backgroundColor: destructive ? colors.dangerSoft : colors.accentSoft }]}>
-          <Icon size={22} color={destructive ? colors.danger : colors.accent} />
+        <View style={[styles.icon, { backgroundColor: destructive ? colors.dangerSoft : colors.surfaceMuted }]}>
+          <Icon size={22} color={destructive ? colors.danger : colors.text} />
         </View>
       )}
       <View style={styles.text}>
-        <AppText variant="bodyStrong" numberOfLines={titleLines} style={destructive ? { color: colors.danger } : undefined}>
+        <AppText variant="body-strong" numberOfLines={titleLines} style={destructive ? { color: colors.danger } : undefined}>
           {title}
         </AppText>
         {subtitle ? (
-          <AppText variant="caption" tone="muted" numberOfLines={4}>
+          <AppText variant="body-sm" tone="muted" numberOfLines={4}>
             {subtitle}
           </AppText>
         ) : null}
       </View>
       {value !== undefined && (
-        <AppText variant="body" tone={valueTone} numeric numberOfLines={2} style={styles.value}>
+        <AppText variant="body-md" tone={valueTone} numeric numberOfLines={2} style={styles.value}>
           {value}
         </AppText>
       )}
       {trailing}
-      {onPress && !destructive && <CaretRight size={18} color={colors.textSubtle} weight="bold" />}
+      {onPress && !destructive && <CaretRight size={18} color={colors.textSubtle} weight="bold" style={styles.caret} />}
     </>
   );
 
@@ -109,21 +112,82 @@ export function ListRow({ title, subtitle, value, valueTone = 'muted', icon: Ico
   );
 }
 
+type SummaryRowProps = {
+  title: string;
+  /** Right side of the first line, usually an amount. */
+  value?: string;
+  valueTone?: 'default' | 'muted' | 'warning' | 'danger' | 'accent';
+  /** One line of detail under the title. Keep it to one separator. */
+  meta?: string;
+  /** Right side of the second line: at most one status tag. */
+  tag?: ReactNode;
+  leading?: ReactNode;
+  onPress: () => void;
+  /** Screen-reader label for the whole row. */
+  label: string;
+  hint?: string;
+};
+
+/**
+ * Two-line list row for dense lists (customers, balances, payments):
+ * who and how much, then one line of detail and at most one tag. Nothing
+ * wraps, so every row has the same rhythm.
+ */
+export function SummaryRow({ title, value, valueTone = 'default', meta, tag, leading, onPress, label, hint }: SummaryRowProps) {
+  const { colors } = useTheme();
+  return (
+    <Pressable
+      role="button"
+      aria-label={label}
+      accessibilityHint={hint}
+      onPress={onPress}
+      style={({ pressed }) => [styles.summary, pressed && { backgroundColor: colors.surfaceMuted }]}
+    >
+      {leading}
+      <View style={styles.summaryMain}>
+        <View style={styles.summaryLine}>
+          <AppText variant="body-strong" numberOfLines={1} style={styles.summaryTitle}>
+            {title}
+          </AppText>
+          {value !== undefined && (
+            <AppText variant="body-strong" tone={valueTone} numeric numberOfLines={1}>
+              {value}
+            </AppText>
+          )}
+        </View>
+        {(meta || tag) && (
+          <View style={styles.summaryLine}>
+            <AppText variant="body-sm" tone="muted" numeric numberOfLines={1} style={styles.summaryTitle}>
+              {meta}
+            </AppText>
+            {tag}
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   groupWrap: { gap: spacing.md },
   groupTitle: { paddingHorizontal: spacing.xxs },
   groupFooter: { paddingHorizontal: spacing.xs },
-  group: { overflow: 'hidden' },
-  divider: { height: StyleSheet.hairlineWidth, marginLeft: spacing.xl },
+  group: { overflow: 'hidden', borderRadius: radius.card },
+  divider: { height: StyleSheet.hairlineWidth * 2, marginLeft: spacing.xl },
   row: {
-    minHeight: 68,
+    minHeight: 72,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.lg,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.lg,
   },
-  icon: { width: 42, height: 42, borderRadius: radius.control, alignItems: 'center', justifyContent: 'center' },
-  text: { flex: 1, gap: spacing.xxs + 1 },
+  icon: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  text: { flex: 1, gap: spacing.xs + 2 },
   value: { maxWidth: '48%', textAlign: 'right' },
+  caret: { marginLeft: -spacing.xs },
+  summary: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.xl, paddingVertical: spacing.md + 2, minHeight: 72 },
+  summaryMain: { flex: 1, gap: spacing.xs },
+  summaryLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  summaryTitle: { flex: 1 },
 });

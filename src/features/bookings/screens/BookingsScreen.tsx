@@ -10,7 +10,6 @@ import { addDays, formatCalendarDate, type CalendarDate } from '@/lib/datetime';
 import { useFormat } from '@/lib/format';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { spacing } from '@/theme/tokens';
 import { Button } from '@/ui/Button';
 import { Chip, ChipRow, SegmentedControl } from '@/ui/Chips';
@@ -63,24 +62,23 @@ function periodRange(p: Period, today: CalendarDate, date: CalendarDate): Pick<B
 
 export function BookingsScreen() {
   const router = useRouter();
-  const { can } = useSession();
   const f = useFormat();
   const today = f.today();
   const [mode, setMode] = useState<'list' | 'day'>('list');
 
   return mode === 'list' ? (
-    <BookingList mode={mode} setMode={setMode} today={today} canCreate={can('booking.create')} onNew={() => router.push(routes.bookingNew())} />
+    <BookingList mode={mode} setMode={setMode} today={today} onNew={() => router.push(routes.bookingNew())} />
   ) : (
-    <BookingDay mode={mode} setMode={setMode} today={today} canCreate={can('booking.create')} onNew={() => router.push(routes.bookingNew())} />
+    <BookingDay mode={mode} setMode={setMode} today={today} onNew={() => router.push(routes.bookingNew())} />
   );
 }
 
-type ModeProps = { mode: 'list' | 'day'; setMode: (m: 'list' | 'day') => void; today: CalendarDate; canCreate: boolean; onNew: () => void };
+type ModeProps = { mode: 'list' | 'day'; setMode: (m: 'list' | 'day') => void; today: CalendarDate; onNew: () => void };
 
-function Header({ mode, setMode, canCreate, onNew, extra }: ModeProps & { extra?: ReactNode }) {
+function Header({ mode, setMode, onNew, extra }: ModeProps & { extra?: ReactNode }) {
   return (
     <View style={styles.header}>
-      <LargeTitle title="Bookings" actions={canCreate ? <IconButton icon={Plus} label="New booking" onPress={onNew} tone="accent" variant="filled" /> : undefined} />
+      <LargeTitle title="Bookings" actions={<IconButton icon={Plus} label="New booking" onPress={onNew} variant="solid" />} />
       <SegmentedControl
         label="View"
         value={mode}
@@ -163,7 +161,7 @@ function BookingList(props: ModeProps) {
               icon={CalendarBlank}
               title="No upcoming bookings"
               message="New bookings will appear here as soon as they're made."
-              action={props.canCreate ? <Button label="New booking" icon={Plus} onPress={props.onNew} /> : undefined}
+              action={<Button label="New booking" icon={Plus} onPress={props.onNew} />}
             />
           )
         }
@@ -251,7 +249,7 @@ function BookingDay(props: ModeProps) {
         <DayTimeline
           slots={availability.data!.slots}
           onOpenBooking={(id) => router.push(routes.booking(id))}
-          onBook={props.canCreate ? (s) => router.push(routes.bookingNew({ courtId: selected, date, startAt: s.startAt })) : undefined}
+          onBook={(s) => router.push(routes.bookingNew({ courtId: selected, date, startAt: s.startAt }))}
         />
       )}
     </Screen>

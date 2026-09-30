@@ -7,9 +7,7 @@ import type { Customer } from '@/domain/types';
 import { useFormat } from '@/lib/format';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { routes } from '@/navigation/routes';
-import { useSession } from '@/session/SessionProvider';
 import { spacing } from '@/theme/tokens';
-import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
 import { Chip, ChipRow } from '@/ui/Chips';
@@ -17,7 +15,7 @@ import { EmptyState } from '@/ui/EmptyState';
 import { IconButton } from '@/ui/IconButton';
 import { InfiniteList } from '@/ui/InfiniteList';
 import { LargeTitle } from '@/ui/LargeTitle';
-import { ListRow } from '@/ui/List';
+import { SummaryRow } from '@/ui/List';
 import { SearchBar } from '@/ui/SearchBar';
 import { OptionSheet } from '@/ui/Select';
 import { StatusBadge } from '@/ui/StatusBadge';
@@ -41,14 +39,12 @@ const SORTS: { value: CustomerSort; label: string }[] = [
 
 export function CustomersScreen() {
   const router = useRouter();
-  const { can } = useSession();
   const [search, setSearch] = useState('');
   const q = useDebouncedValue(search.trim());
   const [filter, setFilter] = useState<CustomerFilter>('active');
   const [sort, setSort] = useState<CustomerSort>('name');
   const [sortOpen, setSortOpen] = useState(false);
   const query = useCustomers({ q: q || undefined, filter, sort });
-  const canManage = can('customer.manage');
 
   return (
     <>
@@ -61,7 +57,7 @@ export function CustomersScreen() {
           <View style={styles.header}>
             <LargeTitle
               title="Customers"
-              actions={canManage ? <IconButton icon={Plus} label="Add customer" onPress={() => router.push(routes.customerNew())} tone="accent" variant="filled" /> : undefined}
+              actions={<IconButton icon={Plus} label="Add customer" onPress={() => router.push(routes.customerNew())} variant="solid" />}
             />
             <SearchBar value={search} onChange={setSearch} placeholder="Search name, phone or email" />
             <ChipRow>
@@ -82,7 +78,7 @@ export function CustomersScreen() {
               icon={UsersThree}
               title="No customers yet"
               message="Add the people who book your courts to track their bookings and balances."
-              action={canManage ? <Button label="Add customer" icon={Plus} onPress={() => router.push(routes.customerNew())} /> : undefined}
+              action={<Button label="Add customer" icon={Plus} onPress={() => router.push(routes.customerNew())} />}
             />
           )
         }
@@ -95,30 +91,23 @@ export function CustomersScreen() {
 const CustomerRow = memo(function CustomerRow({ customer: c, onPress }: { customer: Customer; onPress: () => void }) {
   const f = useFormat();
   const owes = c.outstanding > 0;
+  const inactive = c.status === 'INACTIVE';
+  const bookings = `${c.totalBookings} ${c.totalBookings === 1 ? 'booking' : 'bookings'}`;
   return (
-    <ListRow
-      leading={<Avatar name={c.name} />}
+    <SummaryRow
+      leading={<Avatar name={c.name} size={40} />}
       title={c.name}
-      subtitle={`${c.phone} · ${c.totalBookings} ${c.totalBookings === 1 ? 'booking' : 'bookings'}`}
-      trailing={
-        <View style={styles.tags}>
-          {owes && (
-            <AppText variant="label" tone="warning" numeric>
-              {f.money(c.outstanding)} due
-            </AppText>
-          )}
-          {c.isRegular && <StatusBadge label="Regular" tone="positive" />}
-          {c.status === 'INACTIVE' && <StatusBadge label="Inactive" tone="neutral" />}
-        </View>
-      }
-      label={[c.name, c.phone, c.isRegular ? 'Regular' : undefined, c.status === 'INACTIVE' ? 'Inactive' : undefined, owes ? `owes ${f.moneyA11y(c.outstanding)}` : undefined].filter(Boolean).join(', ')}
+      value={owes ? f.money(c.outstanding) : bookings}
+      valueTone={owes ? 'warning' : 'muted'}
+      meta={owes ? `${c.phone} · ${bookings}` : c.phone}
+      tag={inactive ? <StatusBadge label="Inactive" tone="neutral" /> : c.isRegular ? <StatusBadge label="Regular" tone="positive" /> : undefined}
+      label={[c.name, c.phone, bookings, c.isRegular ? 'Regular' : undefined, inactive ? 'Inactive' : undefined, owes ? `owes ${f.moneyA11y(c.outstanding)}` : undefined].filter(Boolean).join(', ')}
+      hint="Opens the customer"
       onPress={onPress}
-      titleLines={1}
     />
   );
 });
 
 const styles = StyleSheet.create({
   header: { gap: spacing.lg },
-  tags: { alignItems: 'flex-end', gap: spacing.xxs },
 });

@@ -44,14 +44,14 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
               onPress={() => s.bookingId && onOpenBooking?.(s.bookingId)}
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
             >
-              <AppText variant="caption" tone="muted" numeric style={styles.time}>
+              <AppText variant="body-sm" tone="muted" numeric style={styles.time}>
                 {time}
               </AppText>
               <View style={[styles.block, styles.booked, { backgroundColor: colors.accentSoft, borderLeftColor: colors.accent }]}>
-                <AppText variant="bodyStrong" numberOfLines={1}>
+                <AppText variant="body-strong" numberOfLines={1}>
                   {s.customerName ?? 'Booked'}
                 </AppText>
-                <AppText variant="caption" tone="muted" numeric>
+                <AppText variant="body-sm" tone="muted" numeric>
                   {range}
                 </AppText>
               </View>
@@ -68,17 +68,17 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
               onPress={() => onBook?.(s)}
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
             >
-              <AppText variant="caption" tone="muted" numeric style={styles.time}>
+              <AppText variant="body-sm" tone="muted" numeric style={styles.time}>
                 {time}
               </AppText>
               <View style={[styles.block, styles.free, { borderColor: colors.border }]}>
-                <AppText variant="label" tone="muted" style={styles.flex}>
+                <AppText variant="nav-link" tone="muted" style={styles.flex}>
                   Free{s.rate ? ` · ${f.money(s.rate)}/h` : ''}
                 </AppText>
                 {onBook && (
                   <View style={styles.bookHint}>
                     <Plus size={14} color={colors.accent} weight="bold" />
-                    <AppText variant="label" tone="accent">
+                    <AppText variant="nav-link" tone="accent">
                       Book
                     </AppText>
                   </View>
@@ -89,12 +89,12 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
         }
         return (
           <View key={s.startAt} style={styles.row} accessible aria-label={`${s.status === 'CLOSED' ? 'Closed' : 'Past'}, ${range}`}>
-            <AppText variant="caption" tone="subtle" numeric style={styles.time}>
+            <AppText variant="body-sm" tone="subtle" numeric style={styles.time}>
               {time}
             </AppText>
             <View style={[styles.block, styles.muted, { backgroundColor: colors.surfaceMuted }]}>
               {s.status === 'CLOSED' && <Prohibit size={14} color={colors.textSubtle} />}
-              <AppText variant="caption" tone="subtle">
+              <AppText variant="body-sm" tone="subtle">
                 {s.status === 'CLOSED' ? 'Closed' : 'Passed'}
               </AppText>
             </View>

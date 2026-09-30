@@ -23,8 +23,6 @@ import type {
   UserProfile,
   Weekday,
 } from '@/domain/types';
-import type { Permission } from '@/session/types';
-import { PERMISSIONS } from '@/session/types';
 
 import { quote } from './pricing';
 import { dateOf, minutesOf, naive, nowNaive, rng, toEpoch, weekdayOf } from './util';
@@ -55,10 +53,7 @@ export type StoredBooking = {
 
 export type StoredPayment = Omit<Payment, 'bookingReference' | 'customerName'>;
 
-/** The owner holds every permission; CoyoteOS is owner-only for now. */
-export const OWNER_PERMISSIONS: Permission[] = [...PERMISSIONS];
-
-export const DEMO_PASSWORD = 'coyote123';
+export const DEMO_PASSWORD = 'sportvenue123';
 
 type Db = {
   facility: Facility;
