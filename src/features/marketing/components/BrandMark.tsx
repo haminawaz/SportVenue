@@ -29,7 +29,8 @@ export function BrandMark({ size = 36, withName = true, onInk }: BrandMarkProps)
 
   return (
     <View style={styles.row} accessible aria-label="SportVenue">
-      <View style={{ width: size, height: size, borderRadius: 26 * s, backgroundColor: tile }}>
+      {/* In dark mode the tile gets a faint edge so it reads on any dark surface, including ones the same tone as the tile. */}
+      <View style={[{ width: size, height: size, borderRadius: 26 * s, backgroundColor: tile }, raised && styles.edge]}>
         <Flap left={15 * s} scale={s} color={leftFlap} letter="S" letterColor={BRAND.cream} />
         <Flap left={52 * s} scale={s} color={BRAND.green} letter="V" letterColor={BRAND.lime} />
         {size >= 36 && <View style={{ position: 'absolute', left: 15 * s, width: 70 * s, top: 48.5 * s, height: 3 * s, backgroundColor: tile }} />}
@@ -56,5 +57,6 @@ function Flap({ left, scale: s, color, letter, letterColor }: { left: number; sc
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   flap: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
+  edge: { borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(243, 241, 238, 0.22)' },
   name: { fontFamily: LOGO_FONT, letterSpacing: 0.4 },
 });
