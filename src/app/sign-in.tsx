@@ -86,19 +86,29 @@ export default function SignInScreen() {
       </View>
 
       {USE_MOCKS && (
-        <Pressable
-          role="button"
-          aria-label="Fill in the sample owner account"
-          onPress={() => form.patch({ email: 'hamid@baselinepadel.pk', password: 'sportvenue123' })}
-          style={({ pressed }) => [styles.demo, { borderColor: colors.border }, pressed && { backgroundColor: colors.surfaceMuted }]}
-        >
+        <View style={[styles.demo, { borderColor: colors.border }]}>
           <AppText variant="body-sm" tone="muted">
-            Development build
+            Development build: sample owners
           </AppText>
-          <AppText variant="body-strong" tone="accent">
-            Fill in the sample owner account
-          </AppText>
-        </Pressable>
+          <View style={styles.demoRow}>
+            <Button
+              label="Seeded facility"
+              variant="ghost"
+              size="sm"
+              block
+              aria-label="Fill in the owner account with sample data"
+              onPress={() => form.patch({ email: 'hamid@baselinepadel.pk', password: 'sportvenue123' })}
+            />
+            <Button
+              label="Empty facility"
+              variant="ghost"
+              size="sm"
+              block
+              aria-label="Fill in the owner account with no data"
+              onPress={() => form.patch({ email: 'sana@greenlinearena.pk', password: 'sportvenue123' })}
+            />
+          </View>
+        </View>
       )}
     </AuthLayout>
   );
@@ -108,5 +118,6 @@ const styles = StyleSheet.create({
   card: { padding: spacing.xl, gap: spacing.xl },
   alt: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' },
   link: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44 },
-  demo: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.card, padding: spacing.lg, gap: spacing.xxs, alignItems: 'center' },
+  demo: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.card, padding: spacing.lg, gap: spacing.md, alignItems: 'center' },
+  demoRow: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
 });

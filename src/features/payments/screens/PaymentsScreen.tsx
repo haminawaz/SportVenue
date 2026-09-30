@@ -88,7 +88,7 @@ function OutstandingList({ tabs }: { tabs: ReactElement }) {
             </ChipRow>
           </View>
         }
-        empty={<EmptyState icon={CheckCircle} title="Nothing outstanding" message="Every past booking has been paid in full." />}
+        empty={<EmptyState icon={CheckCircle} title="Nothing outstanding" message="Unpaid balances from past bookings show up here." />}
       />
       <OptionSheet
         visible={sortOpen}

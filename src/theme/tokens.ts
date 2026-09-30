@@ -29,6 +29,10 @@ export const palette = {
     surface: '#FDFCFB',
     surfaceRaised: '#FEFEFD',
     surfaceMuted: '#EAE7E3',
+    /** Tint over the blurred floating header. */
+    glass: 'rgba(253, 252, 251, 0.72)',
+    /** Tint over the blurred band behind the header, from the status bar down. */
+    glassBand: 'rgba(243, 241, 238, 0.55)',
     border: '#E2DED9',
     borderStrong: '#C9C4BD',
     text: '#141413',
@@ -60,6 +64,8 @@ export const palette = {
     surface: '#1B1A19',
     surfaceRaised: '#232220',
     surfaceMuted: '#2A2927',
+    glass: 'rgba(35, 34, 32, 0.72)',
+    glassBand: 'rgba(18, 18, 17, 0.55)',
     border: '#33312E',
     borderStrong: '#46433F',
     text: '#F3F1EE',

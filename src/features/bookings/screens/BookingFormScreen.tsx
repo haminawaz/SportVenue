@@ -1,8 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
+import { View } from 'react-native';
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { CourtBasketball, Plus } from 'phosphor-react-native';
 
 import { qk } from '@/api/queryKeys';
+import { useCourts } from '@/features/courts/api';
 import { useDiscounts } from '@/features/pricing/api';
 import { addMinutesLocal, type CalendarDate } from '@/lib/datetime';
 import { useFormat } from '@/lib/format';
@@ -10,11 +13,11 @@ import { selectionBus } from '@/lib/selectionBus';
 import { useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
 import { Button } from '@/ui/Button';
+import { EmptyState } from '@/ui/EmptyState';
 import { TextField } from '@/ui/Fields';
 import { Screen } from '@/ui/Screen';
 import { SectionHeader } from '@/ui/SectionHeader';
 import { SelectField } from '@/ui/Select';
-import { View } from 'react-native';
 
 import { useBookingQuote, useCreateBooking } from '../api';
 import { CustomerPicker } from '../components/CustomerPicker';
@@ -67,6 +70,7 @@ export function BookingFormScreen() {
   );
   const quote = useBookingQuote(quoteInput);
 
+  const courts = useCourts();
   const activeDiscounts = (discounts.data ?? []).filter((d) => d.active);
   const discountMissed = !!discountId && !!quote.data && quote.data.discountAmount === 0 && !quote.isFetching;
 
@@ -91,6 +95,23 @@ export function BookingFormScreen() {
     });
     setSaving(false);
   };
+
+  // A new facility has nothing to book yet: say so instead of showing a form that cannot be completed.
+  if (courts.isSuccess && !courts.data.some((c) => c.status === 'ACTIVE')) {
+    return (
+      <>
+        <Stack.Screen options={{ title: 'New booking' }} />
+        <Screen>
+          <EmptyState
+            icon={CourtBasketball}
+            title={courts.data.length === 0 ? 'Add a court first' : 'No courts are taking bookings'}
+            message={courts.data.length === 0 ? 'Bookings are made on a court. Add one, then come back to book.' : 'Set a court to active to take bookings on it.'}
+            action={<Button label={courts.data.length === 0 ? 'Add court' : 'View courts'} icon={courts.data.length === 0 ? Plus : undefined} onPress={() => router.push(courts.data.length === 0 ? routes.courtNew : routes.courts)} />}
+          />
+        </Screen>
+      </>
+    );
+  }
 
   return (
     <>

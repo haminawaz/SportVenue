@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, PauseCircle, PencilSimple, PlayCircle, Prohibit, Tag, Trash } from 'phosphor-react-native';
+import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, PauseCircle, PencilSimple, Percent, PlayCircle, Prohibit, Tag, Trash } from 'phosphor-react-native';
 
 import { COURT_STATUS } from '@/domain/labels';
 import type { CourtStatus, CourtSummary } from '@/domain/types';
@@ -135,7 +135,7 @@ function CourtBody({ court: c }: { court: CourtSummary }) {
             onPress={() => router.push(routes.pricingRule(r.id))}
           />
         ))}
-        <ListRow title="All pricing for this court" onPress={() => router.push(routes.pricing(c.id))} />
+        <ListRow title="Manage pricing" subtitle="Peak rates and discounts for this court" icon={Percent} onPress={() => router.push(routes.pricing(c.id))} />
       </ListGroup>
 
       <ListGroup title="Settings">

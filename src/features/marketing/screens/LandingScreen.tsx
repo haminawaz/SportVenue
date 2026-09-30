@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, useWindowDimensions, type ScrollView } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Animated, ScrollView, StyleSheet, useWindowDimensions, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
+import { BlurTargetView } from 'expo-blur';
 import { useRouter, type Href } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -32,6 +33,7 @@ export function LandingScreen() {
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
+  const blurTarget = useRef<View>(null);
   const [scrollY] = useState(() => new Animated.Value(0));
   const offset = useRef(0);
   const sectionY = useRef<Partial<Record<SectionId, number>>>({});
@@ -68,16 +70,17 @@ export function LandingScreen() {
     [navHeight, reveal],
   );
 
-  const onScroll = useMemo(() => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true }), [scrollY]);
-
-  // Follow the native scroll value on the JS side only to decide which sections to reveal.
-  useEffect(() => {
-    const id = scrollY.addListener(({ value }) => {
-      offset.current = value;
+  // A plain JS scroll handler (not the native driver): every scroll event reliably
+  // reaches JS on all devices, so the header state and section reveals never miss one.
+  const onScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      offset.current = y;
+      scrollY.setValue(y);
       reveal();
-    });
-    return () => scrollY.removeListener(id);
-  }, [scrollY, reveal]);
+    },
+    [scrollY, reveal],
+  );
 
   const go = (href: Href) => () => router.push(href);
   const getStarted = go('/request-demo');
@@ -87,16 +90,30 @@ export function LandingScreen() {
 
   return (
     <LandingScrollProvider value={api}>
-      <Animated.ScrollView ref={scrollRef} style={{ flex: 1, backgroundColor: colors.background }} onScroll={onScroll} scrollEventThrottle={32}>
-        <Hero topInset={navHeight} onGetStarted={getStarted} onHowItWorks={() => api.scrollTo('how')} />
-        <Features />
-        <HowItWorks />
-        <ForFacilityOwners onBookDemo={bookDemo} />
-        <Pricing onGetQuote={getQuote} />
-        <CTASection onGetStarted={getStarted} />
-        <Footer onLogin={login} onGetStarted={getStarted} onBookDemo={bookDemo} />
-      </Animated.ScrollView>
-      <Nav scrollY={scrollY} onLogin={login} onGetStarted={getStarted} />
+      {/* Android blurs only what sits inside the target; the header stays outside it. */}
+      <BlurTargetView ref={blurTarget} style={[styles.fill, { backgroundColor: colors.background }]}>
+        <ScrollView
+          ref={scrollRef}
+          style={styles.fill}
+          onScroll={onScroll}
+          onScrollEndDrag={onScroll}
+          onMomentumScrollEnd={onScroll}
+          scrollEventThrottle={16}
+        >
+          <Hero topInset={navHeight} onGetStarted={getStarted} onHowItWorks={() => api.scrollTo('how')} />
+          <Features />
+          <HowItWorks />
+          <ForFacilityOwners onBookDemo={bookDemo} />
+          <Pricing onGetQuote={getQuote} />
+          <CTASection onGetStarted={getStarted} />
+          <Footer onLogin={login} onGetStarted={getStarted} onBookDemo={bookDemo} />
+        </ScrollView>
+      </BlurTargetView>
+      <Nav scrollY={scrollY} blurTarget={blurTarget} onLogin={login} onGetStarted={getStarted} />
     </LandingScrollProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  fill: { flex: 1 },
+});

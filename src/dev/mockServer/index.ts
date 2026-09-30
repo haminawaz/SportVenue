@@ -21,7 +21,7 @@ import type {
   Weekday,
 } from '@/domain/types';
 
-import { DEMO_PASSWORD, db, type StoredBooking, type StoredCustomer } from './db';
+import { DEMO_PASSWORD, activateOwner, db, persistOwner, type StoredBooking, type StoredCustomer } from './db';
 import { quote } from './pricing';
 import { conflict, invalid, newId, notFound, paginate, round2, toEpoch, dateOf, minutesOf, clockOf, overlaps, weekdayOf, wait, rng } from './util';
 import {
@@ -87,7 +87,13 @@ export async function handleMockRequest(req: Req): Promise<unknown> {
 
   const found = match(routes);
   if (!found) throw new ApiError(404, `No mock route for ${req.method} ${req.path}`);
-  return clone(found.r.handler({ req, params: found.params, user, body, q }));
+  // Each owner has a separate facility; handlers are synchronous from here on.
+  activateOwner(user.id);
+  try {
+    return clone(found.r.handler({ req, params: found.params, user, body, q }));
+  } finally {
+    persistOwner(user.id);
+  }
 }
 
 const clone = <T,>(v: T): T => (v === undefined ? v : JSON.parse(JSON.stringify(v)));

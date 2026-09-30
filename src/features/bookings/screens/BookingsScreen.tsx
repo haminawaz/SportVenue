@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CalendarBlank, MagnifyingGlass, Plus, X } from 'phosphor-react-native';
+import { CalendarBlank, CourtBasketball, MagnifyingGlass, Plus, X } from 'phosphor-react-native';
 
 import { useAvailability, useCourts } from '@/features/courts/api';
 import { BOOKING_STATUS } from '@/domain/labels';
@@ -239,7 +239,14 @@ function BookingDay(props: ModeProps) {
       {court && court.status !== 'ACTIVE' && (
         <Notice tone="warning" title={`${court.name} is ${court.status === 'MAINTENANCE' ? 'in maintenance' : 'inactive'}`} message="Existing bookings still show here. New bookings are paused." />
       )}
-      {courts.isPending || availability.isPending ? (
+      {courts.isSuccess && list.length === 0 ? (
+        <EmptyState
+          icon={CourtBasketball}
+          title="Add a court to see its schedule"
+          message="Each court gets its own day view with free and booked slots."
+          action={<Button label="Add court" icon={Plus} onPress={() => router.push(routes.courtNew)} />}
+        />
+      ) : courts.isPending || availability.isPending ? (
         <ListSkeleton rows={8} withAvatar={false} />
       ) : availability.isError ? (
         <ErrorState title="Couldn't load the schedule" message="Pull down to try again." onRetry={() => availability.refetch()} />

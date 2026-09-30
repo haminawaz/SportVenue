@@ -99,7 +99,7 @@ const CustomerRow = memo(function CustomerRow({ customer: c, onPress }: { custom
       title={c.name}
       value={owes ? f.money(c.outstanding) : bookings}
       valueTone={owes ? 'warning' : 'muted'}
-      meta={owes ? `${c.phone} · ${bookings}` : c.phone}
+      meta={owes && !inactive && !c.isRegular ? `${c.phone} · ${bookings}` : c.phone}
       tag={inactive ? <StatusBadge label="Inactive" tone="neutral" /> : c.isRegular ? <StatusBadge label="Regular" tone="positive" /> : undefined}
       label={[c.name, c.phone, bookings, c.isRegular ? 'Regular' : undefined, inactive ? 'Inactive' : undefined, owes ? `owes ${f.moneyA11y(c.outstanding)}` : undefined].filter(Boolean).join(', ')}
       hint="Opens the customer"

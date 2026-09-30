@@ -5,7 +5,8 @@ import { CalendarBlank, DotsThreeCircle, House, UsersThree, Wallet, type IconPro
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { elevation, radius, typography } from '@/theme/tokens';
+import { elevation, radius } from '@/theme/tokens';
+import { AppText } from '@/ui/AppText';
 
 const BAR_HEIGHT = 72;
 
@@ -19,7 +20,7 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const narrow = width < 380;
-  const gap = narrow ? 10 : 16;
+  const gap = narrow ? 8 : 16;
   const bottom = Math.max(insets.bottom, Platform.OS === 'web' ? 14 : 10);
 
   const icon = (Icon: ComponentType<IconProps>) =>
@@ -30,6 +31,16 @@ export default function TabsLayout() {
         </View>
       );
     };
+
+  // Labels may run slightly wider than their slot ("Customers" at 360pt) instead of truncating;
+  // the neighbouring labels are short, so nothing collides.
+  const label = ({ color, children }: { color: ColorValue; children: string }) => (
+    <View style={styles.labelBox}>
+      <AppText variant="caption" numberOfLines={1} style={[styles.label, { color: color as string }]}>
+        {children}
+      </AppText>
+    </View>
+  );
 
   return (
     <Tabs
@@ -54,8 +65,9 @@ export default function TabsLayout() {
           shadowColor: colors.shadow,
           ...(scheme === 'light' ? elevation.nav : { elevation: 0, shadowOpacity: 0 }),
         },
-        tabBarItemStyle: { borderRadius: radius.full },
-        tabBarLabelStyle: { ...typography.caption, marginTop: 2 },
+        // No side padding inside items, so "Customers" fits at 360pt.
+        tabBarItemStyle: { borderRadius: radius.full, paddingHorizontal: 0 },
+        tabBarLabel: label,
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -70,4 +82,7 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   iconWrap: { width: 48, height: 30, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
+  // The wrapper sets the width; text alone is capped at its parent's width on web.
+  labelBox: { width: 76, alignSelf: 'center', alignItems: 'center', marginTop: 2 },
+  label: { textAlign: 'center' },
 });

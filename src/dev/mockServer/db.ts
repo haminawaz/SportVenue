@@ -450,4 +450,93 @@ function seed(): Db {
   };
 }
 
-export const db: Db = seed();
+/**
+ * A brand-new owner: facility profile and account only. No courts, bookings,
+ * customers, payments, pricing, opportunities or notifications, so every
+ * empty state in the app can be exercised.
+ */
+function emptyFacility(): FacilityData {
+  const today = todayIn(TZ);
+  return {
+    facility: {
+      id: 'facility_greenline',
+      name: 'Greenline Sports Arena',
+      sports: [],
+      address: '',
+      city: 'Karachi',
+      phone: '+92 300 7718245',
+      email: 'sana@greenlinearena.pk',
+      timezone: TZ,
+      currency: 'PKR',
+      businessHours: ALL_DAYS.map((weekday) => ({ weekday, closed: false, open: '08:00', close: '22:00' })),
+      settings: { defaultSlotMinutes: 60, bufferMinutes: 0, cancellationWindowHours: 12, bookingLeadDays: 30 },
+    },
+    courts: [],
+    customers: [],
+    bookings: [],
+    payments: [],
+    rules: [],
+    discounts: [],
+    pricingHistory: [],
+    opportunities: [],
+    notifications: [],
+    preferences: {
+      push: true,
+      email: true,
+      bookingReminders: true,
+      reminderLeadMinutes: 60,
+      newBookings: true,
+      cancellations: true,
+      paymentReminders: true,
+      paymentsReceived: false,
+      dailySummary: true,
+    },
+    subscription: {
+      plan: 'Starter',
+      status: 'TRIALING',
+      price: 7900,
+      currency: 'PKR',
+      interval: 'MONTH',
+      renewsOn: addDays(today, 14),
+      courtsLimit: 4,
+      courtsUsed: 0,
+      invoices: [],
+    },
+    bookingSeq: 1001,
+  };
+}
+
+/** Everything that belongs to one facility (one owner). Users and sessions are shared. */
+type FacilityData = Omit<Db, 'users' | 'sessions'>;
+const FACILITY_KEYS = ['facility', 'courts', 'customers', 'bookings', 'payments', 'rules', 'discounts', 'pricingHistory', 'opportunities', 'notifications', 'preferences', 'subscription', 'bookingSeq'] as const;
+
+const seeded = seed();
+
+/**
+ * The live view of the signed-in owner's data. Route handlers read and write
+ * `db.<field>` as before; `activateOwner` points it at the right facility for
+ * each request and `persistOwner` saves any reassigned fields back.
+ */
+export const db: Db = seeded;
+
+const stores = new Map<string, FacilityData>([
+  ['user_hamid', pickFacility(seeded)],
+  ['user_sana', emptyFacility()],
+]);
+
+db.users.push({ id: 'user_sana', firstName: 'Sana', lastName: 'Tariq', email: 'sana@greenlinearena.pk', phone: '+92 333 5102847', role: 'OWNER' });
+
+function pickFacility(source: Db | FacilityData): FacilityData {
+  const out = {} as Record<string, unknown>;
+  for (const k of FACILITY_KEYS) out[k] = source[k];
+  return out as FacilityData;
+}
+
+export function activateOwner(userId: string) {
+  const data = stores.get(userId);
+  if (data) Object.assign(db, data);
+}
+
+export function persistOwner(userId: string) {
+  if (stores.has(userId)) stores.set(userId, pickFacility(db));
+}

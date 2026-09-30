@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { CourtBasketball, Plus } from 'phosphor-react-native';
+import { CaretRight, CourtBasketball, Plus, Tag } from 'phosphor-react-native';
 
 import { COURT_STATUS } from '@/domain/labels';
 import type { CourtStatus, CourtSummary } from '@/domain/types';
@@ -11,14 +11,15 @@ import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
-import { PressableCard } from '@/ui/Card';
 import { Chip, ChipRow } from '@/ui/Chips';
 import { EmptyState } from '@/ui/EmptyState';
 import { IconButton } from '@/ui/IconButton';
+import { ListGroup, ListRow } from '@/ui/List';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Screen } from '@/ui/Screen';
 import { DetailSkeleton, QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
+import { useSurface } from '@/ui/surface';
 
 import { useCourts } from '../api';
 
@@ -61,6 +62,9 @@ export function CourtsScreen() {
           }
           return (
             <View style={styles.list}>
+              <ListGroup>
+                <ListRow icon={Tag} title="Pricing and discounts" subtitle="Peak rates and offers across all courts" onPress={() => router.push(routes.pricing())} />
+              </ListGroup>
               <ChipRow>
                 {(['ALL', 'ACTIVE', 'MAINTENANCE', 'INACTIVE'] as Filter[]).map((s) => (
                   <Chip key={s} label={s === 'ALL' ? 'All' : COURT_STATUS[s].label} count={count(s)} selected={filter === s} onPress={() => setFilter(s)} />
@@ -69,7 +73,7 @@ export function CourtsScreen() {
               {shown.length === 0 ? (
                 <EmptyState compact icon={CourtBasketball} title={`No ${filter === 'ALL' ? '' : COURT_STATUS[filter as CourtStatus].label.toLowerCase()} courts`} />
               ) : (
-                shown.map((c) => <CourtCard key={c.id} court={c} onPress={() => router.push(routes.court(c.id))} />)
+                shown.map((c) => <CourtCard key={c.id} court={c} onPress={() => router.push(routes.court(c.id))} onPricing={() => router.push(routes.pricing(c.id))} />)
               )}
             </View>
           );
@@ -79,61 +83,79 @@ export function CourtsScreen() {
   );
 }
 
-function CourtCard({ court: c, onPress }: { court: CourtSummary; onPress: () => void }) {
+/**
+ * A court with its pricing attached: the body opens the court, the footer
+ * opens that court's rates and discounts. Two sibling tap targets (not nested)
+ * so screen readers can reach both.
+ */
+function CourtCard({ court: c, onPress, onPricing }: { court: CourtSummary; onPress: () => void; onPricing: () => void }) {
   const { colors } = useTheme();
+  const surface = useSurface();
   const f = useFormat();
   const status = COURT_STATUS[c.status];
   const active = c.status === 'ACTIVE';
-  const a11y = [c.name, c.sport, c.indoor ? 'Indoor' : 'Outdoor', status.label, active ? `${Math.round(c.todayUtilization)} percent booked today` : undefined, `${f.moneyA11y(c.hourlyRate)} per hour`]
+  const a11y = [c.name, c.sport, c.indoor ? 'Indoor' : 'Outdoor', status.label, active ? `${Math.round(c.todayUtilization)} percent booked today` : undefined, `${c.upcomingBookings} upcoming bookings`]
     .filter(Boolean)
     .join(', ');
 
   return (
-    <PressableCard onPress={onPress} aria-label={a11y} accessibilityHint="Opens court details">
-      <View style={styles.top}>
-        <View style={[styles.icon, { backgroundColor: active ? colors.accentSoft : colors.surfaceMuted }]}>
-          <CourtBasketball size={22} color={active ? colors.accent : colors.textMuted} />
-        </View>
-        <View style={styles.flex}>
-          <AppText variant="title-md" numberOfLines={2}>
-            {c.name}
-          </AppText>
-          <AppText variant="body-sm" tone="muted" numberOfLines={1}>
-            {c.sport} · {c.indoor ? 'Indoor' : 'Outdoor'}
-          </AppText>
-        </View>
-        <StatusBadge label={status.label} tone={status.tone} />
-      </View>
-      {active ? (
-        <View style={styles.util}>
-          <View style={styles.utilRow}>
-            <AppText variant="body-sm" tone="muted" style={styles.flex}>
-              Today: {c.todayBookedSlots} of {c.todayTotalSlots} slots
-            </AppText>
-            <AppText variant="body-strong" numeric>
-              {Math.round(c.todayUtilization)}%
-            </AppText>
+    <View style={surface}>
+      <View style={styles.clip}>
+        <Pressable role="button" aria-label={a11y} accessibilityHint="Opens court details" onPress={onPress} style={({ pressed }) => [styles.body, pressed && { backgroundColor: colors.surfaceMuted }]}>
+          <View style={styles.top}>
+            <View style={[styles.icon, { backgroundColor: active ? colors.accentSoft : colors.surfaceMuted }]}>
+              <CourtBasketball size={22} color={active ? colors.accent : colors.textMuted} />
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="title-md" numberOfLines={2}>
+                {c.name}
+              </AppText>
+              <AppText variant="body-sm" tone="muted" numberOfLines={1}>
+                {c.sport} · {c.indoor ? 'Indoor' : 'Outdoor'}
+              </AppText>
+            </View>
+            <StatusBadge label={status.label} tone={status.tone} />
           </View>
-          <ProgressBar value={c.todayUtilization} />
-        </View>
-      ) : (
-        <AppText variant="body-sm" tone="muted" style={styles.util}>
-          {status.description}
-        </AppText>
-      )}
-      <View style={[styles.foot, { borderTopColor: colors.border }]}>
-        <AppText variant="body-strong" numeric>
-          {f.money(c.hourlyRate)}
-          <AppText variant="body-sm" tone="muted">
-            {' '}
-            / hour base
+          {active ? (
+            <View style={styles.util}>
+              <View style={styles.utilRow}>
+                <AppText variant="body-sm" tone="muted" style={styles.flex}>
+                  Today: {c.todayBookedSlots} of {c.todayTotalSlots} slots
+                </AppText>
+                <AppText variant="body-strong" numeric>
+                  {Math.round(c.todayUtilization)}%
+                </AppText>
+              </View>
+              <ProgressBar value={c.todayUtilization} />
+            </View>
+          ) : (
+            <AppText variant="body-sm" tone="muted" style={styles.util}>
+              {status.description}
+            </AppText>
+          )}
+        </Pressable>
+        <Pressable
+          role="button"
+          aria-label={`Pricing for ${c.name}, base rate ${f.moneyA11y(c.hourlyRate)} per hour`}
+          accessibilityHint="Opens rates and discounts for this court"
+          onPress={onPricing}
+          style={({ pressed }) => [styles.foot, { borderTopColor: colors.border }, pressed && { backgroundColor: colors.surfaceMuted }]}
+        >
+          <Tag size={20} color={colors.accent} weight="bold" />
+          <AppText variant="body-strong" numeric style={styles.flex}>
+            {f.money(c.hourlyRate)}
+            <AppText variant="body-sm" tone="muted">
+              {' '}
+              / hour base
+            </AppText>
           </AppText>
-        </AppText>
-        <AppText variant="body-sm" tone="muted" numeric>
-          {c.upcomingBookings} upcoming
-        </AppText>
+          <AppText variant="nav-link" tone="accent">
+            Pricing
+          </AppText>
+          <CaretRight size={16} color={colors.accent} weight="bold" />
+        </Pressable>
       </View>
-    </PressableCard>
+    </View>
   );
 }
 
@@ -142,7 +164,9 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   icon: { width: 48, height: 48, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
+  clip: { borderRadius: radius.card, overflow: 'hidden' },
+  body: { padding: spacing.xl },
   util: { marginTop: spacing.lg, gap: spacing.sm },
   utilRow: { flexDirection: 'row', alignItems: 'center' },
-  foot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md, borderTopWidth: StyleSheet.hairlineWidth * 2, marginTop: spacing.lg, paddingTop: spacing.md, flexWrap: 'wrap' },
+  foot: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm + 2, borderTopWidth: StyleSheet.hairlineWidth, paddingHorizontal: spacing.xl, minHeight: 56 },
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, Buildings, CaretRight, ChartLine, CourtBasketball, Gear, Lightbulb, SignOut, Tag } from 'phosphor-react-native';
+import { Bell, Buildings, CaretRight, ChartLine, CourtBasketball, Gear, Lightbulb, SignOut } from 'phosphor-react-native';
 
 import { useUnreadCount } from '@/features/notifications/api';
 import { useOpportunities } from '@/features/opportunities/api';
@@ -47,13 +47,11 @@ export function MoreScreen() {
       </PressableCard>
 
       <ListGroup title="Run the business">
-        <ListRow icon={CourtBasketball} title="Courts" subtitle="Status, schedules and base rates" onPress={() => router.push(routes.courts)} />
-        <ListRow icon={Tag} title="Pricing" subtitle="Rates, peak pricing and discounts" onPress={() => router.push(routes.pricing())} />
+        <ListRow icon={CourtBasketball} title="Courts and pricing" subtitle="Schedules, rates and discounts for each court" onPress={() => router.push(routes.courts)} />
         <ListRow
           icon={Lightbulb}
           title="Revenue opportunities"
-          subtitle="Ways to fill courts and collect payments"
-          trailing={open.data?.length ? <StatusBadge label={`${open.data.length} open`} tone="warning" /> : undefined}
+          subtitle={open.data?.length ? `${open.data.length} open to review` : 'Ways to fill courts and collect payments'}
           onPress={() => router.push(routes.opportunities)}
         />
         <ListRow icon={ChartLine} title="Analytics" subtitle="Revenue, utilization and peak hours" onPress={() => router.push(routes.analytics)} />
