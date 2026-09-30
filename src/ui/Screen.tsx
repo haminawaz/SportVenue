@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 
+import { PinnedTitle } from './LargeTitle';
 import { GUTTER } from './surface';
 
 export { GUTTER };
@@ -24,11 +25,17 @@ type ScreenProps = {
   contentStyle?: StyleProp<ViewStyle>;
   /** Forms: lift content above the keyboard. */
   keyboard?: boolean;
+  /** Tab screens: a large title pinned above the scrolling content (handles the top inset). */
+  title?: string;
+  titleActions?: ReactNode;
+  /** Pushed screens using a pinned title (and no native header). */
+  onBack?: () => void;
 };
 
-export function Screen({ children, refreshing = false, onRefresh, footer, topInset, contentStyle, keyboard }: ScreenProps) {
+export function Screen({ children, refreshing = false, onRefresh, footer, topInset, contentStyle, keyboard, title, titleActions, onBack }: ScreenProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const [scrolled, setScrolled] = useState(false);
 
   const scroll = (
     <ScrollView
@@ -36,7 +43,7 @@ export function Screen({ children, refreshing = false, onRefresh, footer, topIns
       contentContainerStyle={[
         styles.content,
         {
-          paddingTop: (topInset ? insets.top : 0) + spacing.lg,
+          paddingTop: (topInset && !title ? insets.top : 0) + (title ? spacing.sm : spacing.lg),
           paddingBottom: footer ? spacing.xxl : insets.bottom + spacing.huge,
           paddingLeft: insets.left + GUTTER,
           paddingRight: insets.right + GUTTER,
@@ -45,6 +52,8 @@ export function Screen({ children, refreshing = false, onRefresh, footer, topIns
       ]}
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
+      onScroll={title ? (e) => setScrolled(e.nativeEvent.contentOffset.y > 2) : undefined}
+      scrollEventThrottle={title ? 32 : undefined}
       refreshControl={
         onRefresh ? (
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} />
@@ -57,6 +66,7 @@ export function Screen({ children, refreshing = false, onRefresh, footer, topIns
 
   const body = (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      {title && <PinnedTitle title={title} actions={titleActions} onBack={onBack} scrolled={scrolled} />}
       {scroll}
       {footer && <StickyFooter>{footer}</StickyFooter>}
     </View>

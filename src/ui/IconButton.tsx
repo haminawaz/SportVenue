@@ -16,10 +16,12 @@ type IconButtonProps = {
   badge?: number;
   tone?: 'default' | 'accent' | 'danger';
   variant?: 'plain' | 'filled' | 'solid';
+  /** sm is 40pt with extra hit area, for header actions next to a large title. */
+  size?: 'md' | 'sm';
   disabled?: boolean;
 };
 
-export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default', variant = 'plain', disabled }: IconButtonProps) {
+export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default', variant = 'plain', size = 'md', disabled }: IconButtonProps) {
   const { colors } = useTheme();
   const surface = useSurface();
   const color = variant === 'solid' ? colors.onPrimary : tone === 'accent' ? colors.accent : tone === 'danger' ? colors.danger : colors.text;
@@ -31,16 +33,17 @@ export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default'
       aria-disabled={disabled}
       disabled={disabled}
       onPress={onPress}
-      hitSlop={4}
+      hitSlop={size === 'sm' ? 8 : 4}
       style={({ pressed }) => [
         styles.btn,
+        size === 'sm' && styles.sm,
         variant === 'filled' && [surface, styles.round],
         variant === 'solid' && [styles.round, { backgroundColor: colors.primary }],
         pressed && { opacity: 0.7, transform: [{ scale: 0.96 }] },
         disabled && styles.disabled,
       ]}
     >
-      <Icon size={24} color={color} weight={variant === 'solid' ? 'bold' : 'regular'} />
+      <Icon size={size === 'sm' ? 20 : 24} color={color} weight={variant === 'solid' ? 'bold' : 'regular'} />
       {!!badge && badge > 0 && (
         <View style={[styles.badge, { backgroundColor: colors.danger, borderColor: colors.background }]}>
           <AppText variant="caption-uppercase" style={{ color: colors.onAccent }} numeric>
@@ -54,6 +57,7 @@ export function IconButton({ icon: Icon, label, onPress, badge, tone = 'default'
 
 const styles = StyleSheet.create({
   btn: { width: touchTarget, height: touchTarget, alignItems: 'center', justifyContent: 'center', borderRadius: radius.full },
+  sm: { width: 40, height: 40 },
   round: { borderRadius: radius.full },
   disabled: { opacity: 0.4 },
   badge: {

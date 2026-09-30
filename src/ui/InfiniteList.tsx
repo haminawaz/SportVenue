@@ -11,6 +11,7 @@ import { radius, spacing } from '@/theme/tokens';
 import { AppText } from './AppText';
 import { Button } from './Button';
 import { ErrorState } from './ErrorState';
+import { PinnedTitle } from './LargeTitle';
 import { MAX_CONTENT } from './Screen';
 import { ListSkeleton } from './States';
 import { GUTTER } from './surface';
@@ -25,13 +26,17 @@ type InfiniteListProps<T> = {
   skeleton?: ReactNode;
   errorTitle?: string;
   topInset?: boolean;
+  /** Tab screens: a large title pinned above the list (handles the top inset). */
+  title?: string;
+  titleActions?: ReactNode;
 };
 
 /**
  * Paged list with pull-to-refresh, skeleton, error, empty and
  * "loading more" states. Rows sit on one elevated surface.
  */
-export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty, skeleton, errorTitle = "Couldn't load this list", topInset }: InfiniteListProps<T>) {
+export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty, skeleton, errorTitle = "Couldn't load this list", topInset, title, titleActions }: InfiniteListProps<T>) {
+  const [scrolled, setScrolled] = useState(false);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [pulling, setPulling] = useState(false);
@@ -74,14 +79,14 @@ export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty
     </View>
   );
 
-  return (
+  const list = (
     <FlatList
       data={body ? [] : items}
       renderItem={renderRow}
       keyExtractor={keyExtractor}
       style={{ backgroundColor: colors.background }}
       contentContainerStyle={{
-        paddingTop: (topInset ? insets.top : 0) + spacing.lg,
+        paddingTop: (topInset && !title ? insets.top : 0) + (title ? spacing.sm : spacing.lg),
         paddingBottom: insets.bottom + spacing.huge,
         paddingLeft: insets.left + GUTTER,
         paddingRight: insets.right + GUTTER,
@@ -116,7 +121,17 @@ export function InfiniteList<T>({ query, renderItem, keyExtractor, header, empty
       keyboardShouldPersistTaps="handled"
       keyboardDismissMode="on-drag"
       refreshControl={<RefreshControl refreshing={pulling} onRefresh={onRefresh} tintColor={colors.accent} colors={[colors.accent]} progressBackgroundColor={colors.surface} />}
+      onScroll={title ? (e) => setScrolled(e.nativeEvent.contentOffset.y > 2) : undefined}
+      scrollEventThrottle={title ? 32 : undefined}
     />
+  );
+
+  if (!title) return list;
+  return (
+    <View style={[styles.fill, { backgroundColor: colors.background }]}>
+      <PinnedTitle title={title} actions={titleActions} scrolled={scrolled} />
+      {list}
+    </View>
   );
 }
 
@@ -129,4 +144,5 @@ const styles = StyleSheet.create({
   first: { borderTopLeftRadius: radius.card, borderTopRightRadius: radius.card, borderTopWidth: StyleSheet.hairlineWidth * 2 },
   last: { borderBottomLeftRadius: radius.card, borderBottomRightRadius: radius.card, borderBottomWidth: StyleSheet.hairlineWidth * 2 },
   more: { paddingVertical: spacing.xl, alignItems: 'center' },
+  fill: { flex: 1 },
 });

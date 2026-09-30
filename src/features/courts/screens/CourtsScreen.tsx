@@ -33,6 +33,9 @@ export function CourtsScreen() {
 
   return (
     <Screen
+      title="Courts"
+      onBack={() => (router.canGoBack() ? router.back() : router.replace(routes.more))}
+      titleActions={<IconButton icon={Plus} label="Add court" onPress={() => router.push(routes.courtNew)} variant="solid" size="sm" />}
       refreshing={refreshing}
       onRefresh={async () => {
         setRefreshing(true);
@@ -40,12 +43,8 @@ export function CourtsScreen() {
         setRefreshing(false);
       }}
     >
-      <Stack.Screen
-        options={{
-          title: 'Courts',
-          headerRight: () => <IconButton icon={Plus} label="Add court" onPress={() => router.push(routes.courtNew)} tone="accent" />,
-        }}
-      />
+      {/* The pinned large title replaces the native header here, to match the tab screens. */}
+      <Stack.Screen options={{ headerShown: false, title: 'Courts' }} />
       <QueryView query={query} skeleton={<DetailSkeleton />} errorTitle="Couldn't load courts">
         {(courts) => {
           const count = (s: Filter) => (s === 'ALL' ? courts.length : courts.filter((c) => c.status === s).length);

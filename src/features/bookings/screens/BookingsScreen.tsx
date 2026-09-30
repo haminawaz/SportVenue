@@ -18,7 +18,6 @@ import { EmptyState } from '@/ui/EmptyState';
 import { ErrorState } from '@/ui/ErrorState';
 import { IconButton } from '@/ui/IconButton';
 import { InfiniteList } from '@/ui/InfiniteList';
-import { LargeTitle } from '@/ui/LargeTitle';
 import { Screen } from '@/ui/Screen';
 import { SearchBar } from '@/ui/SearchBar';
 import { OptionSheet } from '@/ui/Select';
@@ -73,12 +72,16 @@ export function BookingsScreen() {
   );
 }
 
+/** The pinned "Bookings" title and its New booking action, shared by both views. */
+function titleProps(onNew: () => void) {
+  return { title: 'Bookings', titleActions: <IconButton icon={Plus} label="New booking" onPress={onNew} variant="solid" size="sm" /> };
+}
+
 type ModeProps = { mode: 'list' | 'day'; setMode: (m: 'list' | 'day') => void; today: CalendarDate; onNew: () => void };
 
-function Header({ mode, setMode, onNew, extra }: ModeProps & { extra?: ReactNode }) {
+function Header({ mode, setMode, extra }: ModeProps & { extra?: ReactNode }) {
   return (
     <View style={styles.header}>
-      <LargeTitle title="Bookings" actions={<IconButton icon={Plus} label="New booking" onPress={onNew} variant="solid" />} />
       <SegmentedControl
         label="View"
         value={mode}
@@ -132,7 +135,7 @@ function BookingList(props: ModeProps) {
   return (
     <>
       <InfiniteList
-        topInset
+        {...titleProps(props.onNew)}
         query={query}
         keyExtractor={(b) => b.id}
         renderItem={({ item }) => <BookingRow booking={item} onPress={(id) => router.push(routes.booking(id))} />}
@@ -221,7 +224,7 @@ function BookingDay(props: ModeProps) {
 
   return (
     <Screen
-      topInset
+      {...titleProps(props.onNew)}
       refreshing={refreshing}
       onRefresh={async () => {
         setRefreshing(true);

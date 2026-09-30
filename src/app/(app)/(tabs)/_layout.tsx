@@ -1,5 +1,5 @@
-import type { ComponentType } from 'react';
-import { Platform, StyleSheet, useWindowDimensions, View, type ColorValue } from 'react-native';
+import type { ComponentType, ReactNode } from 'react';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View, type AccessibilityState, type ColorValue, type GestureResponderEvent, type StyleProp, type ViewStyle } from 'react-native';
 import { Tabs } from 'expo-router';
 import { CalendarBlank, DotsThreeCircle, House, UsersThree, Wallet, type IconProps } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,6 +68,7 @@ export default function TabsLayout() {
         // No side padding inside items, so "Customers" fits at 360pt.
         tabBarItemStyle: { borderRadius: radius.full, paddingHorizontal: 0 },
         tabBarLabel: label,
+        tabBarButton: (props) => <TabButton {...props} />,
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
@@ -80,7 +81,40 @@ export default function TabsLayout() {
   );
 }
 
+type TabButtonProps = {
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+  onPress?: ((e: GestureResponderEvent) => void) | null;
+  onLongPress?: ((e: GestureResponderEvent) => void) | null;
+  accessibilityState?: AccessibilityState;
+  accessibilityLabel?: string;
+  testID?: string;
+};
+
+/**
+ * Plain tab button: no platform ripple or highlight across the whole slot
+ * (Android draws a large one by default). Pressing just dims the icon and
+ * label; the selected pill behind the icon marks the active tab.
+ */
+function TabButton({ children, style, onPress, onLongPress, accessibilityState, accessibilityLabel, testID }: TabButtonProps) {
+  return (
+    <Pressable
+      role="tab"
+      aria-selected={accessibilityState?.selected}
+      aria-label={accessibilityLabel}
+      testID={testID}
+      onPress={onPress}
+      onLongPress={onLongPress}
+      android_ripple={null}
+      style={({ pressed }) => [style, pressed && styles.pressed]}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  pressed: { opacity: 0.6 },
   iconWrap: { width: 48, height: 30, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   // The wrapper sets the width; text alone is capped at its parent's width on web.
   labelBox: { width: 76, alignSelf: 'center', alignItems: 'center', marginTop: 2 },

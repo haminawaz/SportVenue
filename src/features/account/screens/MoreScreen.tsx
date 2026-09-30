@@ -13,7 +13,6 @@ import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
 import { PressableCard } from '@/ui/Card';
 import { ConfirmDialog } from '@/ui/Dialogs';
-import { LargeTitle } from '@/ui/LargeTitle';
 import { ListGroup, ListRow } from '@/ui/List';
 import { Screen } from '@/ui/Screen';
 import { StatusBadge } from '@/ui/StatusBadge';
@@ -28,8 +27,7 @@ export function MoreScreen() {
   const name = `${user.firstName} ${user.lastName}`;
 
   return (
-    <Screen topInset>
-      <LargeTitle title="More" />
+    <Screen title="More">
 
       <PressableCard onPress={() => router.push(routes.profile)} aria-label={`${name}, owner of ${facility.name}`} accessibilityHint="Opens your profile">
         <View style={styles.profile}>

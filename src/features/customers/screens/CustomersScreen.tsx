@@ -14,7 +14,6 @@ import { Chip, ChipRow } from '@/ui/Chips';
 import { EmptyState } from '@/ui/EmptyState';
 import { IconButton } from '@/ui/IconButton';
 import { InfiniteList } from '@/ui/InfiniteList';
-import { LargeTitle } from '@/ui/LargeTitle';
 import { SummaryRow } from '@/ui/List';
 import { SearchBar } from '@/ui/SearchBar';
 import { OptionSheet } from '@/ui/Select';
@@ -49,16 +48,13 @@ export function CustomersScreen() {
   return (
     <>
       <InfiniteList
-        topInset
+        title="Customers"
+        titleActions={<IconButton icon={Plus} label="Add customer" onPress={() => router.push(routes.customerNew())} variant="solid" size="sm" />}
         query={query}
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => <CustomerRow customer={item} onPress={() => router.push(routes.customer(item.id))} />}
         header={
           <View style={styles.header}>
-            <LargeTitle
-              title="Customers"
-              actions={<IconButton icon={Plus} label="Add customer" onPress={() => router.push(routes.customerNew())} variant="solid" />}
-            />
             <SearchBar value={search} onChange={setSearch} placeholder="Search name, phone or email" />
             <ChipRow>
               {FILTERS.map((fl) => (

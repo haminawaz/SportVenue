@@ -14,7 +14,6 @@ import { Card } from '@/ui/Card';
 import { Chip, ChipRow, SegmentedControl } from '@/ui/Chips';
 import { EmptyState } from '@/ui/EmptyState';
 import { InfiniteList } from '@/ui/InfiniteList';
-import { LargeTitle } from '@/ui/LargeTitle';
 import { SummaryRow } from '@/ui/List';
 import { OptionSheet } from '@/ui/Select';
 import { StatusBadge } from '@/ui/StatusBadge';
@@ -35,7 +34,6 @@ export function PaymentsScreen() {
   }
   const tabs = (
     <View style={styles.header}>
-      <LargeTitle title="Payments" />
       <SegmentedControl
         label="Payments view"
         value={tab}
@@ -61,7 +59,7 @@ function OutstandingList({ tabs }: { tabs: ReactElement }) {
   return (
     <>
       <InfiniteList
-        topInset
+        title="Payments"
         query={query}
         keyExtractor={(b) => b.id}
         renderItem={({ item }) => <BalanceRow balance={item} onPress={() => router.push(routes.booking(item.id))} />}
@@ -129,7 +127,7 @@ function HistoryList({ tabs }: { tabs: ReactElement }) {
   const query = usePayments({});
   return (
     <InfiniteList
-      topInset
+      title="Payments"
       query={query}
       keyExtractor={(p) => p.id}
       renderItem={({ item }) => <PaymentRow payment={item} onPress={(id) => router.push(routes.payment(id))} />}
