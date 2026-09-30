@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Switch, TextInput, View, type TextInputProps } from 'react-native';
-import { CaretDown, Eye, EyeSlash, WarningCircle } from 'phosphor-react-native';
+import { CaretDown, Eye, EyeSlash, WarningCircle, type IconProps } from 'phosphor-react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing, touchTarget, typography } from '@/theme/tokens';
@@ -44,9 +44,11 @@ type TextFieldProps = Omit<TextInputProps, 'style' | 'onChange'> & {
   /** Fixed text before the input, such as a currency code. */
   prefix?: string;
   suffix?: string;
+  /** Icon before the input, for scannable forms (email, phone, facility). Decorative. */
+  icon?: ComponentType<IconProps>;
 };
 
-export function TextField({ label, helper, error, optional, prefix, suffix, secureTextEntry, multiline, ...rest }: TextFieldProps) {
+export function TextField({ label, helper, error, optional, prefix, suffix, icon: Icon, secureTextEntry, multiline, ...rest }: TextFieldProps) {
   const { colors } = useTheme();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(!!secureTextEntry);
@@ -55,6 +57,7 @@ export function TextField({ label, helper, error, optional, prefix, suffix, secu
   return (
     <FieldShell label={label} helper={helper} error={error} optional={optional}>
       <View style={[styles.inputBox, multiline && styles.multiline, { backgroundColor: colors.surface, borderColor }, (focused || error) && styles.inputFocused]}>
+        {Icon && <Icon size={20} color={focused ? colors.text : colors.textSubtle} />}
         {prefix && (
           <AppText variant="body-strong" tone="muted">
             {prefix}

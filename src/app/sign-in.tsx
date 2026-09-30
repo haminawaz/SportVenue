@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowRight } from 'phosphor-react-native';
+import { ArrowRight, EnvelopeSimple, LockSimple } from 'phosphor-react-native';
 
 import { ApiError } from '@/api/client';
 import { toUserFacingError } from '@/api/errors';
@@ -46,12 +46,13 @@ export default function SignInScreen() {
   };
 
   return (
-    <AuthLayout title="Owner login" lead="Log in to see today’s bookings, payments and courts.">
-      {formError && <Notice tone="danger" message={formError} />}
-
+    <AuthLayout eyebrow="Welcome back" title="Owner login" lead="See today’s bookings, payments and courts in one place.">
       <View style={[surface, styles.card]}>
+        {formError && <Notice tone="danger" message={formError} />}
         <TextField
           label="Email"
+          icon={EnvelopeSimple}
+          placeholder="you@yourfacility.com"
           value={form.values.email}
           onChangeText={(t) => form.set('email', t)}
           error={form.errors.email}
@@ -63,6 +64,7 @@ export default function SignInScreen() {
         />
         <TextField
           label="Password"
+          icon={LockSimple}
           value={form.values.password}
           onChangeText={(t) => form.set('password', t)}
           error={form.errors.password}
@@ -75,14 +77,14 @@ export default function SignInScreen() {
         <Button label="Log in" size="lg" block onPress={onSubmit} loading={submitting} />
       </View>
 
-      <View style={styles.alt}>
-        <AppText tone="muted">New to SportVenue?</AppText>
-        <Pressable role="link" aria-label="Get started" onPress={() => router.push('/request-demo')} hitSlop={12} style={styles.link}>
-          <AppText variant="body-strong" tone="accent">
-            Get started
+      <View style={[styles.alt, { backgroundColor: colors.surfaceMuted }]}>
+        <View style={styles.flex}>
+          <AppText variant="body-strong">New to SportVenue?</AppText>
+          <AppText variant="body-sm" tone="muted">
+            We set it up with your courts.
           </AppText>
-          <ArrowRight size={16} color={colors.accent} weight="bold" />
-        </Pressable>
+        </View>
+        <Button label="Get started" variant="accent" size="sm" trailingIcon={ArrowRight} onPress={() => router.push('/request-demo')} />
       </View>
 
       {USE_MOCKS && (
@@ -115,9 +117,9 @@ export default function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  card: { padding: spacing.xl, gap: spacing.xl },
-  alt: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' },
-  link: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, minHeight: 44 },
+  card: { padding: spacing.xl, gap: spacing.lg + 2 },
+  alt: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.card, paddingVertical: spacing.lg, paddingLeft: spacing.xl, paddingRight: spacing.md },
+  flex: { flex: 1, gap: 2 },
   demo: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.card, padding: spacing.lg, gap: spacing.md, alignItems: 'center' },
   demoRow: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
 });
