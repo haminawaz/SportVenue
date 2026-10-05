@@ -198,7 +198,6 @@ describe('date filter', () => {
     renderDashboard();
     await screen.findByText(money('Rs 24,500'));
 
-    await user.click(screen.getByRole('button', { name: /Change period/ }));
     await user.click(screen.getByRole('radio', { name: 'Yesterday' }));
 
     const yesterday = addDays(todayIn(TZ), -1);
@@ -212,7 +211,6 @@ describe('date filter', () => {
     await screen.findByText(money('Rs 24,500'));
     const calls = service.getDashboard.mock.calls.length;
 
-    await user.click(screen.getByRole('button', { name: /Change period/ }));
     await user.click(screen.getByRole('radio', { name: 'Today' }));
 
     expect(service.getDashboard).toHaveBeenCalledTimes(calls);

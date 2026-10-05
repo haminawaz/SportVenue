@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Prohibit } from '@phosphor-icons/react';
+import { Plus } from '@phosphor-icons/react';
 
 import { COURT_STATUS } from '@/domain/labels';
 import type { AvailabilitySlot, Court } from '@/domain/types';
@@ -169,7 +169,6 @@ export function ScheduleBoard({ columns, onBook, onOpenBooking }: ScheduleBoardP
                       className={cn('absolute inset-x-1 flex items-start gap-1 rounded-[8px] px-2 py-1 text-text-subtle', s.status === 'CLOSED' ? 'bg-[repeating-linear-gradient(135deg,var(--surface-muted)_0_6px,transparent_6px_12px)]' : 'bg-surface-muted/60')}
                       style={style}
                     >
-                      {s.status === 'CLOSED' && <Prohibit size={11} className="mt-0.5" aria-hidden />}
                     </div>
                   );
                 })

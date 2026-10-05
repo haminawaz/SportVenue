@@ -128,7 +128,7 @@ describe('signed-out screens', () => {
   test('request demo validates, then sends', async () => {
     const user = userEvent.setup();
     show(<RequestDemoScreen />, { signedIn: false, search: 'intent=demo' });
-    expect(screen.getByRole('heading', { name: 'Book a demo' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Book a demo' }).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('button', { name: 'Request demo' }));
     expect(await screen.findByText('Enter your name.')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Your name'), 'Imran Aslam');
@@ -152,9 +152,9 @@ describe('tab screens', () => {
   test('bookings list and day schedule', async () => {
     const user = userEvent.setup();
     show(<BookingsScreen />);
-    expect(await screen.findByText(/\d+ results?/, undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText(/^Showing \d+ of \d+/, undefined, SLOW)).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: 'Day schedule' }));
-    expect(await screen.findByRole('radiogroup', { name: 'Day' }, SLOW)).toBeInTheDocument();
+    expect(await screen.findByRole('list', { name: 'Court 1 schedule' }, SLOW)).toBeInTheDocument();
     expectNoErrors();
   });
 
@@ -163,7 +163,7 @@ describe('tab screens', () => {
     show(<PaymentsScreen />);
     expect(await screen.findByText('Owed to you', undefined, SLOW)).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: 'Received' }));
-    expect(await screen.findByText(/\d+ results?/, undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText(/^Showing \d+ of \d+/, undefined, SLOW)).toBeInTheDocument();
     expectNoErrors();
   });
 
@@ -175,8 +175,7 @@ describe('tab screens', () => {
 
   test('more', async () => {
     show(<MoreScreen />);
-    expect(await screen.findByText('Hamid Nawaz', undefined, SLOW)).toBeInTheDocument();
-    expect(screen.getByText('Owner, Baseline Padel Club')).toBeInTheDocument();
+    expect(await screen.findByText(/Hamid Nawaz · Owner, Baseline Padel Club/, undefined, SLOW)).toBeInTheDocument();
   });
 });
 
@@ -221,7 +220,7 @@ describe('bookings', () => {
 describe('courts', () => {
   test('list', async () => {
     show(<CourtsScreen />);
-    expect(await screen.findByRole('button', { name: /^Court 1, Padel/ }, SLOW)).toBeInTheDocument();
+    expect(await screen.findByRole('link', { name: /^Court 1, Padel/ }, SLOW)).toBeInTheDocument();
     expectNoErrors();
   });
 
@@ -264,7 +263,7 @@ describe('customers', () => {
 
   test('bookings and payments history', async () => {
     const { unmount } = show(<CustomerBookingsScreen />, { params: { id: 'cust_1' } });
-    expect(await screen.findByText(/\d+ results?/, undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText(/^Showing \d+ of \d+/, undefined, SLOW)).toBeInTheDocument();
     unmount();
     show(<CustomerPaymentsScreen />, { params: { id: 'cust_1' } });
     expect(await screen.findByText('Total paid', undefined, SLOW)).toBeInTheDocument();
@@ -324,7 +323,7 @@ describe('pricing', () => {
 describe('facility and account', () => {
   test('facility profile, edit, hours and settings', async () => {
     let r = show(<FacilityScreen />);
-    expect(await screen.findByText('Business hours', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Business hours' }, SLOW)).toBeInTheDocument();
     r.unmount();
     r = show(<FacilityEditScreen />);
     expect(await screen.findByDisplayValue('Baseline Padel Club', undefined, SLOW)).toBeInTheDocument();
@@ -340,7 +339,7 @@ describe('facility and account', () => {
   test('settings, profile, notification preferences and billing', async () => {
     const user = userEvent.setup();
     let r = show(<SettingsScreen />);
-    await user.click(await screen.findByRole('tab', { name: 'Dark' }, SLOW));
+    await user.click(await screen.findByRole('radio', { name: 'Dark' }, SLOW));
     expect(window.localStorage.getItem('sportvenue.appearance')).toBe('dark');
     r.unmount();
     r = show(<ProfileScreen />);

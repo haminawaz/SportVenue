@@ -11,7 +11,7 @@ export function Avatar({ name, size = 44, tone = 'neutral' }: { name: string; si
       className={cn('flex shrink-0 items-center justify-center rounded-full', tone === 'accent' ? 'bg-accent-soft text-accent' : 'bg-surface-muted text-text-muted')}
       style={{ width: size, height: size }}
     >
-      <AppText variant={size >= 56 ? 'heading' : size >= 36 ? 'label' : 'mini'} className="text-current">
+      <AppText variant={size >= 56 ? 'heading' : size >= 36 ? 'label' : 'mini'} className="whitespace-nowrap text-current">
         {initials(name)}
       </AppText>
     </span>
