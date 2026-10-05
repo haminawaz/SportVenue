@@ -10,9 +10,9 @@ import { useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
+import { Card } from '@/ui/Card';
 import { TextField } from '@/ui/Fields';
-import { Screen } from '@/ui/Screen';
-import { StackHeader } from '@/ui/StackHeader';
+import { FormActions, FormSection, Page, PageHeader } from '@/ui/Page';
 import { Notice, QueryView } from '@/ui/States';
 
 import { useBooking, useUpdateBooking } from '../api';
@@ -24,12 +24,11 @@ export function BookingEditScreen() {
   const id = useRouteParam('id');
   const query = useBooking(id);
   return (
-    <>
-      <StackHeader title="Edit booking" />
+    <Page width="form">
       <QueryView query={query} errorTitle="Couldn't load booking">
         {(b) => <EditForm booking={b} />}
       </QueryView>
-    </>
+    </Page>
   );
 }
 
@@ -65,19 +64,30 @@ function EditForm({ booking: b }: { booking: BookingDetail }) {
   };
 
   return (
-    <Screen footer={<Button label="Save changes" block onPress={save} loading={saving} disabled={!form.dirty} />}>
-      {locked && <Notice message="A payment has been recorded, so the customer can't be changed. Cancel and rebook if it was booked under the wrong name." />}
-      <CustomerPicker
-        value={form.values.customerId}
-        onChange={(id) => form.set('customerId', id)}
-        disabled={locked}
-        error={form.errors.customerId}
-        onCreateNew={() => {
-          formDraft.put(draftKey, form.values);
-          router.push(routes.customerNew({ returnTo: 'booking' }));
-        }}
-      />
-      <TextField label="Notes" optional multiline value={form.values.notes} onChangeText={(t) => form.set('notes', t)} error={form.errors.notes} maxLength={500} />
-    </Screen>
+    <>
+      <PageHeader breadcrumbs={[{ label: 'Bookings', href: routes.bookings }, { label: b.reference, href: routes.booking(b.id) }, { label: 'Edit' }]} title="Edit booking" description="Change who the booking is for, or its notes. Use Reschedule to move it." hideRefresh />
+      <Card>
+        <FormSection title="Customer" description="Who the booking is for.">
+          {locked && <Notice message="A payment has been recorded, so the customer can't be changed. Cancel and rebook if it was booked under the wrong name." />}
+          <CustomerPicker
+            value={form.values.customerId}
+            onChange={(id) => form.set('customerId', id)}
+            disabled={locked}
+            error={form.errors.customerId}
+            onCreateNew={() => {
+              formDraft.put(draftKey, form.values);
+              router.push(routes.customerNew({ returnTo: 'booking' }));
+            }}
+          />
+        </FormSection>
+        <FormSection title="Notes" description="Visible to your team on the booking.">
+          <TextField label="Notes" optional multiline value={form.values.notes} onChangeText={(t) => form.set('notes', t)} error={form.errors.notes} maxLength={500} />
+        </FormSection>
+      </Card>
+      <FormActions>
+        <Button label="Cancel" variant="secondary" onPress={() => router.back(routes.booking(b.id))} />
+        <Button label="Save changes" onPress={save} loading={saving} disabled={!form.dirty} />
+      </FormActions>
+    </>
   );
 }

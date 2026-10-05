@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { CalendarBlank, Receipt, User } from '@phosphor-icons/react';
 
 import { PAYMENT_METHOD, PAYMENT_STATUS } from '@/domain/labels';
@@ -8,13 +9,10 @@ import { formatDayAndTime } from '@/lib/datetime';
 import { useFormat } from '@/lib/format';
 import { useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
-import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
-import { Card } from '@/ui/Card';
-import { ListGroup, ListRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { StackHeader } from '@/ui/StackHeader';
-import { QueryView } from '@/ui/States';
+import { Card, CardHeader } from '@/ui/Card';
+import { DetailLayout, Page, PageHeader } from '@/ui/Page';
+import { DescriptionList, Notice, QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
 
 import { usePayment } from '../api';
@@ -23,65 +21,89 @@ export function PaymentDetailScreen() {
   const id = useRouteParam('id');
   const query = usePayment(id);
   return (
-    <>
-      <StackHeader title="Payment" />
-      <Screen>
-        <QueryView query={query} errorTitle="Couldn't load payment">
-          {(p) => <PaymentBody paymentId={p.id} />}
-        </QueryView>
-      </Screen>
-    </>
+    <Page width="wide">
+      <QueryView query={query} errorTitle="Couldn't load payment">
+        {(p) => <PaymentBody paymentId={p.id} />}
+      </QueryView>
+    </Page>
   );
 }
 
 function PaymentBody({ paymentId }: { paymentId: string }) {
-  const router = useAppRouter();
   const f = useFormat();
   const p = usePayment(paymentId).data!;
   const booking = useBooking(p.bookingId);
   const method = PAYMENT_METHOD[p.method];
-  const Icon = method.icon;
   const b = booking.data;
+  const link = 'flex items-center gap-3 rounded-control px-3 py-2.5 hover:bg-surface-muted';
 
   return (
     <>
-      <Card>
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-accent-soft text-accent">
-          <Icon size={24} aria-hidden />
-        </span>
-        <AppText variant="nav-link" tone="muted" className="mt-4">
-          Received from {p.customerName}
-        </AppText>
-        <AppText as="h2" variant="display-xl" numeric aria-label={f.moneyA11y(p.amount)} className="my-1">
-          {f.money(p.amount)}
-        </AppText>
-        <AppText tone="muted">{formatDayAndTime(p.receivedAt, f.timeZone, f.today())}</AppText>
-      </Card>
-
-      <ListGroup title="Details">
-        <ListRow title="Method" value={method.label} />
-        <ListRow title="Recorded by" value={p.recordedBy} />
-        <ListRow title="Reference" value={p.id.toUpperCase()} />
-        {p.note && <ListRow title="Note" subtitle={p.note} />}
-      </ListGroup>
-
-      <ListGroup title="Related">
-        <ListRow
-          icon={CalendarBlank}
-          title={`Booking ${p.bookingReference}`}
-          subtitle={b ? `${b.courtName} · ${formatDayAndTime(b.startAt, f.timeZone, f.today())}` : undefined}
-          trailing={b ? <StatusBadge label={PAYMENT_STATUS[b.paymentStatus].label} tone={PAYMENT_STATUS[b.paymentStatus].tone} /> : undefined}
-          onPress={() => router.push(routes.booking(p.bookingId))}
-        />
-        <ListRow icon={User} title={p.customerName} subtitle="Customer profile" onPress={() => router.push(routes.customer(p.customerId))} />
-        <ListRow icon={Receipt} title="All payments from this customer" onPress={() => router.push(routes.customerPayments(p.customerId))} />
-      </ListGroup>
-
-      {b && b.outstanding > 0 && (
-        <AppText variant="body-sm" tone="muted" className="px-1">
-          {f.money(b.outstanding)} is still due on this booking.
-        </AppText>
-      )}
+      <PageHeader
+        breadcrumbs={[{ label: 'Payments', href: routes.payments('history') }, { label: p.id.toUpperCase() }]}
+        title={f.money(p.amount)}
+        description={`Received from ${p.customerName} · ${formatDayAndTime(p.receivedAt, f.timeZone, f.today())}`}
+        meta={<StatusBadge label={method.label} tone="positive" />}
+        hideRefresh
+      />
+      {b && b.outstanding > 0 && <Notice tone="warning" message={`${f.money(b.outstanding)} is still due on this booking.`} />}
+      <DetailLayout
+        main={
+          <Card padded={false}>
+            <CardHeader title="Details" />
+            <div className="px-5 py-2">
+              <DescriptionList
+                items={[
+                  { label: 'Amount', value: <span aria-label={f.moneyA11y(p.amount)}>{f.money(p.amount)}</span> },
+                  { label: 'Method', value: method.label },
+                  { label: 'Received', value: formatDayAndTime(p.receivedAt, f.timeZone, f.today()) },
+                  { label: 'Recorded by', value: p.recordedBy },
+                  { label: 'Reference', value: p.id.toUpperCase() },
+                  p.note ? { label: 'Note', value: p.note } : null,
+                ]}
+              />
+            </div>
+          </Card>
+        }
+        side={
+          <Card padded={false}>
+            <CardHeader title="Related" />
+            <ul className="flex flex-col p-2">
+              <li>
+                <Link href={routes.booking(p.bookingId)} className={link}>
+                  <CalendarBlank size={18} className="text-text-muted" aria-hidden />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <AppText variant="text-strong">Booking {p.bookingReference}</AppText>
+                    {b && (
+                      <AppText variant="small" tone="muted">
+                        {b.courtName} · {formatDayAndTime(b.startAt, f.timeZone, f.today())}
+                      </AppText>
+                    )}
+                  </span>
+                  {b && <StatusBadge label={PAYMENT_STATUS[b.paymentStatus].label} tone={PAYMENT_STATUS[b.paymentStatus].tone} />}
+                </Link>
+              </li>
+              <li>
+                <Link href={routes.customer(p.customerId)} className={link}>
+                  <User size={18} className="text-text-muted" aria-hidden />
+                  <span className="flex flex-col">
+                    <AppText variant="text-strong">{p.customerName}</AppText>
+                    <AppText variant="small" tone="muted">
+                      Customer profile
+                    </AppText>
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link href={routes.customerPayments(p.customerId)} className={link}>
+                  <Receipt size={18} className="text-text-muted" aria-hidden />
+                  <AppText variant="text-strong">All payments from this customer</AppText>
+                </Link>
+              </li>
+            </ul>
+          </Card>
+        }
+      />
     </>
   );
 }

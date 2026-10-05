@@ -10,33 +10,27 @@ import { useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
-import { SegmentedControl } from '@/ui/Chips';
-import { FieldShell, SwitchRow, TextField } from '@/ui/Fields';
-import { Screen } from '@/ui/Screen';
-import { SelectField } from '@/ui/Select';
-import { StackHeader } from '@/ui/StackHeader';
+import { Card } from '@/ui/Card';
+import { FieldShell, SelectField, SwitchRow, TextField } from '@/ui/Fields';
+import { FormActions, FormSection, Page, PageHeader } from '@/ui/Page';
 import { QueryView } from '@/ui/States';
+import { SegmentedControl } from '@/ui/Tabs';
 
 import { useCourt, useCreateCourt, useUpdateCourt } from '../api';
 
 export function CourtFormScreen() {
   const id = useRouteParam('id');
   const query = useCourt(id);
-  if (!id) {
-    return (
-      <>
-        <StackHeader title="Add court" />
-        <CourtForm />
-      </>
-    );
-  }
   return (
-    <>
-      <StackHeader title="Edit court" />
-      <QueryView query={query} errorTitle="Couldn't load court">
-        {(c) => <CourtForm court={c} />}
-      </QueryView>
-    </>
+    <Page width="form">
+      {!id ? (
+        <CourtForm />
+      ) : (
+        <QueryView query={query} errorTitle="Couldn't load court">
+          {(c) => <CourtForm court={c} />}
+        </QueryView>
+      )}
+    </Page>
   );
 }
 
@@ -95,45 +89,50 @@ function CourtForm({ court }: { court?: Court }) {
   };
 
   const sportOptions = [...new Set([...SPORTS, ...(court?.sport ? [court.sport] : [])])].map((s) => ({ value: s, label: s }));
+  const back = court ? routes.court(court.id) : routes.courts;
 
   return (
-    <Screen footer={<Button label={court ? 'Save court' : 'Add court'} block onPress={save} loading={saving} disabled={!!court && !form.dirty} />}>
-      <TextField label="Name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Court 4" maxLength={40} autoCapitalize="words" />
-      <SelectField label="Sport" value={form.values.sport || undefined} options={sportOptions} onChange={(v) => form.set('sport', v)} error={form.errors.sport} placeholder="Choose a sport" />
-      <TextField label="Surface" optional value={form.values.surface} onChangeText={(t) => form.set('surface', t)} placeholder="For example: artificial turf" maxLength={60} />
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
-        <SwitchRow label="Indoor court" description="Shown to customers and used for weather-related opportunities." value={form.values.indoor} onChange={(v) => form.set('indoor', v)} />
-      </div>
-      <TextField
-        label="Base hourly rate"
-        value={form.values.hourlyRate}
-        onChangeText={(t) => form.set('hourlyRate', t)}
-        error={form.errors.hourlyRate}
-        inputMode="decimal"
-        prefix={f.currency}
-        helper="Used when no time-based rate applies."
+    <>
+      <PageHeader
+        breadcrumbs={court ? [{ label: 'Courts', href: routes.courts }, { label: court.name, href: routes.court(court.id) }, { label: 'Edit' }] : [{ label: 'Courts', href: routes.courts }, { label: 'Add court' }]}
+        title={court ? 'Edit court' : 'Add court'}
+        hideRefresh
       />
-      <FieldShell label="Slot length" helper="Bookings start on these intervals.">
-        <SegmentedControl
-          label="Slot length"
-          value={form.values.slotMinutes}
-          onChange={(v) => form.set('slotMinutes', v)}
-          options={[
-            { value: '30', label: '30 min' },
-            { value: '60', label: '60 min' },
-            { value: '90', label: '90 min' },
-          ]}
-        />
-      </FieldShell>
-      <FieldShell label="Status" helper={COURT_STATUS[form.values.status].description}>
-        <SegmentedControl
-          label="Status"
-          value={form.values.status}
-          onChange={(v) => form.set('status', v)}
-          options={(['ACTIVE', 'MAINTENANCE', 'INACTIVE'] as CourtStatus[]).map((s) => ({ value: s, label: COURT_STATUS[s].label }))}
-        />
-      </FieldShell>
-      <TextField label="Notes" optional multiline value={form.values.notes} onChangeText={(t) => form.set('notes', t)} placeholder="Visible to your team only" maxLength={300} />
-    </Screen>
+      <Card>
+        <FormSection title="Court" description="How the court appears in bookings and schedules.">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField label="Name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Court 4" maxLength={40} autoCapitalize="words" />
+            <SelectField label="Sport" value={form.values.sport || undefined} options={sportOptions} onChange={(v) => form.set('sport', v)} error={form.errors.sport} placeholder="Choose a sport" />
+          </div>
+          <TextField label="Surface" optional value={form.values.surface} onChangeText={(t) => form.set('surface', t)} placeholder="For example: artificial turf" maxLength={60} />
+          <SwitchRow label="Indoor court" description="Shown to customers and used for weather-related opportunities." value={form.values.indoor} onChange={(v) => form.set('indoor', v)} />
+        </FormSection>
+        <FormSection title="Booking and price" description="The base rate applies when no time-based rate does.">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField label="Base hourly rate" value={form.values.hourlyRate} onChangeText={(t) => form.set('hourlyRate', t)} error={form.errors.hourlyRate} inputMode="decimal" prefix={f.currency} helper="Used when no time-based rate applies." />
+            <FieldShell label="Slot length" helper="Bookings start on these intervals.">
+              <SegmentedControl
+                label="Slot length"
+                value={form.values.slotMinutes}
+                onChange={(v) => form.set('slotMinutes', v)}
+                options={[
+                  { value: '30', label: '30 min' },
+                  { value: '60', label: '60 min' },
+                  { value: '90', label: '90 min' },
+                ]}
+              />
+            </FieldShell>
+          </div>
+        </FormSection>
+        <FormSection title="Status" description={COURT_STATUS[form.values.status].description}>
+          <SegmentedControl label="Status" value={form.values.status} onChange={(v) => form.set('status', v)} options={(['ACTIVE', 'MAINTENANCE', 'INACTIVE'] as CourtStatus[]).map((s) => ({ value: s, label: COURT_STATUS[s].label }))} />
+          <TextField label="Notes" optional multiline rows={3} value={form.values.notes} onChangeText={(t) => form.set('notes', t)} placeholder="Visible to your team only" maxLength={300} />
+        </FormSection>
+      </Card>
+      <FormActions>
+        <Button label="Cancel" variant="secondary" onPress={() => router.back(back)} />
+        <Button label={court ? 'Save court' : 'Add court'} onPress={save} loading={saving} disabled={!!court && !form.dirty} />
+      </FormActions>
+    </>
   );
 }

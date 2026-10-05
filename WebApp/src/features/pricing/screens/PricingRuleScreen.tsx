@@ -14,13 +14,10 @@ import { useQueryParams, useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
-import { DayToggles } from '@/ui/Chips';
+import { Card } from '@/ui/Card';
 import { ConfirmDialog } from '@/ui/Dialogs';
-import { FieldShell, SwitchRow, TextField } from '@/ui/Fields';
-import { ListGroup, ListRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { SelectField } from '@/ui/Select';
-import { StackHeader } from '@/ui/StackHeader';
+import { DayToggles, FieldShell, SelectField, SwitchRow, TextField } from '@/ui/Fields';
+import { FormActions, FormSection, Page, PageHeader } from '@/ui/Page';
 import { Notice, QueryView } from '@/ui/States';
 
 import { useDeleteRule, usePricingRule, useSaveRule } from '../api';
@@ -28,21 +25,16 @@ import { useDeleteRule, usePricingRule, useSaveRule } from '../api';
 export function PricingRuleScreen() {
   const id = useRouteParam('id');
   const query = usePricingRule(id);
-  if (!id) {
-    return (
-      <>
-        <StackHeader title="Add a rate" />
-        <RuleForm />
-      </>
-    );
-  }
   return (
-    <>
-      <StackHeader title="Time-based rate" />
-      <QueryView query={query} errorTitle="Couldn't load this rate">
-        {(r) => <RuleForm rule={r} />}
-      </QueryView>
-    </>
+    <Page width="form">
+      {!id ? (
+        <RuleForm />
+      ) : (
+        <QueryView query={query} errorTitle="Couldn't load this rate">
+          {(r) => <RuleForm rule={r} />}
+        </QueryView>
+      )}
+    </Page>
   );
 }
 
@@ -107,40 +99,51 @@ function RuleForm({ rule }: { rule?: PricingRule }) {
   const times = clockOptions('05:00', '23:30').map((t) => ({ value: t, label: formatClock(t) }));
 
   return (
-    <Screen footer={<Button label={rule ? 'Save rate' : 'Add rate'} block onPress={submit} loading={saving} disabled={!!rule && !form.dirty} />}>
+    <>
+      <PageHeader
+        breadcrumbs={[{ label: 'Pricing', href: routes.pricing() }, { label: rule ? rule.name : 'Add a rate' }]}
+        title={rule ? 'Time-based rate' : 'Add a rate'}
+        actions={rule && <Button label="Delete rate" icon={Trash} variant="secondary" onPress={() => setConfirmDelete(true)} />}
+        hideRefresh
+      />
       {params.opportunityId && !rule && <Notice message="Pre-filled from a revenue opportunity. Set the rate, then save to mark it resolved." />}
-      <TextField label="Name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Evening peak" maxLength={40} />
-      <SelectField
-        label="Court"
-        value={form.values.courtId}
-        options={[{ value: '', label: 'All courts' }, ...(courts.data ?? []).map((c) => ({ value: c.id, label: c.name, description: `Base ${f.money(c.hourlyRate)} / h` }))]}
-        onChange={(x) => form.set('courtId', x)}
-      />
-      <FieldShell label="Days" error={form.errors.weekdays}>
-        <DayToggles label="Days" value={form.values.weekdays} onChange={(d) => form.set('weekdays', d)} />
-      </FieldShell>
-      <div className="grid grid-cols-2 gap-3">
-        <SelectField label="From" value={form.values.startTime} options={times} onChange={(t) => form.set('startTime', t)} error={form.errors.startTime} />
-        <SelectField label="Until" value={form.values.endTime} options={times} onChange={(t) => form.set('endTime', t)} error={form.errors.endTime} />
-      </div>
-      <TextField
-        label="Hourly rate"
-        value={form.values.hourlyRate}
-        onChangeText={(t) => form.set('hourlyRate', t)}
-        error={form.errors.hourlyRate}
-        inputMode="decimal"
-        prefix={f.currency}
-        helper={court ? `${court.name}'s base rate is ${f.money(court.hourlyRate)} / h.` : 'Applies to every court in this time window.'}
-      />
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
-        <SwitchRow label="Active" description="Turn off to keep the rate without applying it." value={form.values.active} onChange={(x) => form.set('active', x)} />
-      </div>
-
-      {rule && (
-        <ListGroup>
-          <ListRow title="Delete rate" icon={Trash} destructive onPress={() => setConfirmDelete(true)} />
-        </ListGroup>
-      )}
+      <Card>
+        <FormSection title="Rate" description="Name it so it's easy to recognise in bookings and history.">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField label="Name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Evening peak" maxLength={40} />
+            <SelectField
+              label="Court"
+              value={form.values.courtId}
+              options={[{ value: '', label: 'All courts' }, ...(courts.data ?? []).map((c) => ({ value: c.id, label: c.name, description: `Base ${f.money(c.hourlyRate)} / h` }))]}
+              onChange={(x) => form.set('courtId', x)}
+            />
+          </div>
+          <TextField
+            label="Hourly rate"
+            value={form.values.hourlyRate}
+            onChangeText={(t) => form.set('hourlyRate', t)}
+            error={form.errors.hourlyRate}
+            inputMode="decimal"
+            prefix={f.currency}
+            helper={court ? `${court.name}'s base rate is ${f.money(court.hourlyRate)} / h.` : 'Applies to every court in this time window.'}
+            className="sm:max-w-xs"
+          />
+        </FormSection>
+        <FormSection title="When it applies" description="The days and hours this rate replaces the base rate.">
+          <FieldShell label="Days" error={form.errors.weekdays}>
+            <DayToggles label="Days" value={form.values.weekdays} onChange={(d) => form.set('weekdays', d)} />
+          </FieldShell>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <SelectField label="From" value={form.values.startTime} options={times} onChange={(t) => form.set('startTime', t)} error={form.errors.startTime} />
+            <SelectField label="Until" value={form.values.endTime} options={times} onChange={(t) => form.set('endTime', t)} error={form.errors.endTime} />
+          </div>
+          <SwitchRow label="Active" description="Turn off to keep the rate without applying it." value={form.values.active} onChange={(x) => form.set('active', x)} />
+        </FormSection>
+      </Card>
+      <FormActions>
+        <Button label="Cancel" variant="secondary" onPress={() => router.back(routes.pricing())} />
+        <Button label={rule ? 'Save rate' : 'Add rate'} onPress={submit} loading={saving} disabled={!!rule && !form.dirty} />
+      </FormActions>
 
       <ConfirmDialog
         visible={confirmDelete}
@@ -152,6 +155,6 @@ function RuleForm({ rule }: { rule?: PricingRule }) {
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => rule && remove.mutate(rule.id, { onSuccess: () => router.back(routes.pricing()), onSettled: () => setConfirmDelete(false) })}
       />
-    </Screen>
+    </>
   );
 }

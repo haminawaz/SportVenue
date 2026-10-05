@@ -1,23 +1,25 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { MagnifyingGlass, Plus, SortAscending, UsersThree } from '@phosphor-icons/react';
 
 import type { Customer } from '@/domain/types';
-import { useFormat } from '@/lib/format';
+import { formatDateTimeLocal, useFormat } from '@/lib/format';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
+import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
-import { Chip, ChipRow } from '@/ui/Chips';
+import { Card } from '@/ui/Card';
+import { InfiniteTable, type Column } from '@/ui/DataTable';
 import { EmptyState } from '@/ui/EmptyState';
-import { IconButton } from '@/ui/IconButton';
-import { InfiniteList } from '@/ui/InfiniteList';
-import { SummaryRow } from '@/ui/List';
-import { SearchBar } from '@/ui/SearchBar';
-import { OptionSheet } from '@/ui/Select';
+import { FilterSelect } from '@/ui/Menu';
+import { Page, PageHeader } from '@/ui/Page';
+import { useRegisterRefresh } from '@/ui/Refresh';
+import { SearchBar, Toolbar } from '@/ui/SearchBar';
 import { StatusBadge } from '@/ui/StatusBadge';
+import { Tabs } from '@/ui/Tabs';
 
 import { useCustomers, type CustomerFilter, type CustomerSort } from '../api';
 
@@ -38,68 +40,87 @@ const SORTS: { value: CustomerSort; label: string }[] = [
 
 export function CustomersScreen() {
   const router = useAppRouter();
+  const f = useFormat();
   const [search, setSearch] = useState('');
   const q = useDebouncedValue(search.trim());
   const [filter, setFilter] = useState<CustomerFilter>('active');
   const [sort, setSort] = useState<CustomerSort>('name');
-  const [sortOpen, setSortOpen] = useState(false);
   const query = useCustomers({ q: q || undefined, filter, sort });
+  useRegisterRefresh(() => query.refetch());
+
+  const columns = useMemo<Column<Customer>[]>(
+    () => [
+      {
+        key: 'name',
+        header: 'Customer',
+        primary: true,
+        cell: (c) => (
+          <span className="flex items-center gap-3">
+            <Avatar name={c.name} size={32} />
+            <span className="flex min-w-0 flex-col">
+              <AppText variant="text-strong" lines={1}>
+                {c.name}
+              </AppText>
+              <AppText variant="small" tone="muted" lines={1} className="md:hidden">
+                {c.phone}
+              </AppText>
+            </span>
+          </span>
+        ),
+      },
+      { key: 'phone', header: 'Phone', hideBelow: 'md', cell: (c) => <span className="whitespace-nowrap text-text-muted tabular-nums">{c.phone}</span> },
+      {
+        key: 'tag',
+        header: 'Type',
+        hideBelow: 'sm',
+        cell: (c) => (c.status === 'INACTIVE' ? <StatusBadge label="Inactive" tone="neutral" /> : c.isRegular ? <StatusBadge label="Regular" tone="positive" /> : <span className="text-text-subtle">-</span>),
+      },
+      { key: 'bookings', header: 'Bookings', align: 'right', hideBelow: 'lg', cell: (c) => c.totalBookings },
+      { key: 'last', header: 'Last booking', hideBelow: 'xl', cell: (c) => <span className="whitespace-nowrap text-text-muted">{c.lastBookingAt ? formatDateTimeLocal(c.lastBookingAt, f.today()) : '-'}</span> },
+      { key: 'spent', header: 'Total paid', align: 'right', hideBelow: 'lg', cell: (c) => f.money(c.totalSpent) },
+      { key: 'balance', header: 'Balance', align: 'right', cell: (c) => (c.outstanding > 0 ? <span className="t-text-strong text-warning">{f.money(c.outstanding)}</span> : <span className="text-text-subtle">-</span>) },
+    ],
+    [f],
+  );
 
   return (
-    <>
-      <InfiniteList
-        title="Customers"
-        titleActions={<IconButton icon={Plus} label="Add customer" onPress={() => router.push(routes.customerNew())} variant="solid" size="sm" />}
-        query={query}
-        keyExtractor={(c) => c.id}
-        renderItem={({ item }) => <CustomerRow customer={item} onPress={() => router.push(routes.customer(item.id))} />}
-        header={
-          <div className="flex flex-col gap-4">
-            <SearchBar value={search} onChange={setSearch} placeholder="Search name, phone or email" />
-            <ChipRow>
-              {FILTERS.map((fl) => (
-                <Chip key={fl.value} label={fl.label} selected={filter === fl.value} onPress={() => setFilter(fl.value)} />
-              ))}
-              <Chip label={SORTS.find((s) => s.value === sort)!.label} icon={SortAscending} dropdown onPress={() => setSortOpen(true)} />
-            </ChipRow>
-          </div>
-        }
-        empty={
-          q ? (
-            <EmptyState icon={MagnifyingGlass} title={`No one matches "${q}"`} message="Check the spelling, or search by phone number." />
-          ) : filter !== 'active' && filter !== 'all' ? (
-            <EmptyState icon={UsersThree} title="No customers in this list" message="Try another filter." action={<Button label="Show active customers" variant="secondary" onPress={() => setFilter('active')} />} />
-          ) : (
-            <EmptyState
-              icon={UsersThree}
-              title="No customers yet"
-              message="Add the people who book your courts to track their bookings and balances."
-              action={<Button label="Add customer" icon={Plus} onPress={() => router.push(routes.customerNew())} />}
-            />
-          )
-        }
-      />
-      <OptionSheet visible={sortOpen} title="Sort by" options={SORTS} selected={[sort]} onClose={() => setSortOpen(false)} onChange={([s]) => setSort(s)} />
-    </>
+    <Page>
+      <PageHeader title="Customers" description="Everyone who books your courts, with their history and balances." actions={<Button label="Add customer" icon={Plus} onPress={() => router.push(routes.customerNew())} />} />
+      <Tabs label="Show" value={filter} onChange={setFilter} items={FILTERS} />
+      <Card padded={false}>
+        <Toolbar>
+          <SearchBar value={search} onChange={setSearch} placeholder="Search name, phone or email" className="w-full sm:w-80" />
+          <FilterSelect label="Sort" icon={SortAscending} value={sort} options={SORTS} onChange={setSort} active={sort !== 'name'} />
+        </Toolbar>
+        <InfiniteTable
+          query={query}
+          columns={columns}
+          rowKey={(c) => c.id}
+          rowHref={(c) => routes.customer(c.id)}
+          rowLabel={(c) =>
+            [c.name, c.phone, `${c.totalBookings} ${c.totalBookings === 1 ? 'booking' : 'bookings'}`, c.isRegular ? 'Regular' : undefined, c.status === 'INACTIVE' ? 'Inactive' : undefined, c.outstanding > 0 ? `owes ${f.moneyA11y(c.outstanding)}` : undefined]
+              .filter(Boolean)
+              .join(', ')
+          }
+          muted={(c) => c.status === 'INACTIVE'}
+          caption="Customers"
+          noun={['customer', 'customers']}
+          empty={
+            q ? (
+              <EmptyState icon={MagnifyingGlass} title={`No one matches "${q}"`} message="Check the spelling, or search by phone number." />
+            ) : filter !== 'active' && filter !== 'all' ? (
+              <EmptyState icon={UsersThree} title="No customers in this list" message="Try another filter." action={<Button label="Show active customers" variant="secondary" onPress={() => setFilter('active')} />} />
+            ) : (
+              <EmptyState
+                icon={UsersThree}
+                title="No customers yet"
+                message="Add the people who book your courts to track their bookings and balances."
+                action={<Button label="Add customer" icon={Plus} onPress={() => router.push(routes.customerNew())} />}
+              />
+            )
+          }
+        />
+      </Card>
+    </Page>
   );
 }
-
-const CustomerRow = memo(function CustomerRow({ customer: c, onPress }: { customer: Customer; onPress: () => void }) {
-  const f = useFormat();
-  const owes = c.outstanding > 0;
-  const inactive = c.status === 'INACTIVE';
-  const bookings = `${c.totalBookings} ${c.totalBookings === 1 ? 'booking' : 'bookings'}`;
-  return (
-    <SummaryRow
-      leading={<Avatar name={c.name} size={40} />}
-      title={c.name}
-      value={owes ? f.money(c.outstanding) : bookings}
-      valueTone={owes ? 'warning' : 'muted'}
-      meta={owes && !inactive && !c.isRegular ? `${c.phone} · ${bookings}` : c.phone}
-      tag={inactive ? <StatusBadge label="Inactive" tone="neutral" /> : c.isRegular ? <StatusBadge label="Regular" tone="positive" /> : undefined}
-      label={[c.name, c.phone, bookings, c.isRegular ? 'Regular' : undefined, inactive ? 'Inactive' : undefined, owes ? `owes ${f.moneyA11y(c.outstanding)}` : undefined].filter(Boolean).join(', ')}
-      hint="Opens the customer"
-      onPress={onPress}
-    />
-  );
-});

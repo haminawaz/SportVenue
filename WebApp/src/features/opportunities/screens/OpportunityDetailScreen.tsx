@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { ArrowCounterClockwise, Bell, CalendarBlank, CheckCircle, CourtBasketball, Lightbulb, PlayCircle, Tag, User, XCircle } from '@phosphor-icons/react';
 
 import { OPPORTUNITY_STATUS, opportunityTypeMeta } from '@/domain/labels';
@@ -14,13 +15,11 @@ import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
+import { Card, CardHeader } from '@/ui/Card';
 import { ConfirmDialog } from '@/ui/Dialogs';
 import { TextField } from '@/ui/Fields';
 import type { IconType } from '@/ui/icon';
-import { ListGroup, ListRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { StackHeader } from '@/ui/StackHeader';
+import { DetailLayout, Page, PageHeader } from '@/ui/Page';
 import { Notice, QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
 
@@ -30,14 +29,11 @@ export function OpportunityDetailScreen() {
   const id = useRouteParam('id');
   const query = useOpportunity(id);
   return (
-    <>
-      <StackHeader title="Opportunity" />
-      <Screen onRefresh={() => query.refetch()}>
-        <QueryView query={query} errorTitle="Couldn't load opportunity">
-          {(o) => <Body opportunity={o} />}
-        </QueryView>
-      </Screen>
-    </>
+    <Page width="wide" onRefresh={() => query.refetch()}>
+      <QueryView query={query} errorTitle="Couldn't load opportunity">
+        {(o) => <Body opportunity={o} />}
+      </QueryView>
+    </Page>
   );
 }
 
@@ -51,7 +47,6 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
   const [noteError, setNoteError] = useState<string>();
 
   const type = opportunityTypeMeta(o.type);
-  const Icon = type.icon;
   const status = OPPORTUNITY_STATUS[o.status];
   const closed = o.status === 'RESOLVED' || o.status === 'DISMISSED';
   const suggestion = recommendationText(o.recommendedAction, (n) => f.money(n));
@@ -83,17 +78,7 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
         return {
           label: 'Add a peak rate',
           icon: Tag,
-          run: () =>
-            router.push(
-              routes.pricingRuleNew({
-                courtId: o.courtId,
-                weekdays: window?.weekdays.join(','),
-                startTime: window?.startTime,
-                endTime: window?.endTime,
-                name: 'Peak demand',
-                opportunityId: o.id,
-              }),
-            ),
+          run: () => router.push(routes.pricingRuleNew({ courtId: o.courtId, weekdays: window?.weekdays.join(','), startTime: window?.startTime, endTime: window?.endTime, name: 'Peak demand', opportunityId: o.id })),
         };
       case 'REMIND':
         return o.bookingId ? { label: 'Send reminder', icon: Bell, run: () => remind.mutate(o.bookingId!) } : null;
@@ -105,74 +90,31 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
   })();
 
   const window = o.startAt ? `${formatDayAndTime(o.startAt, f.timeZone, f.today())}${o.endAt ? ` - ${formatTime(o.endAt, f.timeZone)}` : ''}` : undefined;
+  const related: { href: string; icon: IconType; title: string; subtitle: string }[] = [];
+  if (o.courtId) related.push({ href: routes.court(o.courtId), icon: CourtBasketball, title: o.courtName ?? 'Court', subtitle: 'Court details' });
+  if (o.courtId && window && o.startAt) related.push({ href: routes.courtCalendar(o.courtId, facilityWallClock(o.startAt, f.timeZone).date), icon: CalendarBlank, title: window, subtitle: 'Open this day in the calendar' });
+  if (o.bookingId) related.push({ href: routes.booking(o.bookingId), icon: CalendarBlank, title: `Booking ${o.bookingReference ?? ''}`.trim(), subtitle: 'Booking details' });
+  if (o.customerId) related.push({ href: routes.customer(o.customerId), icon: User, title: o.customerName ?? 'Customer', subtitle: 'Customer profile' });
 
   return (
     <>
-      <Card>
-        <div className="flex items-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft text-accent">
-            <Icon size={22} aria-hidden />
-          </span>
-          <AppText variant="nav-link" tone="muted" className="flex-1">
-            {type.label}
-          </AppText>
-          <StatusBadge label={status.label} tone={status.tone} />
-        </div>
-        <AppText as="h2" variant="display-lg" className="mt-4 mb-2">
-          {o.title}
-        </AppText>
-        {o.description && <AppText tone="muted">{o.description}</AppText>}
-        <AppText variant="body-sm" tone="subtle" className="mt-3">
-          Found {formatDayAndTime(o.createdAt, f.timeZone, f.today())}
-        </AppText>
-      </Card>
-
-      {o.potentialRevenue ? (
-        <Card tint="accent">
-          <AppText variant="nav-link" tone="muted">
-            Revenue at stake
-          </AppText>
-          <AppText variant="display-lg" numeric aria-label={f.moneyA11y(o.potentialRevenue)}>
-            {f.money(o.potentialRevenue)}
-          </AppText>
-          <AppText variant="body-sm" tone="muted">
-            SportVenue’s estimate for the next 4 weeks if acted on.
-          </AppText>
-        </Card>
-      ) : null}
-
-      {suggestion && (
-        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-4">
-          <div className="flex items-center gap-2">
-            <Lightbulb size={18} weight="fill" className="text-accent" aria-hidden />
-            <AppText variant="body-strong" className="flex-1">
-              Recommended action
-            </AppText>
-          </div>
-          <AppText>{suggestion.replace(/^Suggested: /, '').replace(/^./, (c) => c.toUpperCase())}.</AppText>
-          {action?.window && (
-            <AppText variant="body-sm" tone="muted">
-              Applies {action.window.weekdays.length === 5 ? 'on weekdays' : 'on selected days'}, {formatClock(action.window.startTime)} - {formatClock(action.window.endTime)}.
-            </AppText>
-          )}
-          {apply && (
-            <div className="mt-2">
-              <Button label={apply.label} icon={apply.icon} onPress={apply.run} loading={action?.type === 'REMIND' && remind.isPending} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {(o.courtId || o.bookingId || o.customerId) && (
-        <ListGroup title="Related">
-          {o.courtId && <ListRow icon={CourtBasketball} title={o.courtName ?? 'Court'} subtitle="Court details" onPress={() => router.push(routes.court(o.courtId!))} />}
-          {o.courtId && window && o.startAt && (
-            <ListRow icon={CalendarBlank} title={window} subtitle="Open this day in the calendar" onPress={() => router.push(routes.courtCalendar(o.courtId!, facilityWallClock(o.startAt!, f.timeZone).date))} />
-          )}
-          {o.bookingId && <ListRow icon={CalendarBlank} title={`Booking ${o.bookingReference ?? ''}`.trim()} subtitle="Booking details" onPress={() => router.push(routes.booking(o.bookingId!))} />}
-          {o.customerId && <ListRow icon={User} title={o.customerName ?? 'Customer'} subtitle="Customer profile" onPress={() => router.push(routes.customer(o.customerId!))} />}
-        </ListGroup>
-      )}
+      <PageHeader
+        breadcrumbs={[{ label: 'Opportunities', href: routes.opportunities }, { label: type.label }]}
+        title={o.title}
+        meta={<StatusBadge label={status.label} tone={status.tone} />}
+        description={`${type.label} · Found ${formatDayAndTime(o.createdAt, f.timeZone, f.today())}`}
+        actions={
+          closed ? (
+            <Button label="Reopen" icon={ArrowCounterClockwise} variant="secondary" onPress={() => transition.mutate({ action: 'reopen' })} />
+          ) : (
+            <>
+              {o.status === 'OPEN' && <Button label="Start working on it" icon={PlayCircle} variant="secondary" onPress={() => transition.mutate({ action: 'start' })} />}
+              <Button label="Dismiss" icon={XCircle} variant="secondary" onPress={() => setDialog('dismiss')} />
+              <Button label="Mark as resolved" icon={CheckCircle} onPress={() => setDialog('resolve')} />
+            </>
+          )
+        }
+      />
 
       {o.resolution && (
         <Notice
@@ -183,12 +125,78 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
         />
       )}
 
-      <ListGroup title="Status">
-        {o.status === 'OPEN' && <ListRow icon={PlayCircle} title="Start working on it" subtitle="Shows the team someone is on it" onPress={() => transition.mutate({ action: 'start' })} />}
-        {!closed && <ListRow icon={CheckCircle} title="Mark as resolved" onPress={() => setDialog('resolve')} />}
-        {!closed && <ListRow icon={XCircle} title="Dismiss" subtitle="Not relevant or not worth doing" onPress={() => setDialog('dismiss')} />}
-        {closed && <ListRow icon={ArrowCounterClockwise} title="Reopen" onPress={() => transition.mutate({ action: 'reopen' })} />}
-      </ListGroup>
+      <DetailLayout
+        main={
+          <>
+            {o.description && (
+              <Card padded={false}>
+                <CardHeader title="What we found" />
+                <AppText as="p" className="p-5">
+                  {o.description}
+                </AppText>
+              </Card>
+            )}
+            {suggestion && (
+              <Card padded={false}>
+                <CardHeader title="Recommended action" />
+                <div className="flex flex-col gap-3 p-5">
+                  <div className="flex items-start gap-2">
+                    <Lightbulb size={18} weight="fill" className="mt-0.5 shrink-0 text-accent" aria-hidden />
+                    <AppText variant="text-strong">{suggestion.replace(/^Suggested: /, '').replace(/^./, (c) => c.toUpperCase())}.</AppText>
+                  </div>
+                  {action?.window && (
+                    <AppText variant="small" tone="muted">
+                      Applies {action.window.weekdays.length === 5 ? 'on weekdays' : 'on selected days'}, {formatClock(action.window.startTime)} - {formatClock(action.window.endTime)}.
+                    </AppText>
+                  )}
+                  {apply && (
+                    <div>
+                      <Button label={apply.label} icon={apply.icon} onPress={apply.run} loading={action?.type === 'REMIND' && remind.isPending} />
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+          </>
+        }
+        side={
+          <>
+            {o.potentialRevenue ? (
+              <Card tint="accent" className="flex flex-col gap-1">
+                <AppText variant="label" tone="muted">
+                  Revenue at stake
+                </AppText>
+                <AppText variant="stat" numeric aria-label={f.moneyA11y(o.potentialRevenue)}>
+                  {f.money(o.potentialRevenue)}
+                </AppText>
+                <AppText variant="small" tone="muted">
+                  SportVenue’s estimate for the next 4 weeks if acted on.
+                </AppText>
+              </Card>
+            ) : null}
+            {related.length > 0 && (
+              <Card padded={false}>
+                <CardHeader title="Related" />
+                <ul className="flex flex-col p-2">
+                  {related.map((r) => (
+                    <li key={`${r.href}${r.subtitle}`}>
+                      <Link href={r.href} className="flex items-start gap-3 rounded-control px-3 py-2.5 hover:bg-surface-muted">
+                        <r.icon size={17} className="mt-0.5 text-text-muted" aria-hidden />
+                        <span className="flex flex-col">
+                          <AppText variant="text-strong">{r.title}</AppText>
+                          <AppText variant="small" tone="muted">
+                            {r.subtitle}
+                          </AppText>
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
+          </>
+        }
+      />
 
       <ConfirmDialog
         visible={dialog !== null}
@@ -221,6 +229,7 @@ function Body({ opportunity: o }: { opportunity: Opportunity }) {
           label={dialog === 'resolve' ? 'What did you do?' : 'Reason'}
           optional={dialog === 'resolve'}
           multiline
+          rows={3}
           value={note}
           onChangeText={(t) => {
             setNote(t);

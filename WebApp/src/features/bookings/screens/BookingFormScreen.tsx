@@ -16,12 +16,10 @@ import { useQueryParams } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
+import { Card, CardHeader } from '@/ui/Card';
 import { EmptyState } from '@/ui/EmptyState';
-import { TextField } from '@/ui/Fields';
-import { Screen } from '@/ui/Screen';
-import { SectionHeader } from '@/ui/SectionHeader';
-import { SelectField } from '@/ui/Select';
-import { StackHeader } from '@/ui/StackHeader';
+import { SelectField, TextField } from '@/ui/Fields';
+import { Page, PageHeader } from '@/ui/Page';
 
 import { useBookingQuote, useCreateBooking } from '../api';
 import { CustomerPicker } from '../components/CustomerPicker';
@@ -31,6 +29,7 @@ import { SlotPicker, type SlotValue } from '../components/SlotPicker';
 type Values = { customerId?: string; slot: SlotValue; discountId?: string; notes: string };
 
 const DRAFT_KEY = 'booking-new';
+const CRUMBS = [{ label: 'Bookings', href: routes.bookings }, { label: 'New booking' }];
 
 export function BookingFormScreen() {
   const params = useQueryParams('courtId', 'date', 'startAt', 'customerId');
@@ -106,63 +105,82 @@ export function BookingFormScreen() {
   if (courts.isSuccess && !courts.data.some((c) => c.status === 'ACTIVE')) {
     const none = courts.data.length === 0;
     return (
-      <>
-        <StackHeader title="New booking" />
-        <Screen>
+      <Page width="form">
+        <PageHeader breadcrumbs={CRUMBS} title="New booking" />
+        <Card>
           <EmptyState
             icon={CourtBasketball}
             title={none ? 'Add a court first' : 'No courts are taking bookings'}
             message={none ? 'Bookings are made on a court. Add one, then come back to book.' : 'Set a court to active to take bookings on it.'}
             action={<Button label={none ? 'Add court' : 'View courts'} icon={none ? Plus : undefined} onPress={() => router.push(none ? routes.courtNew : routes.courts)} />}
           />
-        </Screen>
-      </>
+        </Card>
+      </Page>
     );
   }
 
   return (
-    <>
-      <StackHeader title="New booking" />
-      <Screen footer={<Button label="Create booking" block onPress={submit} loading={saving} />}>
-        <CustomerPicker
-          value={form.values.customerId}
-          onChange={(id) => form.set('customerId', id)}
-          error={form.errors.customerId}
-          onCreateNew={() => {
-            formDraft.put(DRAFT_KEY, form.values);
-            router.push(routes.customerNew({ returnTo: 'booking' }));
-          }}
-        />
-
-        <section>
-          <SectionHeader title="Court and time" />
-          <SlotPicker value={slot} onChange={(s) => form.set('slot', s)} courtError={form.errors.courtId} slotError={form.errors.startAt} />
-        </section>
-
-        <SelectField
-          label="Discount"
-          optional
-          value={discountId ?? ''}
-          placeholder="No discount"
-          options={[{ value: '', label: 'No discount' }, ...activeDiscounts.map((d) => ({ value: d.id, label: d.name, description: d.code ? `Code ${d.code}` : undefined }))]}
-          onChange={(v) => form.set('discountId', v || undefined)}
-          helper={discountMissed ? "This discount doesn't apply to the chosen court or time." : undefined}
-          error={form.errors.discountId}
-        />
-
-        <TextField
-          label="Notes"
-          optional
-          multiline
-          value={form.values.notes}
-          onChangeText={(t) => form.set('notes', t)}
-          error={form.errors.notes}
-          placeholder="For example: bring extra rackets"
-          maxLength={500}
-        />
-
-        <QuoteSummary quote={quote.data} loading={quote.isFetching} error={quote.isError} />
-      </Screen>
-    </>
+    <Page width="wide">
+      <PageHeader breadcrumbs={CRUMBS} title="New booking" description="Choose the customer and an open slot. The price is calculated by the server." />
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <Card padded={false}>
+            <CardHeader title="Customer" />
+            <div className="p-5">
+              <CustomerPicker
+                value={form.values.customerId}
+                onChange={(id) => form.set('customerId', id)}
+                error={form.errors.customerId}
+                onCreateNew={() => {
+                  formDraft.put(DRAFT_KEY, form.values);
+                  router.push(routes.customerNew({ returnTo: 'booking' }));
+                }}
+              />
+            </div>
+          </Card>
+          <Card padded={false}>
+            <CardHeader title="Court and time" />
+            <div className="p-5">
+              <SlotPicker value={slot} onChange={(s) => form.set('slot', s)} courtError={form.errors.courtId} slotError={form.errors.startAt} />
+            </div>
+          </Card>
+          <Card padded={false}>
+            <CardHeader title="Discount and notes" />
+            <div className="flex flex-col gap-5 p-5">
+              <SelectField
+                label="Discount"
+                optional
+                value={discountId ?? ''}
+                options={[{ value: '', label: 'No discount' }, ...activeDiscounts.map((d) => ({ value: d.id, label: d.name, description: d.code ? `Code ${d.code}` : undefined }))]}
+                onChange={(v) => form.set('discountId', v || undefined)}
+                helper={discountMissed ? "This discount doesn't apply to the chosen court or time." : undefined}
+                error={form.errors.discountId}
+              />
+              <TextField
+                label="Notes"
+                optional
+                multiline
+                rows={3}
+                value={form.values.notes}
+                onChangeText={(t) => form.set('notes', t)}
+                error={form.errors.notes}
+                placeholder="For example: bring extra rackets"
+                maxLength={500}
+              />
+            </div>
+          </Card>
+        </div>
+        <aside className="lg:sticky lg:top-20">
+          <Card padded={false}>
+            <CardHeader title="Price" />
+            <div className="flex flex-col gap-4 p-5">
+              <QuoteSummary quote={quote.data} loading={quote.isFetching} error={quote.isError} />
+              <Button label="Create booking" size="lg" block onPress={submit} loading={saving} />
+              <Button label="Cancel" variant="ghost" block onPress={() => router.back(routes.bookings)} />
+            </div>
+          </Card>
+        </aside>
+      </div>
+    </Page>
   );
 }

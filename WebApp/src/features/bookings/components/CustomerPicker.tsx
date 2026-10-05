@@ -7,10 +7,13 @@ import { useCustomer, useCustomers } from '@/features/customers/api';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
-import { BottomSheet } from '@/ui/BottomSheet';
-import { PickerField } from '@/ui/Fields';
+import { Button } from '@/ui/Button';
+import { cn } from '@/ui/cn';
+import { Modal } from '@/ui/Dialogs';
+import { FieldShell } from '@/ui/Fields';
 import { SearchBar } from '@/ui/SearchBar';
 import { Spinner } from '@/ui/Spinner';
+import { StatusBadge } from '@/ui/StatusBadge';
 
 type CustomerPickerProps = {
   value: string | undefined;
@@ -21,7 +24,7 @@ type CustomerPickerProps = {
   onCreateNew?: () => void;
 };
 
-/** Search-as-you-type customer selector, with a shortcut to add someone new. */
+/** The chosen customer as a card, with a searchable dialog to choose or change, and a shortcut to add someone new. */
 export function CustomerPicker({ value, onChange, error, disabled, helper, onCreateNew }: CustomerPickerProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -42,47 +45,60 @@ export function CustomerPicker({ value, onChange, error, disabled, helper, onCre
     return () => observer.disconnect();
   }, [open, hasNextPage, isFetchingNextPage, fetchNextPage, items.length]);
 
+  const c = selected.data;
+
   return (
-    <>
-      <PickerField
-        label="Customer"
-        value={value ? (selected.data ? `${selected.data.name} · ${selected.data.phone}` : 'Loading...') : undefined}
-        placeholder="Choose a customer"
-        onPress={() => setOpen(true)}
-        error={error}
-        helper={helper}
-        disabled={disabled}
-        leading={value && selected.data ? <Avatar name={selected.data.name} size={28} /> : undefined}
-      />
-      <BottomSheet visible={open} title="Choose a customer" onClose={() => setOpen(false)}>
-        <div className="mb-2">
-          <SearchBar value={query} onChange={setQuery} placeholder="Search by name or phone" autoFocus />
-        </div>
-        {onCreateNew && (
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              onCreateNew();
-            }}
-            className="flex min-h-[52px] w-full items-center gap-3 rounded-control p-2 text-left transition-colors hover:bg-surface-muted"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-accent-soft text-accent">
-              <UserPlus size={18} aria-hidden />
-            </span>
-            <AppText variant="body-strong" tone="accent">
-              Add a new customer
-            </AppText>
-          </button>
+    <FieldShell label="Customer" error={error} helper={helper}>
+      <div className={cn('flex items-center gap-3 rounded-control border bg-surface px-3 py-2.5', error ? 'border-danger' : 'border-border-strong', disabled && 'opacity-60')}>
+        {value && c ? (
+          <>
+            <Avatar name={c.name} size={36} />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <AppText variant="text-strong" lines={1}>
+                {c.name}
+              </AppText>
+              <AppText variant="small" tone="muted" lines={1}>
+                {c.phone}
+                {c.email ? ` · ${c.email}` : ''}
+              </AppText>
+            </div>
+            {c.isRegular && <StatusBadge label="Regular" tone="positive" />}
+          </>
+        ) : (
+          <AppText variant="text" tone="subtle" className="flex-1 py-2">
+            {value ? 'Loading...' : 'No customer chosen'}
+          </AppText>
         )}
-        <div role="radiogroup" aria-label="Customers" className="flex max-h-[380px] flex-col overflow-y-auto">
+        <Button label={value ? 'Change' : 'Choose customer'} aria-label={`Customer: ${c ? `${c.name} · ${c.phone}` : 'not set'}. ${value ? 'Change' : 'Choose'}`} variant="secondary" size="sm" disabled={disabled} onPress={() => setOpen(true)} />
+      </div>
+
+      <Modal
+        visible={open}
+        title="Choose a customer"
+        onClose={() => setOpen(false)}
+        footer={
+          onCreateNew && (
+            <Button
+              label="Add a new customer"
+              icon={UserPlus}
+              variant="secondary"
+              onPress={() => {
+                setOpen(false);
+                onCreateNew();
+              }}
+            />
+          )
+        }
+      >
+        <SearchBar value={query} onChange={setQuery} placeholder="Search by name or phone" autoFocus />
+        <div role="radiogroup" aria-label="Customers" className="-mx-2 flex max-h-[380px] flex-col overflow-y-auto">
           {items.length === 0 ? (
             list.isPending ? (
               <div className="flex justify-center p-4 text-accent">
                 <Spinner label="Loading customers" />
               </div>
             ) : (
-              <AppText tone="muted" className="p-4 text-center">
+              <AppText variant="small" tone="muted" className="p-4 text-center">
                 {debounced ? `No customers match "${debounced}".` : 'No active customers yet.'}
               </AppText>
             )
@@ -100,26 +116,26 @@ export function CustomerPicker({ value, onChange, error, disabled, helper, onCre
                     onChange(item.id);
                     setOpen(false);
                   }}
-                  className="flex min-h-[52px] w-full items-center gap-3 rounded-control p-2 text-left transition-colors hover:bg-surface-muted"
+                  className={cn('flex w-full items-center gap-3 rounded-control px-2 py-2 text-left transition-colors hover:bg-surface-muted', on && 'bg-surface-muted')}
                 >
-                  <Avatar name={item.name} size={36} />
+                  <Avatar name={item.name} size={32} />
                   <span className="flex min-w-0 flex-1 flex-col">
-                    <AppText variant="body-strong" lines={1}>
+                    <AppText variant="text-strong" lines={1}>
                       {item.name}
                     </AppText>
-                    <AppText variant="body-sm" tone="muted" lines={1}>
+                    <AppText variant="small" tone="muted" lines={1}>
                       {item.phone}
                       {item.isRegular ? ' · Regular' : ''}
                     </AppText>
                   </span>
-                  {on && <Check size={18} weight="bold" className="shrink-0 text-accent" />}
+                  {on && <Check size={16} weight="bold" className="shrink-0 text-accent" />}
                 </button>
               );
             })
           )}
           <div ref={sentinel} aria-hidden className="h-px shrink-0" />
         </div>
-      </BottomSheet>
-    </>
+      </Modal>
+    </FieldShell>
   );
 }

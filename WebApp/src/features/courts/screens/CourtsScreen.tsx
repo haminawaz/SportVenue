@@ -1,29 +1,44 @@
 'use client';
 
 import { useState } from 'react';
-import { CaretRight, CourtBasketball, Plus, Tag } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { CalendarBlank, CourtBasketball, Plus, Tag } from '@phosphor-icons/react';
 
 import { COURT_STATUS } from '@/domain/labels';
 import type { CourtStatus, CourtSummary } from '@/domain/types';
 import { useFormat } from '@/lib/format';
 import { routes } from '@/navigation/routes';
-import { useAppRouter } from '@/navigation/useAppRouter';
+import { notePush, useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
-import { Chip, ChipRow } from '@/ui/Chips';
+import { Card } from '@/ui/Card';
 import { cn } from '@/ui/cn';
 import { EmptyState } from '@/ui/EmptyState';
-import { IconButton } from '@/ui/IconButton';
-import { ListGroup, ListRow } from '@/ui/List';
+import { Page, PageHeader } from '@/ui/Page';
 import { ProgressBar } from '@/ui/ProgressBar';
-import { Screen } from '@/ui/Screen';
-import { StackHeader } from '@/ui/StackHeader';
-import { DetailSkeleton, QueryView } from '@/ui/States';
+import { QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
+import { Skeleton } from '@/ui/Skeleton';
+import { Tabs } from '@/ui/Tabs';
 
 import { useCourts } from '../api';
 
 type Filter = 'ALL' | CourtStatus;
+
+function GridSkeleton() {
+  return (
+    <div role="progressbar" aria-label="Loading" aria-busy className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="surface-card flex flex-col gap-3 p-5">
+          <Skeleton width="50%" height={18} />
+          <Skeleton width="35%" height={12} />
+          <Skeleton height={8} />
+          <Skeleton width="60%" height={12} />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function CourtsScreen() {
   const router = useAppRouter();
@@ -31,59 +46,60 @@ export function CourtsScreen() {
   const [filter, setFilter] = useState<Filter>('ALL');
 
   return (
-    <>
-      {/* The pinned large title replaces the stack header here, to match the tab screens. */}
-      <StackHeader title="Courts" headerShown={false} />
-      <Screen
+    <Page onRefresh={() => query.refetch()}>
+      <PageHeader
         title="Courts"
-        onBack={() => router.back(routes.more)}
-        titleActions={<IconButton icon={Plus} label="Add court" onPress={() => router.push(routes.courtNew)} variant="solid" size="sm" />}
-        onRefresh={() => query.refetch()}
-      >
-        <QueryView query={query} skeleton={<DetailSkeleton />} errorTitle="Couldn't load courts">
-          {(courts) => {
-            const count = (s: Filter) => (s === 'ALL' ? courts.length : courts.filter((c) => c.status === s).length);
-            const shown = filter === 'ALL' ? courts : courts.filter((c) => c.status === filter);
-            if (courts.length === 0) {
-              return (
+        description="Your courts, how busy they are today, and their base rates."
+        actions={
+          <>
+            <Button label="Pricing and discounts" icon={Tag} variant="secondary" onPress={() => router.push(routes.pricing())} />
+            <Button label="Add court" icon={Plus} onPress={() => router.push(routes.courtNew)} />
+          </>
+        }
+      />
+      <QueryView query={query} skeleton={<GridSkeleton />} errorTitle="Couldn't load courts">
+        {(courts) => {
+          const count = (s: Filter) => (s === 'ALL' ? courts.length : courts.filter((c) => c.status === s).length);
+          const shown = filter === 'ALL' ? courts : courts.filter((c) => c.status === filter);
+          if (courts.length === 0) {
+            return (
+              <Card>
                 <EmptyState
                   icon={CourtBasketball}
                   title="Add your first court"
                   message="Courts are what customers book. Add one to start taking bookings."
                   action={<Button label="Add court" icon={Plus} onPress={() => router.push(routes.courtNew)} />}
                 />
-              );
-            }
-            return (
-              <div className="flex flex-col gap-3">
-                <ListGroup>
-                  <ListRow icon={Tag} title="Pricing and discounts" subtitle="Peak rates and offers across all courts" onPress={() => router.push(routes.pricing())} />
-                </ListGroup>
-                <ChipRow>
-                  {(['ALL', 'ACTIVE', 'MAINTENANCE', 'INACTIVE'] as Filter[]).map((s) => (
-                    <Chip key={s} label={s === 'ALL' ? 'All' : COURT_STATUS[s].label} count={count(s)} selected={filter === s} onPress={() => setFilter(s)} />
-                  ))}
-                </ChipRow>
-                {shown.length === 0 ? (
-                  <EmptyState compact icon={CourtBasketball} title={`No ${filter === 'ALL' ? '' : COURT_STATUS[filter as CourtStatus].label.toLowerCase()} courts`} />
-                ) : (
-                  shown.map((c) => <CourtCard key={c.id} court={c} onPress={() => router.push(routes.court(c.id))} onPricing={() => router.push(routes.pricing(c.id))} />)
-                )}
-              </div>
+              </Card>
             );
-          }}
-        </QueryView>
-      </Screen>
-    </>
+          }
+          return (
+            <div className="flex flex-col gap-5">
+              <Tabs
+                label="Court status"
+                value={filter}
+                onChange={setFilter}
+                items={(['ALL', 'ACTIVE', 'MAINTENANCE', 'INACTIVE'] as Filter[]).map((s) => ({ value: s, label: s === 'ALL' ? 'All' : COURT_STATUS[s].label, count: count(s) }))}
+              />
+              {shown.length === 0 ? (
+                <EmptyState framed icon={CourtBasketball} title={`No ${filter === 'ALL' ? '' : COURT_STATUS[filter as CourtStatus].label.toLowerCase()} courts`} />
+              ) : (
+                <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {shown.map((c) => (
+                    <CourtCard key={c.id} court={c} />
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        }}
+      </QueryView>
+    </Page>
   );
 }
 
-/**
- * A court with its pricing attached: the body opens the court, the footer
- * opens that court's rates and discounts. Two sibling buttons (not nested)
- * so keyboard and screen-reader users can reach both.
- */
-function CourtCard({ court: c, onPress, onPricing }: { court: CourtSummary; onPress: () => void; onPricing: () => void }) {
+/** A court with today's utilization; the card opens the court, the footer links open its calendar and pricing. */
+function CourtCard({ court: c }: { court: CourtSummary }) {
   const f = useFormat();
   const status = COURT_STATUS[c.status];
   const active = c.status === 'ACTIVE';
@@ -92,60 +108,68 @@ function CourtCard({ court: c, onPress, onPricing }: { court: CourtSummary; onPr
     .join(', ');
 
   return (
-    <div className="surface-card overflow-hidden">
-      <button type="button" aria-label={a11y} title="Opens court details" onClick={onPress} className="block w-full p-5 text-left transition-colors hover:bg-surface-muted/60 active:bg-surface-muted">
-        <span className="flex items-center gap-3">
-          <span className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-full', active ? 'bg-accent-soft text-accent' : 'bg-surface-muted text-text-muted')}>
-            <CourtBasketball size={22} aria-hidden />
+    <li className="surface-card group relative flex flex-col transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-[0_4px_12px_rgba(42,33,23,0.06)]">
+      <div className="flex flex-col gap-4 p-5">
+        <div className="flex items-start gap-3">
+          <span className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-control', active ? 'bg-accent-soft text-accent' : 'bg-surface-muted text-text-muted')}>
+            <CourtBasketball size={20} aria-hidden />
           </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <AppText variant="title-md" lines={2}>
-              {c.name}
-            </AppText>
-            <AppText variant="body-sm" tone="muted" lines={1}>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Link href={routes.court(c.id)} onClick={notePush} aria-label={a11y} className="outline-none after:absolute after:inset-0 after:rounded-card after:content-[''] focus-visible:after:outline-2 focus-visible:after:outline-accent">
+              <AppText variant="heading" lines={1}>
+                {c.name}
+              </AppText>
+            </Link>
+            <AppText variant="small" tone="muted" lines={1}>
               {c.sport} · {c.indoor ? 'Indoor' : 'Outdoor'}
+              {c.surface ? ` · ${c.surface}` : ''}
             </AppText>
-          </span>
+          </div>
           <StatusBadge label={status.label} tone={status.tone} />
-        </span>
+        </div>
         {active ? (
-          <span className="mt-4 flex flex-col gap-2">
-            <span className="flex items-center">
-              <AppText variant="body-sm" tone="muted" className="flex-1">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-baseline justify-between">
+              <AppText variant="small" tone="muted">
                 Today: {c.todayBookedSlots} of {c.todayTotalSlots} slots
               </AppText>
-              <AppText variant="body-strong" numeric>
+              <AppText variant="text-strong" numeric>
                 {Math.round(c.todayUtilization)}%
               </AppText>
-            </span>
+            </div>
             <ProgressBar value={c.todayUtilization} />
-          </span>
+          </div>
         ) : (
-          <AppText variant="body-sm" tone="muted" className="mt-4">
+          <AppText variant="small" tone="muted">
             {status.description}
           </AppText>
         )}
-      </button>
-      <button
-        type="button"
-        aria-label={`Pricing for ${c.name}, base rate ${f.moneyA11y(c.hourlyRate)} per hour`}
-        title="Opens rates and discounts for this court"
-        onClick={onPricing}
-        className="flex min-h-14 w-full items-center gap-2.5 border-t border-border px-5 text-left transition-colors hover:bg-surface-muted/60 active:bg-surface-muted"
-      >
-        <Tag size={20} weight="bold" className="shrink-0 text-accent" aria-hidden />
-        <AppText variant="body-strong" numeric className="flex-1">
-          {f.money(c.hourlyRate)}
-          <AppText inline variant="body-sm" tone="muted">
-            {' '}
-            / hour base
-          </AppText>
-        </AppText>
-        <AppText variant="nav-link" tone="accent">
+        <dl className="grid grid-cols-2 gap-3 border-t border-border pt-3">
+          <div>
+            <dt className="t-mini text-text-muted">Base rate</dt>
+            <dd className="t-text-strong tabular-nums">{f.money(c.hourlyRate)} / h</dd>
+          </div>
+          <div>
+            <dt className="t-mini text-text-muted">Upcoming</dt>
+            <dd className="t-text-strong tabular-nums">{c.upcomingBookings} bookings</dd>
+          </div>
+        </dl>
+      </div>
+      <div className="relative z-10 mt-auto flex border-t border-border">
+        <Link href={routes.courtCalendar(c.id)} onClick={notePush} className="t-label flex h-10 flex-1 items-center justify-center gap-1.5 text-text-muted hover:bg-surface-muted hover:text-text">
+          <CalendarBlank size={15} aria-hidden />
+          Calendar
+        </Link>
+        <Link
+          href={routes.pricing(c.id)}
+          onClick={notePush}
+          aria-label={`Pricing for ${c.name}, base rate ${f.moneyA11y(c.hourlyRate)} per hour`}
+          className="t-label flex h-10 flex-1 items-center justify-center gap-1.5 border-l border-border text-text-muted hover:bg-surface-muted hover:text-text"
+        >
+          <Tag size={15} aria-hidden />
           Pricing
-        </AppText>
-        <CaretRight size={16} weight="bold" className="text-accent" aria-hidden />
-      </button>
-    </div>
+        </Link>
+      </div>
+    </li>
   );
 }

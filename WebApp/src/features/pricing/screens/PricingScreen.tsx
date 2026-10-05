@@ -12,12 +12,11 @@ import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
-import { Chip, ChipRow } from '@/ui/Chips';
+import { Card, CardHeader } from '@/ui/Card';
+import { DataTable } from '@/ui/DataTable';
 import { EmptyState } from '@/ui/EmptyState';
-import { ListGroup, ListRow, SummaryRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { SectionHeader } from '@/ui/SectionHeader';
-import { StackHeader } from '@/ui/StackHeader';
+import { FilterSelect } from '@/ui/Menu';
+import { Page, PageHeader } from '@/ui/Page';
 import { ListSkeleton } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
 
@@ -31,134 +30,131 @@ export function PricingScreen() {
   const params = useQueryParams('courtId');
   const router = useAppRouter();
   const f = useFormat();
-  const [courtId, setCourtId] = useState<string | undefined>(params.courtId);
+  const [courtId, setCourtId] = useState<string>(params.courtId ?? '');
   const courts = useCourts();
-  const rules = usePricingRules(courtId);
+  const rules = usePricingRules(courtId || undefined);
   const discounts = useDiscounts();
 
   const courtList = (courts.data ?? []).filter((c) => !courtId || c.id === courtId);
   const shownDiscounts = (discounts.data ?? []).filter((d) => !courtId || d.courtIds.length === 0 || d.courtIds.includes(courtId));
-  const addButton = (label: string, onPress: () => void) => <ListRow title={label} icon={Plus} onPress={onPress} />;
   const selectedCourt = courts.data?.find((c) => c.id === courtId);
   // Rates and discounts apply to courts, so a new facility sees only the first step: add a court.
   const noCourts = courts.isSuccess && courts.data.length === 0;
+  const courtParam = courtId || undefined;
 
   return (
-    <>
-      <StackHeader title={selectedCourt ? `${selectedCourt.name} pricing` : 'Pricing'} />
-      <Screen onRefresh={() => Promise.all([courts.refetch(), rules.refetch(), discounts.refetch()])}>
-        <AppText as="p" tone="muted">
-          Customers pay the base rate unless a time-based rate applies. Discounts come off the result.
-        </AppText>
-
-        <ChipRow>
-          <Chip label="All courts" selected={!courtId} onPress={() => setCourtId(undefined)} />
-          {(courts.data ?? []).map((c) => (
-            <Chip key={c.id} label={c.name} selected={courtId === c.id} onPress={() => setCourtId(c.id)} />
-          ))}
-        </ChipRow>
-
-        <section>
-          <SectionHeader title="Base rates" />
-          {courts.isPending ? (
-            <ListSkeleton rows={3} withAvatar={false} />
-          ) : courtList.length === 0 ? (
-            <EmptyState
-              compact
-              icon={CourtBasketball}
-              title="No courts yet"
-              message="Each court has a base rate. Add a court to set its price."
-              action={<Button size="sm" variant="secondary" label="Add court" icon={Plus} onPress={() => router.push(routes.courtNew)} />}
-            />
-          ) : (
-            <ListGroup>
-              {courtList.map((c) => (
-                <SummaryRow
-                  key={c.id}
-                  title={c.name}
-                  value={`${f.money(c.hourlyRate)} / h`}
-                  meta={c.sport}
-                  tag={c.status !== 'ACTIVE' ? <StatusBadge label={COURT_STATUS[c.status].label} tone={COURT_STATUS[c.status].tone} /> : undefined}
-                  label={`${c.name}, ${c.sport}, base rate ${f.moneyA11y(c.hourlyRate)} per hour${c.status === 'ACTIVE' ? '' : `, ${COURT_STATUS[c.status].label}`}`}
-                  hint="Opens the court to change its base rate"
-                  onPress={() => router.push(routes.courtEdit(c.id))}
-                />
-              ))}
-            </ListGroup>
-          )}
-        </section>
-
-        {noCourts ? null : (
+    <Page onRefresh={() => Promise.all([courts.refetch(), rules.refetch(), discounts.refetch()])}>
+      <PageHeader
+        title={selectedCourt ? `${selectedCourt.name} pricing` : 'Pricing'}
+        description="Customers pay the base rate unless a time-based rate applies. Discounts come off the result."
+        actions={
           <>
-            <section>
-              <SectionHeader title="Time-based rates" count={rules.data?.length} />
-              {rules.isPending ? (
-                <ListSkeleton rows={3} withAvatar={false} />
-              ) : (rules.data ?? []).length === 0 ? (
-                <EmptyState
-                  compact
-                  icon={Tag}
-                  title="No time-based rates"
-                  message="Charge more at peak times or less when courts are quiet."
-                  action={<Button size="sm" variant="secondary" label="Add a rate" icon={Plus} onPress={() => router.push(routes.pricingRuleNew({ courtId }))} />}
-                />
-              ) : (
-                <ListGroup>
-                  {(rules.data ?? []).map((r) => (
-                    <SummaryRow
-                      key={r.id}
-                      title={r.name}
-                      value={`${f.money(r.hourlyRate)} / h`}
-                      meta={`${formatWeekdays(r.weekdays)}, ${formatClock(r.startTime)} - ${formatClock(r.endTime)}`}
-                      tag={!r.active ? <StatusBadge label="Off" tone="neutral" /> : !courtId ? <StatusBadge label={r.courtName ?? 'All courts'} tone="neutral" /> : undefined}
-                      label={[r.name, r.courtName ?? 'All courts', formatWeekdays(r.weekdays), `${formatClock(r.startTime)} to ${formatClock(r.endTime)}`, `${f.moneyA11y(r.hourlyRate)} per hour`, r.active ? undefined : 'off']
-                        .filter(Boolean)
-                        .join(', ')}
-                      hint="Opens this rate"
-                      onPress={() => router.push(routes.pricingRule(r.id))}
-                    />
-                  ))}
-                  {addButton('Add a rate', () => router.push(routes.pricingRuleNew({ courtId })))}
-                </ListGroup>
-              )}
-            </section>
-
-            <section>
-              <SectionHeader title="Discounts" count={shownDiscounts.length} />
-              {discounts.isPending ? (
-                <ListSkeleton rows={3} withAvatar={false} />
-              ) : shownDiscounts.length === 0 ? (
-                <EmptyState
-                  compact
-                  icon={Percent}
-                  title="No discounts"
-                  message="Offer a percentage or fixed amount off, with or without a code."
-                  action={<Button size="sm" variant="secondary" label="Create a discount" icon={Plus} onPress={() => router.push(routes.discountNew({ courtId }))} />}
-                />
-              ) : (
-                <ListGroup>
-                  {shownDiscounts.map((d) => (
-                    <ListRow
-                      key={d.id}
-                      icon={Percent}
-                      title={d.name}
-                      subtitle={d.code ? `${discountValueLabel(d, f.money)} · Code ${d.code}` : discountValueLabel(d, f.money)}
-                      label={[d.name, discountValueLabel(d, f.money), d.code ? `code ${d.code}` : 'no code', `used ${d.usageCount} times`, d.active ? 'active' : 'off'].join(', ')}
-                      trailing={<StatusBadge label={d.active ? 'Active' : 'Off'} tone={d.active ? 'positive' : 'neutral'} />}
-                      onPress={() => router.push(routes.discount(d.id))}
-                    />
-                  ))}
-                  {addButton('Create a discount', () => router.push(routes.discountNew({ courtId })))}
-                </ListGroup>
-              )}
-            </section>
+            <FilterSelect label="Court" value={courtId} options={[{ value: '', label: 'All courts' }, ...(courts.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} onChange={setCourtId} active={!!courtId} />
+            <Button label="History" icon={ClockCounterClockwise} variant="secondary" onPress={() => router.push(routes.pricingHistory)} />
           </>
-        )}
+        }
+      />
 
-        <ListGroup>
-          <ListRow icon={ClockCounterClockwise} title="Pricing history" subtitle="Every rate and discount change" onPress={() => router.push(routes.pricingHistory)} />
-        </ListGroup>
-      </Screen>
-    </>
+      <Card padded={false} as="section">
+        <CardHeader title="Base rates" description="The hourly price of each court." />
+        {courts.isPending ? (
+          <ListSkeleton rows={3} />
+        ) : courtList.length === 0 ? (
+          <EmptyState
+            compact
+            icon={CourtBasketball}
+            title="No courts yet"
+            message="Each court has a base rate. Add a court to set its price."
+            action={<Button size="sm" variant="secondary" label="Add court" icon={Plus} onPress={() => router.push(routes.courtNew)} />}
+          />
+        ) : (
+          <DataTable
+            caption="Base rates"
+            rows={courtList}
+            rowKey={(c) => c.id}
+            rowHref={(c) => routes.courtEdit(c.id)}
+            rowLabel={(c) => `${c.name}, ${c.sport}, base rate ${f.moneyA11y(c.hourlyRate)} per hour${c.status === 'ACTIVE' ? '' : `, ${COURT_STATUS[c.status].label}`}. Edit`}
+            columns={[
+              { key: 'name', header: 'Court', primary: true, cell: (c) => <AppText variant="text-strong">{c.name}</AppText> },
+              { key: 'sport', header: 'Sport', hideBelow: 'sm', cell: (c) => <span className="text-text-muted">{c.sport}</span> },
+              { key: 'status', header: 'Status', hideBelow: 'md', cell: (c) => <StatusBadge label={COURT_STATUS[c.status].label} tone={COURT_STATUS[c.status].tone} /> },
+              { key: 'rate', header: 'Per hour', align: 'right', cell: (c) => <span className="t-text-strong">{f.money(c.hourlyRate)}</span> },
+            ]}
+          />
+        )}
+      </Card>
+
+      {noCourts ? null : (
+        <div className="grid items-start gap-6 xl:grid-cols-2">
+          <Card padded={false} as="section">
+            <CardHeader title="Time-based rates" count={rules.data?.length} description="Charge more at peak times or less when courts are quiet." actions={<Button label="Add a rate" icon={Plus} size="sm" variant="secondary" onPress={() => router.push(routes.pricingRuleNew({ courtId: courtParam }))} />} />
+            {rules.isPending ? (
+              <ListSkeleton rows={3} />
+            ) : (rules.data ?? []).length === 0 ? (
+              <EmptyState compact icon={Tag} title="No time-based rates" message="Charge more at peak times or less when courts are quiet." />
+            ) : (
+              <DataTable
+                caption="Time-based rates"
+                rows={rules.data ?? []}
+                rowKey={(r) => r.id}
+                rowHref={(r) => routes.pricingRule(r.id)}
+                rowLabel={(r) => [r.name, r.courtName ?? 'All courts', formatWeekdays(r.weekdays), `${formatClock(r.startTime)} to ${formatClock(r.endTime)}`, `${f.moneyA11y(r.hourlyRate)} per hour`, r.active ? undefined : 'off'].filter(Boolean).join(', ')}
+                columns={[
+                  {
+                    key: 'name',
+                    header: 'Rate',
+                    primary: true,
+                    cell: (r) => (
+                      <span className="flex flex-col">
+                        <AppText variant="text-strong">{r.name}</AppText>
+                        <AppText variant="small" tone="muted">{`${formatWeekdays(r.weekdays)}, ${formatClock(r.startTime)} - ${formatClock(r.endTime)}`}</AppText>
+                      </span>
+                    ),
+                  },
+                  { key: 'court', header: 'Court', hideBelow: 'sm', cell: (r) => <span className="text-text-muted">{r.courtName ?? 'All courts'}</span> },
+                  { key: 'status', header: 'Status', hideBelow: 'md', cell: (r) => (r.active ? <StatusBadge label="Active" tone="positive" /> : <StatusBadge label="Off" tone="neutral" />) },
+                  { key: 'rate', header: 'Per hour', align: 'right', cell: (r) => <span className="t-text-strong">{f.money(r.hourlyRate)}</span> },
+                ]}
+              />
+            )}
+          </Card>
+
+          <Card padded={false} as="section">
+            <CardHeader title="Discounts" count={shownDiscounts.length} description="A percentage or fixed amount off, with or without a code." actions={<Button label="Create a discount" icon={Plus} size="sm" variant="secondary" onPress={() => router.push(routes.discountNew({ courtId: courtParam }))} />} />
+            {discounts.isPending ? (
+              <ListSkeleton rows={3} />
+            ) : shownDiscounts.length === 0 ? (
+              <EmptyState compact icon={Percent} title="No discounts" message="Offer a percentage or fixed amount off, with or without a code." />
+            ) : (
+              <DataTable
+                caption="Discounts"
+                rows={shownDiscounts}
+                rowKey={(d) => d.id}
+                rowHref={(d) => routes.discount(d.id)}
+                rowLabel={(d) => [d.name, discountValueLabel(d, f.money), d.code ? `code ${d.code}` : 'no code', `used ${d.usageCount} times`, d.active ? 'active' : 'off'].join(', ')}
+                columns={[
+                  {
+                    key: 'name',
+                    header: 'Discount',
+                    primary: true,
+                    cell: (d) => (
+                      <span className="flex flex-col">
+                        <AppText variant="text-strong">{d.name}</AppText>
+                        <AppText variant="small" tone="muted">
+                          {discountValueLabel(d, f.money)}
+                        </AppText>
+                      </span>
+                    ),
+                  },
+                  { key: 'code', header: 'Code', hideBelow: 'sm', cell: (d) => (d.code ? <code className="t-mini rounded-[4px] bg-surface-muted px-1.5 py-0.5 font-semibold">{d.code}</code> : <span className="text-text-subtle">-</span>) },
+                  { key: 'uses', header: 'Used', align: 'right', hideBelow: 'md', cell: (d) => (d.maxUses ? `${d.usageCount} / ${d.maxUses}` : d.usageCount) },
+                  { key: 'status', header: 'Status', align: 'right', cell: (d) => <StatusBadge label={d.active ? 'Active' : 'Off'} tone={d.active ? 'positive' : 'neutral'} /> },
+                ]}
+              />
+            )}
+          </Card>
+        </div>
+      )}
+    </Page>
   );
 }

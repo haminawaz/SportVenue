@@ -1,20 +1,20 @@
 'use client';
 
-import { CreditCard, Receipt } from '@phosphor-icons/react';
+import { CreditCard } from '@phosphor-icons/react';
 
 import type { Subscription } from '@/domain/types';
 import { BarList } from '@/features/analytics/components/Charts';
 import { formatCalendarDate } from '@/lib/datetime';
 import { formatMoney } from '@/lib/money';
 import { AppText } from '@/ui/AppText';
-import { Card } from '@/ui/Card';
-import { ListGroup, ListRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { StackHeader } from '@/ui/StackHeader';
+import { Card, CardHeader } from '@/ui/Card';
+import { DataTable } from '@/ui/DataTable';
+import { EmptyState } from '@/ui/EmptyState';
 import { Notice, QueryView } from '@/ui/States';
 import { StatusBadge, type BadgeTone } from '@/ui/StatusBadge';
 
 import { useSubscription } from '../api';
+import { SettingsLayout } from '../components/SettingsLayout';
 
 const STATUS: Record<Subscription['status'], { label: string; tone: BadgeTone }> = {
   ACTIVE: { label: 'Active', tone: 'positive' },
@@ -26,65 +26,62 @@ const STATUS: Record<Subscription['status'], { label: string; tone: BadgeTone }>
 export function BillingScreen() {
   const query = useSubscription();
   return (
-    <>
-      <StackHeader title="Subscription" />
-      <Screen>
-        <QueryView query={query} errorTitle="Couldn't load your subscription">
-          {(s) => {
-            const status = STATUS[s.status];
-            const money = (n: number) => formatMoney(n, s.currency);
-            return (
-              <>
-                <Card tint="accent">
-                  <div className="mb-1 flex items-center">
-                    <AppText variant="nav-link" tone="muted" className="flex-1">
+    <SettingsLayout onRefresh={() => query.refetch()}>
+      <QueryView query={query} errorTitle="Couldn't load your subscription">
+        {(s) => {
+          const status = STATUS[s.status];
+          const money = (n: number) => formatMoney(n, s.currency);
+          return (
+            <>
+              {s.status === 'PAST_DUE' && <Notice tone="danger" title="Payment failed" message="Update your card to keep bookings running." />}
+              <div className="grid gap-6 md:grid-cols-2">
+                <Card tint="accent" className="flex flex-col gap-1">
+                  <div className="flex items-center">
+                    <AppText variant="label" tone="muted" className="flex-1">
                       Current plan
                     </AppText>
                     <StatusBadge label={status.label} tone={status.tone} />
                   </div>
-                  <AppText as="h2" variant="display-lg">
+                  <AppText as="h2" variant="page-title">
                     {s.plan}
                   </AppText>
-                  <AppText numeric>
+                  <AppText variant="small" numeric>
                     {money(s.price)} per {s.interval === 'MONTH' ? 'month' : 'year'} · renews {formatCalendarDate(s.renewsOn)}
                   </AppText>
                 </Card>
-                {s.status === 'PAST_DUE' && <Notice tone="danger" title="Payment failed" message="Update your card to keep bookings running." />}
-
-                <Card>
-                  <AppText variant="nav-link" tone="muted" className="mb-3">
+                <Card className="flex flex-col gap-3">
+                  <AppText variant="label" tone="muted">
                     Usage
                   </AppText>
                   <BarList max={1} data={[{ key: 'courts', label: 'Courts', value: s.courtsUsed / s.courtsLimit, valueLabel: `${s.courtsUsed} of ${s.courtsLimit}` }]} />
+                  <div className="flex items-center gap-2 border-t border-border pt-3">
+                    <CreditCard size={18} className="text-text-muted" aria-hidden />
+                    <AppText variant="small">{s.paymentMethod ? `${s.paymentMethod.brand} ending ${s.paymentMethod.last4} · Expires ${s.paymentMethod.expires}` : 'No card on file'}</AppText>
+                  </div>
                 </Card>
-
-                <ListGroup title="Payment method">
-                  {s.paymentMethod ? (
-                    <ListRow icon={CreditCard} title={`${s.paymentMethod.brand} ending ${s.paymentMethod.last4}`} subtitle={`Expires ${s.paymentMethod.expires}`} />
-                  ) : (
-                    <ListRow icon={CreditCard} title="No card on file" />
-                  )}
-                </ListGroup>
-
-                <ListGroup title="Invoices">
-                  {s.invoices.map((inv) => (
-                    <ListRow
-                      key={inv.id}
-                      icon={Receipt}
-                      title={formatCalendarDate(inv.date)}
-                      value={money(inv.amount)}
-                      valueTone="default"
-                      trailing={<StatusBadge label={inv.status === 'PAID' ? 'Paid' : inv.status === 'OPEN' ? 'Open' : 'Failed'} tone={inv.status === 'PAID' ? 'positive' : inv.status === 'OPEN' ? 'warning' : 'danger'} />}
-                    />
-                  ))}
-                </ListGroup>
-
-                <Notice message="Plan changes and card updates are made in the SportVenue web dashboard." />
-              </>
-            );
-          }}
-        </QueryView>
-      </Screen>
-    </>
+              </div>
+              <Card padded={false}>
+                <CardHeader title="Invoices" count={s.invoices.length} />
+                {s.invoices.length === 0 ? (
+                  <EmptyState compact icon={CreditCard} title="No invoices yet" />
+                ) : (
+                  <DataTable
+                    caption="Invoices"
+                    rows={s.invoices}
+                    rowKey={(i) => i.id}
+                    columns={[
+                      { key: 'date', header: 'Date', cell: (i) => formatCalendarDate(i.date) },
+                      { key: 'status', header: 'Status', cell: (i) => <StatusBadge label={i.status === 'PAID' ? 'Paid' : i.status === 'OPEN' ? 'Open' : 'Failed'} tone={i.status === 'PAID' ? 'positive' : i.status === 'OPEN' ? 'warning' : 'danger'} /> },
+                      { key: 'amount', header: 'Amount', align: 'right', cell: (i) => <span className="t-text-strong">{money(i.amount)}</span> },
+                    ]}
+                  />
+                )}
+              </Card>
+              <Notice message="Plan changes and card updates are made in the SportVenue web dashboard." />
+            </>
+          );
+        }}
+      </QueryView>
+    </SettingsLayout>
   );
 }

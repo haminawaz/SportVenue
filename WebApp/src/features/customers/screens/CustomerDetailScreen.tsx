@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ArrowCounterClockwise, CalendarCheck, CalendarPlus, CurrencyCircleDollar, Envelope, PencilSimple, Phone, Prohibit, Receipt, Repeat, Trash } from '@phosphor-icons/react';
+import Link from 'next/link';
 
+import { PAYMENT_METHOD } from '@/domain/labels';
 import type { CustomerDetail } from '@/domain/types';
 import { useBookings } from '@/features/bookings/api';
-import { BookingRow } from '@/features/bookings/components/BookingRow';
+import { bookingColumns, bookingRowLabel } from '@/features/bookings/components/bookingColumns';
 import { usePayments } from '@/features/payments/api';
-import { PaymentRow } from '@/features/payments/components/PaymentRow';
 import { formatDayAndTime } from '@/lib/datetime';
 import { formatClock, formatDuration, useFormat, WEEKDAY_LONG } from '@/lib/format';
 import { useRouteParam } from '@/navigation/params';
@@ -16,15 +17,15 @@ import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
+import { Card, CardHeader } from '@/ui/Card';
+import { DataTable } from '@/ui/DataTable';
 import { ConfirmDialog } from '@/ui/Dialogs';
+import { EmptyState } from '@/ui/EmptyState';
 import { TextField } from '@/ui/Fields';
 import { IconButton } from '@/ui/IconButton';
-import { ListGroup, ListRow } from '@/ui/List';
-import { MetricCard, MetricGrid } from '@/ui/MetricCard';
-import { Screen } from '@/ui/Screen';
-import { SectionHeader } from '@/ui/SectionHeader';
-import { StackHeader } from '@/ui/StackHeader';
+import { Menu } from '@/ui/Menu';
+import { DetailLayout, Page, PageHeader } from '@/ui/Page';
+import { StatCard, StatGrid } from '@/ui/StatCard';
 import { ListSkeleton, Notice, QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
 
@@ -32,18 +33,13 @@ import { useAddNote, useCustomer, useDeleteCustomer, useDeleteNote, useSetCustom
 
 export function CustomerDetailScreen() {
   const id = useRouteParam('id');
-  const router = useAppRouter();
   const query = useCustomer(id);
-
   return (
-    <>
-      <StackHeader title="Customer" headerRight={<IconButton icon={PencilSimple} label="Edit customer" size="sm" onPress={() => router.push(routes.customerEdit(id))} />} />
-      <Screen onRefresh={() => query.refetch()}>
-        <QueryView query={query} errorTitle="Couldn't load customer">
-          {(c) => <CustomerBody customer={c} />}
-        </QueryView>
-      </Screen>
-    </>
+    <Page onRefresh={() => query.refetch()}>
+      <QueryView query={query} errorTitle="Couldn't load customer">
+        {(c) => <CustomerBody customer={c} />}
+      </QueryView>
+    </Page>
   );
 }
 
@@ -59,169 +55,208 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
   const [note, setNote] = useState('');
   const [noteError, setNoteError] = useState<string>();
   const [dialog, setDialog] = useState<'deactivate' | 'delete' | { note: string } | null>(null);
-  const recent = bookings.data?.pages[0]?.items.slice(0, 4) ?? [];
-  const recentPayments = payments.data?.pages[0]?.items.slice(0, 4) ?? [];
+  const recent = bookings.data?.pages[0]?.items.slice(0, 5) ?? [];
+  const recentPayments = payments.data?.pages[0]?.items.slice(0, 5) ?? [];
   const inactive = c.status === 'INACTIVE';
   const tel = `tel:${c.phone.replace(/\s/g, '')}`;
+  const columns = useMemo(() => bookingColumns(f, { showCustomer: false }), [f]);
 
   return (
     <>
-      <Card>
-        <div className="flex items-center gap-4">
-          <Avatar name={c.name} size={60} tone="accent" />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <AppText as="h2" variant="display-lg">
-              {c.name}
-            </AppText>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              {c.isRegular && <StatusBadge label="Regular" tone="positive" />}
-              {inactive && <StatusBadge label="Inactive" tone="neutral" />}
-              <AppText variant="body-sm" tone="muted">
-                Customer since {c.createdAt.slice(0, 4)}
-              </AppText>
-            </div>
+      <PageHeader
+        breadcrumbs={[{ label: 'Customers', href: routes.customers }, { label: c.name }]}
+        leading={<Avatar name={c.name} size={56} tone="accent" />}
+        title={c.name}
+        meta={
+          <div className="flex gap-1.5">
+            {c.isRegular && <StatusBadge label="Regular" tone="positive" />}
+            {inactive && <StatusBadge label="Inactive" tone="neutral" />}
           </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <a
-            href={tel}
-            aria-label={`Call ${c.name}`}
-            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-control border-[1.5px] border-text bg-surface px-3 text-text transition-opacity hover:opacity-90 active:opacity-80"
-          >
-            <Phone size={16} weight="bold" aria-hidden />
-            <AppText variant="nav-link" className="text-current">
+        }
+        description={`Customer since ${c.createdAt.slice(0, 4)} · ${c.phone}`}
+        actions={
+          <>
+            <a href={tel} aria-label={`Call ${c.name}`} className="t-text-strong inline-flex h-9 items-center gap-2 rounded-control border border-border-strong bg-surface px-3.5 hover:bg-surface-muted">
+              <Phone size={16} weight="bold" aria-hidden />
               Call
-            </AppText>
-          </a>
-          {!inactive && <Button size="sm" label="New booking" icon={CalendarPlus} onPress={() => router.push(routes.bookingNew({ customerId: c.id }))} />}
-        </div>
-      </Card>
+            </a>
+            <Button label="Edit" icon={PencilSimple} variant="secondary" onPress={() => router.push(routes.customerEdit(c.id))} />
+            {!inactive && <Button label="New booking" icon={CalendarPlus} onPress={() => router.push(routes.bookingNew({ customerId: c.id }))} />}
+            <Menu
+              label="More customer actions"
+              actions={[
+                inactive
+                  ? { key: 'reactivate', label: 'Reactivate customer', icon: ArrowCounterClockwise, onSelect: () => setStatus.mutate('ACTIVE') }
+                  : { key: 'deactivate', label: 'Deactivate customer', description: 'Stop new bookings, keep history', icon: Prohibit, onSelect: () => setDialog('deactivate') },
+                { key: 'delete', label: 'Delete customer', icon: Trash, destructive: true, onSelect: () => setDialog('delete') },
+              ]}
+            />
+          </>
+        }
+      />
 
       {inactive && <Notice tone="warning" title="Inactive customer" message="They can't be booked until reactivated. Their history is kept." />}
 
-      <MetricGrid>
-        <MetricCard icon={CalendarCheck} label="Bookings" value={String(c.totalBookings)} supporting={c.cancellations || c.noShows ? `${c.cancellations} cancelled, ${c.noShows} no-show` : 'No cancellations'} />
-        <MetricCard icon={CurrencyCircleDollar} label="Total paid" value={f.tileMoney(c.totalSpent)} valueA11y={f.moneyA11y(c.totalSpent)} tint="accent" />
-        <MetricCard
-          span="full"
+      <StatGrid columns={3}>
+        <StatCard icon={CalendarCheck} label="Bookings" value={String(c.totalBookings)} supporting={c.cancellations || c.noShows ? `${c.cancellations} cancelled, ${c.noShows} no-show` : 'No cancellations'} />
+        <StatCard icon={CurrencyCircleDollar} label="Total paid" value={f.tileMoney(c.totalSpent)} valueA11y={f.moneyA11y(c.totalSpent)} />
+        <StatCard
           icon={Receipt}
           label="Outstanding balance"
           value={f.money(c.outstanding)}
           valueA11y={f.moneyA11y(c.outstanding)}
           tint={c.outstanding > 0 ? 'warning' : 'surface'}
-          supporting={c.outstanding > 0 ? 'Across unpaid bookings. See payments below.' : 'All paid up'}
+          supporting={c.outstanding > 0 ? 'Across unpaid bookings' : 'All paid up'}
         />
-      </MetricGrid>
+      </StatGrid>
 
-      <ListGroup title="Contact">
-        <ListRow title={c.phone} icon={Phone} href={tel} label={`Phone ${c.phone}. Call`} />
-        {c.email ? <ListRow title={c.email} icon={Envelope} href={`mailto:${c.email}`} label={`Email ${c.email}`} /> : <ListRow title="No email on file" icon={Envelope} />}
-      </ListGroup>
+      <DetailLayout
+        main={
+          <>
+            <Card padded={false}>
+              <CardHeader title="Recent bookings" actions={<Button label="All bookings" variant="ghost" size="sm" onPress={() => router.push(routes.customerBookings(c.id))} />} />
+              {bookings.isPending ? (
+                <ListSkeleton rows={3} />
+              ) : recent.length === 0 ? (
+                <EmptyState compact icon={CalendarCheck} title="No bookings yet" />
+              ) : (
+                <DataTable caption={`Recent bookings for ${c.name}`} rows={recent} columns={columns} rowKey={(b) => b.id} rowHref={(b) => routes.booking(b.id)} rowLabel={(b) => bookingRowLabel(f, b)} muted={(b) => b.status === 'CANCELLED'} dense />
+              )}
+            </Card>
+            <Card padded={false}>
+              <CardHeader title="Recent payments" actions={<Button label="All payments" variant="ghost" size="sm" onPress={() => router.push(routes.customerPayments(c.id))} />} />
+              {payments.isPending ? (
+                <ListSkeleton rows={3} />
+              ) : recentPayments.length === 0 ? (
+                <EmptyState compact icon={Receipt} title="No payments recorded" />
+              ) : (
+                <DataTable
+                  caption={`Recent payments from ${c.name}`}
+                  rows={recentPayments}
+                  rowKey={(p) => p.id}
+                  rowHref={(p) => routes.payment(p.id)}
+                  dense
+                  columns={[
+                    { key: 'when', header: 'Received', primary: true, cell: (p) => <span className="whitespace-nowrap">{formatDayAndTime(p.receivedAt, f.timeZone, f.today())}</span> },
+                    { key: 'booking', header: 'Booking', hideBelow: 'sm', cell: (p) => <span className="text-text-muted">{p.bookingReference}</span> },
+                    { key: 'method', header: 'Method', hideBelow: 'md', cell: (p) => PAYMENT_METHOD[p.method].label },
+                    { key: 'amount', header: 'Amount', align: 'right', cell: (p) => <span className="t-text-strong">{f.money(p.amount)}</span> },
+                  ]}
+                />
+              )}
+            </Card>
+          </>
+        }
+        side={
+          <>
+            <Card padded={false}>
+              <CardHeader title="Contact" />
+              <ul className="flex flex-col p-2">
+                <li>
+                  <a href={tel} aria-label={`Phone ${c.phone}. Call`} className="flex items-center gap-3 rounded-control px-3 py-2 hover:bg-surface-muted">
+                    <Phone size={17} className="text-text-muted" aria-hidden />
+                    <AppText variant="text" numeric>
+                      {c.phone}
+                    </AppText>
+                  </a>
+                </li>
+                <li>
+                  {c.email ? (
+                    <a href={`mailto:${c.email}`} aria-label={`Email ${c.email}`} className="flex items-center gap-3 rounded-control px-3 py-2 hover:bg-surface-muted">
+                      <Envelope size={17} className="text-text-muted" aria-hidden />
+                      <AppText variant="text" lines={1}>
+                        {c.email}
+                      </AppText>
+                    </a>
+                  ) : (
+                    <span className="flex items-center gap-3 px-3 py-2">
+                      <Envelope size={17} className="text-text-subtle" aria-hidden />
+                      <AppText variant="text" tone="subtle">
+                        No email on file
+                      </AppText>
+                    </span>
+                  )}
+                </li>
+              </ul>
+            </Card>
 
-      {c.isRegular && (
-        <ListGroup title="Regular booking" footer="Regular customers keep this slot each week. Book it from the calendar.">
-          {c.regularSlot ? (
-            <ListRow
-              icon={Repeat}
-              title={`Every ${WEEKDAY_LONG[c.regularSlot.weekday]}, ${formatClock(c.regularSlot.startTime)}`}
-              subtitle={`${c.regularSlot.courtName} · ${formatDuration(c.regularSlot.durationMinutes)}`}
-              onPress={() => router.push(routes.court(c.regularSlot!.courtId))}
-            />
-          ) : (
-            <ListRow icon={Repeat} title="Regular, no fixed slot" subtitle="Add one from Edit." />
-          )}
-        </ListGroup>
-      )}
-
-      <section>
-        <SectionHeader title="Notes" count={c.notes.length} />
-        <div className="flex flex-col gap-2">
-          <div className="mb-2 flex flex-col items-start gap-2">
-            <div className="w-full">
-              <TextField
-                label="Add a note"
-                multiline
-                value={note}
-                onChangeText={(t) => {
-                  setNote(t);
-                  setNoteError(undefined);
-                }}
-                placeholder="For example: prefers evening slots"
-                error={noteError}
-                maxLength={1000}
-              />
-            </div>
-            <Button
-              size="sm"
-              label="Save note"
-              loading={addNote.isPending}
-              onPress={() => {
-                if (!note.trim()) {
-                  setNoteError('Write a note first.');
-                  return;
-                }
-                addNote.mutate(note.trim(), { onSuccess: () => setNote('') });
-              }}
-            />
-          </div>
-          {c.notes.length === 0 ? (
-            <AppText tone="muted">No notes yet.</AppText>
-          ) : (
-            c.notes.map((n) => (
-              <div key={n.id} className="flex flex-col gap-1 rounded-control border border-border bg-surface p-3">
-                <AppText className="whitespace-pre-line">{n.body}</AppText>
-                <div className="-mr-2 -mb-2 flex items-center">
-                  <AppText variant="body-sm" tone="muted" className="flex-1">
-                    {n.author} · {formatDayAndTime(n.createdAt, f.timeZone, f.today())}
-                  </AppText>
-                  <IconButton icon={Trash} label="Delete note" onPress={() => setDialog({ note: n.id })} />
+            {c.isRegular && (
+              <Card padded={false}>
+                <CardHeader title="Regular booking" description="Regular customers keep this slot each week. Book it from the calendar." />
+                <div className="p-5">
+                  {c.regularSlot ? (
+                    <Link href={routes.court(c.regularSlot.courtId)} className="group flex items-start gap-3">
+                      <Repeat size={18} className="mt-0.5 text-accent" aria-hidden />
+                      <span className="flex flex-col">
+                        <AppText variant="text-strong" className="group-hover:underline">{`Every ${WEEKDAY_LONG[c.regularSlot.weekday]}, ${formatClock(c.regularSlot.startTime)}`}</AppText>
+                        <AppText variant="small" tone="muted">{`${c.regularSlot.courtName} · ${formatDuration(c.regularSlot.durationMinutes)}`}</AppText>
+                      </span>
+                    </Link>
+                  ) : (
+                    <AppText variant="small" tone="muted">
+                      Regular, no fixed slot. Add one from Edit.
+                    </AppText>
+                  )}
                 </div>
+              </Card>
+            )}
+
+            <Card padded={false}>
+              <CardHeader title="Notes" count={c.notes.length} />
+              <div className="flex flex-col gap-3 p-5">
+                <TextField
+                  label="Add a note"
+                  multiline
+                  rows={3}
+                  value={note}
+                  onChangeText={(t) => {
+                    setNote(t);
+                    setNoteError(undefined);
+                  }}
+                  placeholder="For example: prefers evening slots"
+                  error={noteError}
+                  maxLength={1000}
+                />
+                <div>
+                  <Button
+                    size="sm"
+                    label="Save note"
+                    loading={addNote.isPending}
+                    onPress={() => {
+                      if (!note.trim()) {
+                        setNoteError('Write a note first.');
+                        return;
+                      }
+                      addNote.mutate(note.trim(), { onSuccess: () => setNote('') });
+                    }}
+                  />
+                </div>
+                {c.notes.length === 0 ? (
+                  <AppText variant="small" tone="muted">
+                    No notes yet.
+                  </AppText>
+                ) : (
+                  <ul className="flex flex-col divide-y divide-border border-t border-border">
+                    {c.notes.map((n) => (
+                      <li key={n.id} className="flex items-start gap-2 py-3">
+                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                          <AppText variant="text" className="whitespace-pre-line">
+                            {n.body}
+                          </AppText>
+                          <AppText variant="mini" tone="muted">
+                            {n.author} · {formatDayAndTime(n.createdAt, f.timeZone, f.today())}
+                          </AppText>
+                        </div>
+                        <IconButton icon={Trash} label="Delete note" size="sm" onPress={() => setDialog({ note: n.id })} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      <section>
-        <SectionHeader title="Bookings" onLink={() => router.push(routes.customerBookings(c.id))} />
-        {bookings.isPending ? (
-          <ListSkeleton rows={3} withAvatar={false} />
-        ) : recent.length === 0 ? (
-          <AppText tone="muted">No bookings yet.</AppText>
-        ) : (
-          <div className="overflow-hidden rounded-card border border-border bg-surface">
-            {recent.map((b, i) => (
-              <div key={b.id} className={i > 0 ? 'border-t border-border' : undefined}>
-                <BookingRow booking={b} showCustomer={false} onPress={(id) => router.push(routes.booking(id))} />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section>
-        <SectionHeader title="Payments" onLink={() => router.push(routes.customerPayments(c.id))} />
-        {payments.isPending ? (
-          <ListSkeleton rows={3} withAvatar={false} />
-        ) : recentPayments.length === 0 ? (
-          <AppText tone="muted">No payments recorded.</AppText>
-        ) : (
-          <ListGroup>
-            {recentPayments.map((p) => (
-              <PaymentRow key={p.id} payment={p} showCustomer={false} onPress={(id) => router.push(routes.payment(id))} />
-            ))}
-          </ListGroup>
-        )}
-      </section>
-
-      <ListGroup title="Manage">
-        {inactive ? (
-          <ListRow title="Reactivate customer" icon={ArrowCounterClockwise} onPress={() => setStatus.mutate('ACTIVE')} />
-        ) : (
-          <ListRow title="Deactivate customer" subtitle="Stop new bookings, keep history" icon={Prohibit} onPress={() => setDialog('deactivate')} />
-        )}
-        <ListRow title="Delete customer" icon={Trash} destructive onPress={() => setDialog('delete')} />
-      </ListGroup>
+            </Card>
+          </>
+        }
+      />
 
       <ConfirmDialog
         visible={dialog === 'deactivate'}

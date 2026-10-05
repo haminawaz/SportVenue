@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowsLeftRight, Bell, CalendarX, CheckCircle, Clock, CourtBasketball, NotePencil, Phone, Receipt, UserMinus } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { ArrowsLeftRight, Bell, CalendarX, CheckCircle, NotePencil, Phone, Receipt, User, UserMinus } from '@phosphor-icons/react';
 
 import { BOOKING_STATUS, CANCEL_REASONS, PAYMENT_METHOD, PAYMENT_STATUS } from '@/domain/labels';
 import type { BookingDetail, PaymentMethod } from '@/domain/types';
@@ -14,16 +15,13 @@ import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Avatar } from '@/ui/Avatar';
 import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
+import { Card, CardHeader } from '@/ui/Card';
+import { DataTable } from '@/ui/DataTable';
 import { ConfirmDialog } from '@/ui/Dialogs';
-import { SwitchRow } from '@/ui/Fields';
-import type { IconType } from '@/ui/icon';
-import { ListGroup, ListRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { SectionHeader } from '@/ui/SectionHeader';
-import { SelectField } from '@/ui/Select';
-import { StackHeader } from '@/ui/StackHeader';
-import { Notice, QueryView } from '@/ui/States';
+import { SelectField, SwitchRow } from '@/ui/Fields';
+import { Menu, type MenuAction } from '@/ui/Menu';
+import { DetailLayout, Page, PageHeader } from '@/ui/Page';
+import { DescriptionList, Notice, QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
 import { Timeline } from '@/ui/Timeline';
 
@@ -34,14 +32,11 @@ export function BookingDetailScreen() {
   const query = useBooking(id);
 
   return (
-    <>
-      <StackHeader title={query.data?.reference ?? 'Booking'} />
-      <Screen onRefresh={() => query.refetch()}>
-        <QueryView query={query} errorTitle="Couldn't load booking">
-          {(b) => <BookingBody booking={b} />}
-        </QueryView>
-      </Screen>
-    </>
+    <Page onRefresh={() => query.refetch()}>
+      <QueryView query={query} errorTitle="Couldn't load booking">
+        {(b) => <BookingBody booking={b} />}
+      </QueryView>
+    </Page>
   );
 }
 
@@ -67,96 +62,155 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
   const pay = PAYMENT_STATUS[b.paymentStatus];
   const open = b.status === 'CONFIRMED' || b.status === 'PENDING';
   const started = b.startAt.slice(0, 16) <= nowLocalIn(tz).slice(0, 16);
+  const owes = b.outstanding > 0;
+  const time = `${formatTime(b.startAt, tz)} - ${formatTime(b.endAt, tz)}`;
+
+  const more: MenuAction[] = [];
+  if (owes) more.push({ key: 'paid', label: 'Mark as paid', icon: CheckCircle, onSelect: () => setDialog('paid') });
+  if (owes) more.push({ key: 'remind', label: 'Send payment reminder', icon: Bell, onSelect: () => remind.mutate(b.id) });
+  if (open && started) more.push({ key: 'done', label: 'Mark as completed', icon: CheckCircle, onSelect: () => setStatus.mutate('COMPLETED') });
+  if (open && started) more.push({ key: 'noShow', label: 'Mark as no-show', icon: UserMinus, onSelect: () => setDialog('noShow') });
+  if (b.status === 'NO_SHOW') more.push({ key: 'undo', label: 'Undo no-show', icon: CheckCircle, onSelect: () => setStatus.mutate('COMPLETED') });
+  if (open) more.push({ key: 'cancel', label: 'Cancel booking', icon: CalendarX, destructive: true, onSelect: () => setDialog('cancel') });
 
   return (
     <>
-      <Card>
-        <div className="flex flex-wrap gap-1.5">
-          <StatusBadge label={status.label} tone={status.tone} />
-          {(b.status !== 'CANCELLED' || b.paymentStatus === 'REFUNDED') && <StatusBadge label={pay.label} tone={pay.tone} />}
-        </div>
-        <AppText variant="display-lg" className="mt-3">
-          {formatCalendarDate(clock.date)}
-        </AppText>
-        <AppText variant="title-md" tone="muted" numeric>
-          {formatTime(b.startAt, tz)} - {formatTime(b.endAt, tz)}
-        </AppText>
-        <div className="mt-3 flex flex-wrap gap-4">
-          <Meta icon={CourtBasketball} text={b.courtName} />
-          <Meta icon={Clock} text={formatDuration(duration)} />
-        </div>
-      </Card>
+      <PageHeader
+        breadcrumbs={[{ label: 'Bookings', href: routes.bookings }, { label: b.reference }]}
+        title={`${b.customerName}, ${formatCalendarDate(clock.date)}`}
+        meta={
+          <div className="flex flex-wrap gap-1.5">
+            <StatusBadge label={status.label} tone={status.tone} />
+            {(b.status !== 'CANCELLED' || b.paymentStatus === 'REFUNDED') && <StatusBadge label={pay.label} tone={pay.tone} />}
+          </div>
+        }
+        description={`${b.reference} · ${b.courtName} · ${time} · ${formatDuration(duration)}`}
+        actions={
+          <>
+            {open && <Button label="Edit" icon={NotePencil} variant="secondary" onPress={() => router.push(routes.bookingEdit(b.id))} />}
+            {open && <Button label="Reschedule" icon={ArrowsLeftRight} variant="secondary" onPress={() => router.push(routes.bookingReschedule(b.id))} />}
+            {owes && <Button label="Record payment" icon={Receipt} onPress={() => router.push(routes.recordPayment(b.id))} />}
+            {b.status !== 'CANCELLED' && <Menu label="More booking actions" actions={more} />}
+          </>
+        }
+      />
 
       {b.status === 'CANCELLED' && <Notice tone="warning" title="Cancelled" message={b.cancelReason ? `Reason: ${b.cancelReason}` : 'This booking was cancelled.'} />}
       {b.status === 'NO_SHOW' && <Notice tone="danger" title="No-show" message="The customer did not arrive for this booking." />}
 
-      <ListGroup title="Customer">
-        <ListRow title={b.customerName} subtitle={b.customerPhone} leading={<Avatar name={b.customerName} />} onPress={() => router.push(routes.customer(b.customerId))} hint="Opens customer profile" />
-        {!!b.customerPhone && <ListRow title="Call" icon={Phone} href={`tel:${b.customerPhone.replace(/\s/g, '')}`} label={`Call ${b.customerName}`} />}
-      </ListGroup>
+      <DetailLayout
+        main={
+          <>
+            <Card padded={false}>
+              <CardHeader title="Payment" />
+              <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_240px]">
+                <DescriptionList
+                  items={[
+                    { label: 'Court price', value: f.money(b.price) },
+                    b.discountAmount > 0 && { label: b.discountName ?? 'Discount', value: <span className="text-accent">-{f.money(b.discountAmount)}</span> },
+                    { label: 'Total', value: <span className="t-text-strong">{f.money(b.total)}</span> },
+                    { label: 'Paid', value: f.money(b.paid) },
+                  ]}
+                />
+                {b.status !== 'CANCELLED' && (
+                  <div className={owes ? 'flex flex-col gap-3 rounded-card bg-warning-soft p-4' : 'flex flex-col gap-3 rounded-card bg-accent-soft p-4'}>
+                    <AppText variant="label" tone="muted">
+                      {owes ? 'Still to pay' : 'Nothing to pay'}
+                    </AppText>
+                    <AppText variant="stat" numeric tone={owes ? 'warning' : 'accent'} aria-label={f.moneyA11y(b.outstanding)}>
+                      {f.money(b.outstanding)}
+                    </AppText>
+                    {owes && (
+                      <div className="flex flex-wrap gap-2">
+                        <Button size="sm" variant="secondary" label="Mark as paid" icon={CheckCircle} onPress={() => setDialog('paid')} />
+                        <Button size="sm" variant="ghost" label="Remind" icon={Bell} loading={remind.isPending} onPress={() => remind.mutate(b.id)} aria-label={`Remind ${b.customerName} to pay`} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
 
-      <section>
-        <SectionHeader title="Payment" />
-        <Card>
-          <Line label="Court price" value={f.money(b.price)} />
-          {b.discountAmount > 0 && <Line label={b.discountName ?? 'Discount'} value={`-${f.money(b.discountAmount)}`} tone="accent" />}
-          <Line label="Total" value={f.money(b.total)} strong />
-          <Line label="Paid" value={f.money(b.paid)} />
-          {b.status !== 'CANCELLED' && (
-            <div className="mt-2 flex items-center gap-3 border-t border-border pt-3">
-              <AppText variant="body-strong" className="flex-1">
-                {b.outstanding > 0 ? 'Still to pay' : 'Nothing to pay'}
-              </AppText>
-              <AppText variant="title-md" numeric tone={b.outstanding > 0 ? 'warning' : 'accent'} aria-label={f.moneyA11y(b.outstanding)}>
-                {f.money(b.outstanding)}
-              </AppText>
-            </div>
-          )}
-          {b.outstanding > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button size="sm" label="Record payment" icon={Receipt} onPress={() => router.push(routes.recordPayment(b.id))} />
-              <Button size="sm" variant="secondary" label="Mark as paid" icon={CheckCircle} onPress={() => setDialog('paid')} />
-              <Button size="sm" variant="secondary" label="Remind" icon={Bell} loading={remind.isPending} onPress={() => remind.mutate(b.id)} aria-label={`Remind ${b.customerName} to pay`} />
-            </div>
-          )}
-        </Card>
-      </section>
+            {b.payments.length > 0 && (
+              <Card padded={false}>
+                <CardHeader title="Payments received" count={b.payments.length} />
+                <DataTable
+                  caption="Payments received"
+                  rows={b.payments}
+                  rowKey={(p) => p.id}
+                  rowHref={(p) => routes.payment(p.id)}
+                  dense
+                  columns={[
+                    { key: 'when', header: 'Received', primary: true, cell: (p) => <span className="whitespace-nowrap">{formatDayAndTime(p.receivedAt, tz, f.today())}</span> },
+                    { key: 'method', header: 'Method', cell: (p) => PAYMENT_METHOD[p.method].label },
+                    { key: 'by', header: 'Recorded by', hideBelow: 'md', cell: (p) => <span className="text-text-muted">{p.recordedBy}</span> },
+                    { key: 'amount', header: 'Amount', align: 'right', cell: (p) => <span className="t-text-strong">{f.money(p.amount)}</span> },
+                  ]}
+                />
+              </Card>
+            )}
 
-      {b.payments.length > 0 && (
-        <ListGroup title="Payments received">
-          {b.payments.map((p) => (
-            <ListRow
-              key={p.id}
-              title={f.money(p.amount)}
-              subtitle={`${PAYMENT_METHOD[p.method].label} · ${formatDayAndTime(p.receivedAt, tz, f.today())}`}
-              icon={PAYMENT_METHOD[p.method].icon}
-              onPress={() => router.push(routes.payment(p.id))}
-            />
-          ))}
-        </ListGroup>
-      )}
+            {b.notes && (
+              <Card padded={false}>
+                <CardHeader title="Notes" />
+                <AppText as="p" className="p-5 whitespace-pre-line">
+                  {b.notes}
+                </AppText>
+              </Card>
+            )}
 
-      {b.notes && (
-        <ListGroup title="Notes">
-          <ListRow title={b.notes} titleLines={20} />
-        </ListGroup>
-      )}
-
-      {b.status !== 'CANCELLED' && (
-        <ListGroup title="Manage">
-          {open && <ListRow title="Edit details" subtitle="Customer and notes" icon={NotePencil} onPress={() => router.push(routes.bookingEdit(b.id))} />}
-          {open && <ListRow title="Reschedule" subtitle="Change court, day or time" icon={ArrowsLeftRight} onPress={() => router.push(routes.bookingReschedule(b.id))} />}
-          {open && started && <ListRow title="Mark as completed" icon={CheckCircle} onPress={() => setStatus.mutate('COMPLETED')} />}
-          {open && started && <ListRow title="Mark as no-show" icon={UserMinus} onPress={() => setDialog('noShow')} />}
-          {b.status === 'NO_SHOW' && <ListRow title="Undo no-show" icon={CheckCircle} onPress={() => setStatus.mutate('COMPLETED')} />}
-          {open && <ListRow title="Cancel booking" icon={CalendarX} destructive onPress={() => setDialog('cancel')} />}
-        </ListGroup>
-      )}
-
-      <section>
-        <SectionHeader title="History" />
-        <Timeline items={b.history.map((h) => ({ id: h.id, title: h.description, meta: `${formatDayAndTime(h.at, tz, f.today())} · ${h.actor}` }))} />
-      </section>
+            <Card padded={false}>
+              <CardHeader title="History" />
+              <div className="p-5">
+                <Timeline items={b.history.map((h) => ({ id: h.id, title: h.description, meta: `${formatDayAndTime(h.at, tz, f.today())} · ${h.actor}` }))} />
+              </div>
+            </Card>
+          </>
+        }
+        side={
+          <>
+            <Card padded={false}>
+              <CardHeader title="Customer" />
+              <div className="flex flex-col gap-4 p-5">
+                <Link href={routes.customer(b.customerId)} className="group flex items-center gap-3" aria-label={`${b.customerName}, open customer profile`}>
+                  <Avatar name={b.customerName} size={44} tone="accent" />
+                  <span className="flex min-w-0 flex-col">
+                    <AppText variant="text-strong" className="group-hover:underline">
+                      {b.customerName}
+                    </AppText>
+                    <AppText variant="small" tone="muted">
+                      {b.customerPhone}
+                    </AppText>
+                  </span>
+                </Link>
+                <div className="flex flex-wrap gap-2">
+                  {!!b.customerPhone && (
+                    <a href={`tel:${b.customerPhone.replace(/\s/g, '')}`} aria-label={`Call ${b.customerName}`} className="t-label inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 hover:bg-surface-muted">
+                      <Phone size={15} weight="bold" aria-hidden />
+                      Call
+                    </a>
+                  )}
+                  <Button size="sm" variant="secondary" label="View profile" icon={User} href={routes.customer(b.customerId)} />
+                </div>
+              </div>
+            </Card>
+            <Card padded={false}>
+              <CardHeader title="Details" />
+              <div className="px-5 py-2">
+                <DescriptionList
+                  items={[
+                    { label: 'Date', value: formatCalendarDate(clock.date) },
+                    { label: 'Time', value: time },
+                    { label: 'Length', value: formatDuration(duration) },
+                    { label: 'Court', value: b.courtName },
+                    { label: 'Reference', value: b.reference },
+                  ]}
+                />
+              </div>
+            </Card>
+          </>
+        }
+      />
 
       <ConfirmDialog
         visible={dialog === 'cancel'}
@@ -184,11 +238,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
             setReasonError(undefined);
           }}
         />
-        {b.paid > 0 && (
-          <div className="mt-1 overflow-hidden rounded-control border border-border">
-            <SwitchRow label="Mark payment as refunded" description={`${f.money(b.paid)} was paid. Turn on once you've returned it.`} value={refund} onChange={setRefund} />
-          </div>
-        )}
+        {b.paid > 0 && <SwitchRow label="Mark payment as refunded" description={`${f.money(b.paid)} was paid. Turn on once you've returned it.`} value={refund} onChange={setRefund} />}
       </ConfirmDialog>
 
       <ConfirmDialog
@@ -201,12 +251,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
         onCancel={() => setDialog(null)}
         onConfirm={() => record.mutate({ bookingId: b.id, amount: b.outstanding, method }, { onSuccess: () => setDialog(null) })}
       >
-        <SelectField
-          label="Paid by"
-          value={method}
-          options={(Object.keys(PAYMENT_METHOD) as PaymentMethod[]).map((m) => ({ value: m, label: PAYMENT_METHOD[m].label }))}
-          onChange={setMethod}
-        />
+        <SelectField label="Paid by" value={method} options={(Object.keys(PAYMENT_METHOD) as PaymentMethod[]).map((m) => ({ value: m, label: PAYMENT_METHOD[m].label }))} onChange={setMethod} />
       </ConfirmDialog>
 
       <ConfirmDialog
@@ -220,29 +265,5 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
         onConfirm={() => setStatus.mutate('NO_SHOW', { onSuccess: () => setDialog(null) })}
       />
     </>
-  );
-}
-
-function Meta({ icon: Icon, text }: { icon: IconType; text: string }) {
-  return (
-    <span className="flex items-center gap-1.5 text-text-muted">
-      <Icon size={16} aria-hidden />
-      <AppText variant="nav-link" tone="muted">
-        {text}
-      </AppText>
-    </span>
-  );
-}
-
-function Line({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: 'accent' }) {
-  return (
-    <div className="flex items-center gap-3 py-1">
-      <AppText variant={strong ? 'body-strong' : 'body-md'} tone={strong ? 'default' : 'muted'} className="flex-1">
-        {label}
-      </AppText>
-      <AppText variant={strong ? 'body-strong' : 'body-md'} numeric tone={tone}>
-        {value}
-      </AppText>
-    </div>
   );
 }

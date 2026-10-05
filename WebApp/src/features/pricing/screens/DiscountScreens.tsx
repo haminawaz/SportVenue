@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ClockCounterClockwise, PauseCircle, PencilSimple, Percent, PlayCircle, Tag, Trash } from '@phosphor-icons/react';
+import { ClockCounterClockwise, PauseCircle, PencilSimple, PlayCircle, Trash } from '@phosphor-icons/react';
 
 import { qk } from '@/api/queryKeys';
 import type { Discount, Weekday } from '@/domain/types';
@@ -16,20 +16,17 @@ import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
-import { Card } from '@/ui/Card';
-import { Chip, ChipRow, DayToggles, SegmentedControl } from '@/ui/Chips';
-import { DateField } from '@/ui/DateField';
+import { Card, CardHeader } from '@/ui/Card';
+import { InfiniteTable } from '@/ui/DataTable';
 import { ConfirmDialog } from '@/ui/Dialogs';
 import { EmptyState } from '@/ui/EmptyState';
-import { FieldShell, SwitchRow, TextField } from '@/ui/Fields';
-import { IconButton } from '@/ui/IconButton';
-import { InfiniteList } from '@/ui/InfiniteList';
-import { ListGroup, ListRow } from '@/ui/List';
-import { Screen } from '@/ui/Screen';
-import { SelectField } from '@/ui/Select';
-import { StackHeader } from '@/ui/StackHeader';
-import { Notice, QueryView } from '@/ui/States';
+import { DateField, DayToggles, FieldShell, SelectField, SwitchRow, TextField, ToggleGroup } from '@/ui/Fields';
+import { Menu } from '@/ui/Menu';
+import { DetailLayout, FormActions, FormSection, Page, PageHeader } from '@/ui/Page';
+import { StatCard, StatGrid } from '@/ui/StatCard';
+import { DescriptionList, Notice, QueryView } from '@/ui/States';
 import { StatusBadge } from '@/ui/StatusBadge';
+import { SegmentedControl } from '@/ui/Tabs';
 
 import { useDeleteDiscount, useDiscount, usePricingHistory, useSaveDiscount, useToggleDiscount } from '../api';
 import { discountValueLabel } from './PricingScreen';
@@ -38,17 +35,13 @@ import { discountValueLabel } from './PricingScreen';
 
 export function DiscountDetailScreen() {
   const id = useRouteParam('id');
-  const router = useAppRouter();
   const query = useDiscount(id);
   return (
-    <>
-      <StackHeader title="Discount" headerRight={<IconButton icon={PencilSimple} label="Edit discount" size="sm" onPress={() => router.push(routes.discountEdit(id))} />} />
-      <Screen>
-        <QueryView query={query} errorTitle="Couldn't load discount">
-          {(d) => <DiscountBody discount={d} />}
-        </QueryView>
-      </Screen>
-    </>
+    <Page width="wide" onRefresh={() => query.refetch()}>
+      <QueryView query={query} errorTitle="Couldn't load discount">
+        {(d) => <DiscountBody discount={d} />}
+      </QueryView>
+    </Page>
   );
 }
 
@@ -64,49 +57,53 @@ function DiscountBody({ discount: d }: { discount: Discount }) {
 
   return (
     <>
-      <Card tint={d.active ? 'accent' : 'surface'}>
-        <div className="flex items-center justify-between">
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-surface text-accent">
-            <Percent size={22} aria-hidden />
-          </span>
-          <StatusBadge label={expired ? 'Ended' : d.active ? 'Active' : 'Off'} tone={d.active && !expired ? 'positive' : 'neutral'} />
-        </div>
-        <AppText as="h2" variant="display-xl" numeric className="mt-4">
-          {discountValueLabel(d, f.money)}
-        </AppText>
-        <AppText variant="body-strong">{d.name}</AppText>
-        {d.code && (
-          <AppText variant="nav-link" tone="muted">
-            Code {d.code}
-          </AppText>
-        )}
-      </Card>
-
+      <PageHeader
+        breadcrumbs={[{ label: 'Pricing', href: routes.pricing() }, { label: d.name }]}
+        title={d.name}
+        meta={<StatusBadge label={expired ? 'Ended' : d.active ? 'Active' : 'Off'} tone={d.active && !expired ? 'positive' : 'neutral'} />}
+        description={d.code ? `Code ${d.code}` : 'Applies without a code'}
+        actions={
+          <>
+            <Button label={d.active ? 'Turn off' : 'Turn on'} icon={d.active ? PauseCircle : PlayCircle} variant="secondary" onPress={() => setConfirm('toggle')} />
+            <Button label="Edit discount" icon={PencilSimple} onPress={() => router.push(routes.discountEdit(d.id))} />
+            <Menu label="More discount actions" actions={[{ key: 'delete', label: 'Delete discount', icon: Trash, destructive: true, onSelect: () => setConfirm('delete') }]} />
+          </>
+        }
+      />
       {expired && d.active && <Notice tone="warning" message="The end date has passed, so this discount no longer applies to new bookings." />}
-
-      <ListGroup title="Where and when">
-        <ListRow title="Courts" value={courtNames} />
-        <ListRow title="Days" value={d.weekdays.length ? formatWeekdays(d.weekdays) : 'Every day'} />
-        <ListRow title="Time" value={d.startTime && d.endTime ? `${formatClock(d.startTime)} - ${formatClock(d.endTime)}` : 'All day'} />
-        <ListRow title="Valid" value={`${formatCalendarDate(d.validFrom)}${d.validTo ? ` - ${formatCalendarDate(d.validTo)}` : ' onwards'}`} />
-      </ListGroup>
-
-      <ListGroup title="Usage">
-        <ListRow title="Used on bookings" value={d.maxUses ? `${d.usageCount} of ${d.maxUses}` : String(d.usageCount)} />
-        <ListRow title="Last changed" value={formatDateTimeLocal(d.updatedAt, f.today())} />
-        <ListRow title="Change history" icon={ClockCounterClockwise} onPress={() => router.push(routes.pricingHistory)} />
-      </ListGroup>
-
-      <ListGroup title="Manage">
-        <ListRow title="Edit discount" icon={PencilSimple} onPress={() => router.push(routes.discountEdit(d.id))} />
-        <ListRow
-          title={d.active ? 'Turn off' : 'Turn on'}
-          subtitle={d.active ? 'Stops applying to new bookings' : 'Starts applying to new bookings'}
-          icon={d.active ? PauseCircle : PlayCircle}
-          onPress={() => setConfirm('toggle')}
-        />
-        <ListRow title="Delete discount" icon={Trash} destructive onPress={() => setConfirm('delete')} />
-      </ListGroup>
+      <StatGrid columns={3}>
+        <StatCard tint={d.active ? 'accent' : 'surface'} label="Discount" value={discountValueLabel(d, f.money)} />
+        <StatCard label="Used on bookings" value={d.maxUses ? `${d.usageCount} of ${d.maxUses}` : String(d.usageCount)} />
+        <StatCard label="Last changed" value={formatDateTimeLocal(d.updatedAt, f.today())} />
+      </StatGrid>
+      <DetailLayout
+        main={
+          <Card padded={false}>
+            <CardHeader title="Where and when" />
+            <div className="px-5 py-2">
+              <DescriptionList
+                items={[
+                  { label: 'Courts', value: courtNames },
+                  { label: 'Days', value: d.weekdays.length ? formatWeekdays(d.weekdays) : 'Every day' },
+                  { label: 'Time', value: d.startTime && d.endTime ? `${formatClock(d.startTime)} - ${formatClock(d.endTime)}` : 'All day' },
+                  { label: 'Valid', value: `${formatCalendarDate(d.validFrom)}${d.validTo ? ` - ${formatCalendarDate(d.validTo)}` : ' onwards'}` },
+                ]}
+              />
+            </div>
+          </Card>
+        }
+        side={
+          <Card padded={false}>
+            <CardHeader title="Change history" />
+            <div className="p-5">
+              <AppText variant="small" tone="muted" className="mb-3">
+                Every change to rates and discounts is recorded.
+              </AppText>
+              <Button label="View pricing history" icon={ClockCounterClockwise} variant="secondary" onPress={() => router.push(routes.pricingHistory)} />
+            </div>
+          </Card>
+        }
+      />
 
       <ConfirmDialog
         visible={confirm === 'toggle'}
@@ -137,21 +134,16 @@ function DiscountBody({ discount: d }: { discount: Discount }) {
 export function DiscountFormScreen() {
   const id = useRouteParam('id');
   const query = useDiscount(id);
-  if (!id) {
-    return (
-      <>
-        <StackHeader title="Create discount" />
-        <DiscountForm />
-      </>
-    );
-  }
   return (
-    <>
-      <StackHeader title="Edit discount" />
-      <QueryView query={query} errorTitle="Couldn't load discount">
-        {(d) => <DiscountForm discount={d} />}
-      </QueryView>
-    </>
+    <Page width="form">
+      {!id ? (
+        <DiscountForm />
+      ) : (
+        <QueryView query={query} errorTitle="Couldn't load discount">
+          {(d) => <DiscountForm discount={d} />}
+        </QueryView>
+      )}
+    </Page>
   );
 }
 
@@ -243,105 +235,136 @@ function DiscountForm({ discount }: { discount?: Discount }) {
 
   const times = clockOptions('05:00', '23:30').map((t) => ({ value: t, label: formatClock(t) }));
   const x = form.values;
+  const back = discount ? routes.discount(discount.id) : routes.pricing();
 
   return (
-    <Screen footer={<Button label={discount ? 'Save discount' : 'Create discount'} block onPress={submit} loading={saving} disabled={!!discount && !form.dirty} />}>
+    <>
+      <PageHeader
+        breadcrumbs={discount ? [{ label: 'Pricing', href: routes.pricing() }, { label: discount.name, href: routes.discount(discount.id) }, { label: 'Edit' }] : [{ label: 'Pricing', href: routes.pricing() }, { label: 'Create discount' }]}
+        title={discount ? 'Edit discount' : 'Create discount'}
+        hideRefresh
+      />
       {params.opportunityId && !discount && <Notice message="Pre-filled from a revenue opportunity. Review it, then create to mark the opportunity resolved." />}
-      <TextField label="Name" value={x.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Weekday afternoons" maxLength={40} />
+      <Card>
+        <FormSection title="Discount" description="What comes off the price, and an optional code customers quote.">
+          <TextField label="Name" value={x.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Weekday afternoons" maxLength={40} />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <FieldShell label="Type">
+              <SegmentedControl
+                label="Discount type"
+                value={x.kind}
+                onChange={(k) => form.set('kind', k)}
+                options={[
+                  { value: 'PERCENT', label: 'Percentage' },
+                  { value: 'AMOUNT', label: 'Fixed amount' },
+                ]}
+              />
+            </FieldShell>
+            <TextField
+              label={x.kind === 'PERCENT' ? 'Percentage off' : 'Amount off'}
+              value={x.value}
+              onChangeText={(t) => form.set('value', t)}
+              error={form.errors.value}
+              inputMode="decimal"
+              prefix={x.kind === 'AMOUNT' ? f.currency : undefined}
+              suffix={x.kind === 'PERCENT' ? '%' : undefined}
+            />
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField
+              label="Code"
+              optional
+              value={x.code}
+              onChangeText={(t) => form.set('code', t.toUpperCase().replace(/\s/g, ''))}
+              error={form.errors.code}
+              autoCapitalize="characters"
+              placeholder="STUDENT10"
+              helper="Leave empty to apply it to bookings without a code."
+              maxLength={16}
+            />
+            <TextField label="Maximum uses" optional value={x.maxUses} onChangeText={(t) => form.set('maxUses', t)} error={form.errors.maxUses} inputMode="numeric" placeholder="Unlimited" />
+          </div>
+        </FormSection>
 
-      <FieldShell label="Type">
-        <SegmentedControl
-          label="Discount type"
-          value={x.kind}
-          onChange={(k) => form.set('kind', k)}
-          options={[
-            { value: 'PERCENT', label: 'Percentage' },
-            { value: 'AMOUNT', label: 'Fixed amount' },
-          ]}
-        />
-      </FieldShell>
-      <TextField
-        label={x.kind === 'PERCENT' ? 'Percentage off' : 'Amount off'}
-        value={x.value}
-        onChangeText={(t) => form.set('value', t)}
-        error={form.errors.value}
-        inputMode="decimal"
-        prefix={x.kind === 'AMOUNT' ? f.currency : undefined}
-        suffix={x.kind === 'PERCENT' ? '%' : undefined}
-      />
-      <TextField
-        label="Code"
-        optional
-        value={x.code}
-        onChangeText={(t) => form.set('code', t.toUpperCase().replace(/\s/g, ''))}
-        error={form.errors.code}
-        autoCapitalize="characters"
-        placeholder="STUDENT10"
-        helper="Leave empty to apply it to bookings without a code."
-        maxLength={16}
-      />
+        <FormSection title="Where and when" description="Limit the discount to some courts, days or hours. Leave days empty for every day.">
+          <FieldShell label="Courts" error={form.errors.courtIds}>
+            <ToggleGroup
+              label="Courts"
+              options={[{ value: '__all', label: 'All courts' }, ...(courts.data ?? []).map((c) => ({ value: c.id, label: c.name }))]}
+              isOn={(v) => (v === '__all' ? x.allCourts : !x.allCourts && x.courtIds.includes(v))}
+              onToggle={(v) => {
+                if (v === '__all') form.patch({ allCourts: true, courtIds: [] });
+                else {
+                  const on = !x.allCourts && x.courtIds.includes(v);
+                  form.patch({ allCourts: false, courtIds: on ? x.courtIds.filter((i) => i !== v) : [...x.courtIds, v] });
+                }
+              }}
+            />
+          </FieldShell>
+          <FieldShell label="Days" helper={x.weekdays.length ? formatWeekdays(x.weekdays) : 'None selected means every day.'}>
+            <DayToggles label="Days" value={x.weekdays} onChange={(d) => form.set('weekdays', d)} />
+          </FieldShell>
+          <SwitchRow label="Only at certain times" description="For example, quiet afternoon hours." value={x.timed} onChange={(t) => form.set('timed', t)} />
+          {x.timed && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SelectField label="From" value={x.startTime} options={times} onChange={(t) => form.set('startTime', t)} error={form.errors.startTime} />
+              <SelectField label="Until" value={x.endTime} options={times} onChange={(t) => form.set('endTime', t)} error={form.errors.endTime} />
+            </div>
+          )}
+          <div className="grid gap-5 sm:grid-cols-2">
+            <DateField label="Starts" value={x.validFrom} onChange={(d) => form.set('validFrom', d)} />
+            <DateField label="Ends" optional value={x.validTo} minimumDate={x.validFrom} onChange={(d) => form.set('validTo', d)} onClear={() => form.set('validTo', undefined)} error={form.errors.validTo} helper="Leave empty for no end date." />
+          </div>
+        </FormSection>
 
-      <FieldShell label="Courts" error={form.errors.courtIds}>
-        <ChipRow>
-          <Chip label="All courts" selected={x.allCourts} onPress={() => form.patch({ allCourts: true, courtIds: [] })} />
-          {(courts.data ?? []).map((c) => {
-            const on = !x.allCourts && x.courtIds.includes(c.id);
-            return <Chip key={c.id} label={c.name} selected={on} onPress={() => form.patch({ allCourts: false, courtIds: on ? x.courtIds.filter((i) => i !== c.id) : [...x.courtIds, c.id] })} />;
-          })}
-        </ChipRow>
-      </FieldShell>
-
-      <FieldShell label="Days" helper={x.weekdays.length ? formatWeekdays(x.weekdays) : 'None selected means every day.'}>
-        <DayToggles label="Days" value={x.weekdays} onChange={(d) => form.set('weekdays', d)} />
-      </FieldShell>
-
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
-        <SwitchRow label="Only at certain times" description="For example, quiet afternoon hours." value={x.timed} onChange={(t) => form.set('timed', t)} />
-      </div>
-      {x.timed && (
-        <div className="grid grid-cols-2 gap-3">
-          <SelectField label="From" value={x.startTime} options={times} onChange={(t) => form.set('startTime', t)} error={form.errors.startTime} />
-          <SelectField label="Until" value={x.endTime} options={times} onChange={(t) => form.set('endTime', t)} error={form.errors.endTime} />
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3">
-        <DateField label="Starts" value={x.validFrom} onChange={(d) => form.set('validFrom', d)} />
-        <DateField
-          label="Ends"
-          optional
-          value={x.validTo}
-          minimumDate={x.validFrom}
-          onChange={(d) => form.set('validTo', d)}
-          onClear={() => form.set('validTo', undefined)}
-          placeholder="No end"
-          error={form.errors.validTo}
-        />
-      </div>
-
-      <TextField label="Maximum uses" optional value={x.maxUses} onChangeText={(t) => form.set('maxUses', t)} error={form.errors.maxUses} inputMode="numeric" placeholder="Unlimited" />
-
-      <div className="overflow-hidden rounded-card border border-border bg-surface">
-        <SwitchRow label="Active" description="Inactive discounts are kept but never applied." value={x.active} onChange={(a) => form.set('active', a)} />
-      </div>
-    </Screen>
+        <FormSection title="Status">
+          <SwitchRow label="Active" description="Inactive discounts are kept but never applied." value={x.active} onChange={(a) => form.set('active', a)} />
+        </FormSection>
+      </Card>
+      <FormActions>
+        <Button label="Cancel" variant="secondary" onPress={() => router.back(back)} />
+        <Button label={discount ? 'Save discount' : 'Create discount'} onPress={submit} loading={saving} disabled={!!discount && !form.dirty} />
+      </FormActions>
+    </>
   );
 }
 
 /* ------------------------------------------------------------------ history */
 
+const SUBJECT: Record<string, string> = { COURT_RATE: 'Base rate', RULE: 'Time-based rate', DISCOUNT: 'Discount' };
+
 export function PricingHistoryScreen() {
   const f = useFormat();
   const query = usePricingHistory();
   return (
-    <>
-      <StackHeader title="Pricing history" />
-      <InfiniteList
-        query={query}
-        keyExtractor={(e) => e.id}
-        renderItem={({ item }) => <ListRow icon={item.subject === 'DISCOUNT' ? Percent : Tag} title={item.subjectName} subtitle={`${item.change}\n${item.actor} · ${formatDateTimeLocal(item.at, f.today())}`} />}
-        empty={<EmptyState icon={ClockCounterClockwise} title="No changes yet" message="Every change to rates and discounts is recorded here." />}
-      />
-    </>
+    <Page onRefresh={() => query.refetch()}>
+      <PageHeader breadcrumbs={[{ label: 'Pricing', href: routes.pricing() }, { label: 'History' }]} title="Pricing history" description="Every change to base rates, time-based rates and discounts." />
+      <Card padded={false}>
+        <InfiniteTable
+          query={query}
+          rowKey={(e) => e.id}
+          caption="Pricing history"
+          noun={['change', 'changes']}
+          columns={[
+            { key: 'at', header: 'When', cell: (e) => <span className="whitespace-nowrap text-text-muted">{formatDateTimeLocal(e.at, f.today())}</span> },
+            {
+              key: 'item',
+              header: 'Item',
+              cell: (e) => (
+                <span className="flex flex-col">
+                  <AppText variant="text-strong">{e.subjectName}</AppText>
+                  <AppText variant="mini" tone="muted">
+                    {SUBJECT[e.subject] ?? e.subject}
+                  </AppText>
+                </span>
+              ),
+            },
+            { key: 'change', header: 'Change', className: 'min-w-[220px]', cell: (e) => e.change },
+            { key: 'by', header: 'By', hideBelow: 'md', cell: (e) => <span className="whitespace-nowrap text-text-muted">{e.actor}</span> },
+          ]}
+          empty={<EmptyState icon={ClockCounterClockwise} title="No changes yet" message="Every change to rates and discounts is recorded here." />}
+        />
+      </Card>
+    </Page>
   );
 }

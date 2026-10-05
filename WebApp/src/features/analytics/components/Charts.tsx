@@ -25,10 +25,10 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
   return (
     <div>
       <div aria-live="polite" className="mb-3 min-h-11">
-        <AppText variant="body-sm" tone="muted">
+        <AppText variant="small" tone="muted">
           {shown ? shown.label : summary.label}
         </AppText>
-        <AppText variant="title-md" numeric>
+        <AppText variant="stat" numeric>
           {shown ? shown.valueLabel : summary.value}
         </AppText>
       </div>
@@ -61,7 +61,7 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
         {/* Each label spans a group of bars, so dates are never squeezed into one bar's width. */}
         {axisGroups(data).map((g) => (
           <div key={g.key} className="min-w-0" style={{ flex: g.span }}>
-            <AppText variant="caption-uppercase" tone="muted" lines={1}>
+            <AppText variant="mini" tone="muted" lines={1}>
               {g.label}
             </AppText>
           </div>
@@ -89,10 +89,10 @@ export function BarList({ data, max: fixedMax }: { data: BarDatum[]; max?: numbe
         const content = (
           <>
             <span className="flex items-center gap-3">
-              <AppText variant="nav-link" lines={1} className="flex-1">
+              <AppText variant="label" lines={1} className="flex-1">
                 {d.label}
               </AppText>
-              <AppText variant="nav-link" numeric tone="muted">
+              <AppText variant="label" numeric tone="muted">
                 {d.valueLabel}
               </AppText>
             </span>
@@ -152,11 +152,11 @@ export function Heatmap({
   return (
     <div>
       <div aria-live="polite" className="mb-3 min-h-11">
-        <AppText variant="body-sm" tone="muted">
-          {shown ? `${rowLabel(shown.row)}, ${colLabel(shown.col)}` : 'Hover over or tap a square to see how busy it is'}
+        <AppText variant="small" tone="muted">
+          {shown ? `${rowLabel(shown.row)}, ${colLabel(shown.col)}` : 'Hover over or select a square to see how busy it is'}
         </AppText>
         {shown && (
-          <AppText variant="title-md" numeric>
+          <AppText variant="stat" numeric>
             {valueLabel(shown.value)}
           </AppText>
         )}
@@ -164,7 +164,7 @@ export function Heatmap({
       <div className="flex flex-col gap-0.5" onMouseLeave={() => setHover(null)}>
         {rows.map((r) => (
           <div key={r} className="flex items-center gap-0.5">
-            <AppText variant="caption-uppercase" tone="muted" className="w-8 shrink-0">
+            <AppText variant="mini" tone="muted" className="w-8 shrink-0">
               {rowLabel(r)}
             </AppText>
             {cols.map((c) => {
@@ -191,7 +191,7 @@ export function Heatmap({
           {cols.map((c, i) => (
             <div key={c} className="min-w-0 flex-1 overflow-visible">
               {i % 3 === 0 && (
-                <AppText variant="caption-uppercase" tone="subtle" className="w-10 whitespace-nowrap">
+                <AppText variant="mini" tone="subtle" className="w-10 whitespace-nowrap">
                   {colShort(c)}
                 </AppText>
               )}
@@ -200,7 +200,7 @@ export function Heatmap({
         </div>
       </div>
       <div role="img" aria-label="Colour key: lighter is quieter, darker is busier" className="mt-3 flex items-center justify-end gap-1">
-        <AppText variant="body-sm" tone="muted">
+        <AppText variant="small" tone="muted">
           Quiet
         </AppText>
         {STEPS.map((o) => (
@@ -208,7 +208,7 @@ export function Heatmap({
             <span className="absolute inset-0 rounded-[3px] bg-accent" style={{ opacity: o }} />
           </span>
         ))}
-        <AppText variant="body-sm" tone="muted">
+        <AppText variant="small" tone="muted">
           Busy
         </AppText>
       </div>

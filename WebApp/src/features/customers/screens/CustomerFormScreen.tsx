@@ -11,11 +11,9 @@ import { useQueryParams, useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
-import { SwitchRow, TextField } from '@/ui/Fields';
-import { Screen } from '@/ui/Screen';
-import { SectionHeader } from '@/ui/SectionHeader';
-import { SelectField } from '@/ui/Select';
-import { StackHeader } from '@/ui/StackHeader';
+import { Card } from '@/ui/Card';
+import { SelectField, SwitchRow, TextField } from '@/ui/Fields';
+import { FormActions, FormSection, Page, PageHeader } from '@/ui/Page';
 import { QueryView } from '@/ui/States';
 
 import { useCreateCustomer, useCustomer, useUpdateCustomer } from '../api';
@@ -23,21 +21,16 @@ import { useCreateCustomer, useCustomer, useUpdateCustomer } from '../api';
 export function CustomerFormScreen() {
   const id = useRouteParam('id');
   const query = useCustomer(id);
-  if (!id) {
-    return (
-      <>
-        <StackHeader title="Add customer" />
-        <CustomerForm />
-      </>
-    );
-  }
   return (
-    <>
-      <StackHeader title="Edit customer" />
-      <QueryView query={query} errorTitle="Couldn't load customer">
-        {(c) => <CustomerForm customer={c} />}
-      </QueryView>
-    </>
+    <Page width="form">
+      {!id ? (
+        <CustomerForm />
+      ) : (
+        <QueryView query={query} errorTitle="Couldn't load customer">
+          {(c) => <CustomerForm customer={c} />}
+        </QueryView>
+      )}
+    </Page>
   );
 }
 
@@ -94,10 +87,7 @@ function CustomerForm({ customer }: { customer?: CustomerDetail }) {
         phone: v.phone.trim(),
         email: v.email.trim() || undefined,
         isRegular: v.isRegular,
-        regularSlot:
-          v.isRegular && v.regularCourt && v.regularTime
-            ? { courtId: v.regularCourt, weekday: Number(v.regularWeekday) as Weekday, startTime: v.regularTime, durationMinutes: Number(v.regularDuration) }
-            : undefined,
+        regularSlot: v.isRegular && v.regularCourt && v.regularTime ? { courtId: v.regularCourt, weekday: Number(v.regularWeekday) as Weekday, startTime: v.regularTime, durationMinutes: Number(v.regularDuration) } : undefined,
       };
       if (customer) {
         await update.mutateAsync(input);
@@ -115,66 +105,59 @@ function CustomerForm({ customer }: { customer?: CustomerDetail }) {
     setSaving(false);
   };
 
+  const back = customer ? routes.customer(customer.id) : returnTo === 'booking' ? routes.bookingNew() : routes.customers;
+
   return (
-    <Screen footer={<Button label={customer ? 'Save customer' : 'Add customer'} block onPress={save} loading={saving} disabled={!!customer && !form.dirty} />}>
-      <TextField label="Full name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} autoCapitalize="words" autoComplete="name" maxLength={80} />
-      <TextField
-        label="Phone"
-        value={form.values.phone}
-        onChangeText={(t) => form.set('phone', t)}
-        error={form.errors.phone}
-        type="tel"
-        autoComplete="tel"
-        placeholder="+92 300 1234567"
-        helper="Used for reminders and to find them quickly."
+    <>
+      <PageHeader
+        breadcrumbs={customer ? [{ label: 'Customers', href: routes.customers }, { label: customer.name, href: routes.customer(customer.id) }, { label: 'Edit' }] : [{ label: 'Customers', href: routes.customers }, { label: 'Add customer' }]}
+        title={customer ? 'Edit customer' : 'Add customer'}
+        description={!customer && returnTo === 'booking' ? 'Once saved, you go back to the booking with this customer selected.' : undefined}
+        hideRefresh
       />
-      <TextField label="Email" optional value={form.values.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" autoComplete="email" />
-
-      <section>
-        <SectionHeader title="Regular customer" />
-        <div className="overflow-hidden rounded-card border border-border bg-surface">
-          <SwitchRow label="Plays every week" description="Regulars are highlighted and can keep a fixed weekly slot." value={form.values.isRegular} onChange={(v) => form.set('isRegular', v)} />
-        </div>
-      </section>
-
-      {form.values.isRegular && (
-        <div className="flex flex-col gap-4">
-          <SelectField
-            label="Usual court"
-            optional
-            value={form.values.regularCourt}
-            options={(courts.data ?? []).map((c) => ({ value: c.id, label: c.name, description: c.sport }))}
-            onChange={(v) => form.set('regularCourt', v)}
-            error={form.errors.regularCourt}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <SelectField
-              label="Day"
-              value={form.values.regularWeekday}
-              options={WEEK_ORDER.map((d) => ({ value: String(d), label: WEEKDAY_LONG[d] }))}
-              onChange={(v) => form.set('regularWeekday', v)}
-            />
-            <SelectField
-              label="Time"
-              value={form.values.regularTime}
-              placeholder="Choose"
-              options={clockOptions('06:00', '23:00').map((t) => ({ value: t, label: formatClock(t) }))}
-              onChange={(v) => form.set('regularTime', v)}
-              error={form.errors.regularTime}
-            />
+      <Card>
+        <FormSection title="Contact details" description="The phone number is used for reminders and to find them quickly.">
+          <TextField label="Full name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} autoCapitalize="words" autoComplete="name" maxLength={80} />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField label="Phone" value={form.values.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" autoComplete="tel" placeholder="+92 300 1234567" />
+            <TextField label="Email" optional value={form.values.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" autoComplete="email" />
           </div>
-          <SelectField
-            label="Length"
-            value={form.values.regularDuration}
-            options={[60, 90, 120].map((d) => ({ value: String(d), label: formatDuration(d) }))}
-            onChange={(v) => form.set('regularDuration', v)}
-          />
-        </div>
-      )}
-
-      {!customer && (
-        <TextField label="First note" optional multiline value={form.values.note} onChangeText={(t) => form.set('note', t)} placeholder="Anything the team should know" maxLength={1000} />
-      )}
-    </Screen>
+        </FormSection>
+        <FormSection title="Regular customer" description="Regulars are highlighted and can keep a fixed weekly slot.">
+          <SwitchRow label="Plays every week" value={form.values.isRegular} onChange={(v) => form.set('isRegular', v)} />
+          {form.values.isRegular && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <SelectField
+                label="Usual court"
+                optional
+                value={form.values.regularCourt}
+                options={(courts.data ?? []).map((c) => ({ value: c.id, label: c.name, description: c.sport }))}
+                onChange={(v) => form.set('regularCourt', v)}
+                error={form.errors.regularCourt}
+              />
+              <SelectField label="Day" value={form.values.regularWeekday} options={WEEK_ORDER.map((d) => ({ value: String(d), label: WEEKDAY_LONG[d] }))} onChange={(v) => form.set('regularWeekday', v)} />
+              <SelectField
+                label="Time"
+                value={form.values.regularTime}
+                placeholder="Choose"
+                options={clockOptions('06:00', '23:00').map((t) => ({ value: t, label: formatClock(t) }))}
+                onChange={(v) => form.set('regularTime', v)}
+                error={form.errors.regularTime}
+              />
+              <SelectField label="Length" value={form.values.regularDuration} options={[60, 90, 120].map((d) => ({ value: String(d), label: formatDuration(d) }))} onChange={(v) => form.set('regularDuration', v)} />
+            </div>
+          )}
+        </FormSection>
+        {!customer && (
+          <FormSection title="First note" description="Anything the team should know.">
+            <TextField label="Note" optional multiline rows={3} value={form.values.note} onChangeText={(t) => form.set('note', t)} maxLength={1000} />
+          </FormSection>
+        )}
+      </Card>
+      <FormActions>
+        <Button label="Cancel" variant="secondary" onPress={() => router.back(back)} />
+        <Button label={customer ? 'Save customer' : 'Add customer'} onPress={save} loading={saving} disabled={!!customer && !form.dirty} />
+      </FormActions>
+    </>
   );
 }
