@@ -1,0 +1,449 @@
+@import "tailwindcss";
+
+/* dark: follows the app's chosen scheme (data-theme on <html>), not only the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * SportVenue design tokens (v4, "stone and ink"), mirrored from src/theme/tokens.ts.
+ * The theme is chosen once at the root (data-theme on <html>); screens never override it.
+ */
+
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --background: #f3f1ee;
+  --surface: #fdfcfb;
+  --surface-raised: #fefefd;
+  --surface-muted: #eae7e3;
+  --glass: rgba(253, 252, 251, 0.72);
+  --glass-band: rgba(243, 241, 238, 0.55);
+  --border: #e2ded9;
+  --border-strong: #c9c4bd;
+  --text: #141413;
+  --text-muted: #45433f;
+  --text-subtle: #625f5a;
+  --primary: #141413;
+  --on-primary: #f3f1ee;
+  --accent: #0b7a4b;
+  --accent-strong: #075c37;
+  --accent-soft: #e1f0e5;
+  --accent-decor: #2fbf71;
+  --on-accent: #fdfcfb;
+  --ink: #141413;
+  --on-ink: #f3f1ee;
+  --on-ink-muted: #aca79f;
+  --ink-accent: #4ade9a;
+  --ink-line: rgba(243, 241, 238, 0.14);
+  --warning: #8a4b00;
+  --warning-soft: #f8ebdd;
+  --danger: #b3261e;
+  --danger-soft: #fae6e3;
+  --track: #e2ded9;
+  --skeleton: #e6e2dd;
+  --backdrop: rgba(20, 20, 19, 0.5);
+  --shadow: #2a2117;
+  /* Wide, soft, low-opacity lift. Light mode only. */
+  --elev-card: 0 1px 2px rgba(42, 33, 23, 0.05), 0 1px 3px rgba(42, 33, 23, 0.04);
+  --elev-nav: 0 4px 16px rgba(42, 33, 23, 0.08);
+  --elev-raised: 0 20px 40px rgba(42, 33, 23, 0.12);
+  --elev-hero: 0 8px 24px rgba(42, 33, 23, 0.12);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #121211;
+  --surface: #1b1a19;
+  --surface-raised: #232220;
+  --surface-muted: #2a2927;
+  --glass: rgba(35, 34, 32, 0.72);
+  --glass-band: rgba(18, 18, 17, 0.55);
+  --border: #33312e;
+  --border-strong: #46433f;
+  --text: #f3f1ee;
+  --text-muted: #cfcac3;
+  --text-subtle: #a39e97;
+  --primary: #f3f1ee;
+  --on-primary: #141413;
+  --accent: #3dd68c;
+  --accent-strong: #2fb57a;
+  --accent-soft: #14281d;
+  --accent-decor: #3dd68c;
+  --on-accent: #07140d;
+  --ink: #201f1d;
+  --on-ink: #f3f1ee;
+  --on-ink-muted: #b3aea7;
+  --ink-accent: #4ade9a;
+  --ink-line: rgba(243, 241, 238, 0.12);
+  --warning: #f2b45a;
+  --warning-soft: #34260f;
+  --danger: #ff8a80;
+  --danger-soft: #3a1714;
+  --track: #33312e;
+  --skeleton: #262523;
+  --backdrop: rgba(5, 5, 4, 0.72);
+  --shadow: #050504;
+  /* Dark mode: surface steps and hairlines instead of shadows. */
+  --elev-card: none;
+  --elev-nav: none;
+  --elev-raised: 0 20px 40px rgba(0, 0, 0, 0.4);
+  --elev-hero: none;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-muted: var(--surface-muted);
+  --color-glass: var(--glass);
+  --color-glass-band: var(--glass-band);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-subtle: var(--text-subtle);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-decor: var(--accent-decor);
+  --color-on-accent: var(--on-accent);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --color-on-ink-muted: var(--on-ink-muted);
+  --color-ink-accent: var(--ink-accent);
+  --color-ink-line: var(--ink-line);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-track: var(--track);
+  --color-skeleton: var(--skeleton);
+  --color-backdrop: var(--backdrop);
+
+  /* Web shape scale: tags 6, controls 10, cards 14, hero panels 22, pills full. */
+  --radius-badge: 6px;
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-hero: 22px;
+
+  --shadow-card: var(--elev-card);
+  --shadow-nav: var(--elev-nav);
+  --shadow-raised: var(--elev-raised);
+  --shadow-hero: var(--elev-hero);
+
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Type scale (exact values from the brand spec). */
+@utility t-display-mega {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 40px;
+  line-height: 42px;
+  letter-spacing: -1.2px;
+}
+@utility t-display-xl {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 32px;
+  line-height: 35px;
+  letter-spacing: -0.64px;
+}
+@utility t-display-lg {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 28px;
+  line-height: 33px;
+  letter-spacing: -0.28px;
+}
+@utility t-display-md {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 24px;
+  line-height: 27px;
+  letter-spacing: -0.24px;
+}
+@utility t-display-sm {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 20px;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+@utility t-title-md {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 18px;
+  line-height: 24px;
+  letter-spacing: 0;
+}
+@utility t-title-sm {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 23px;
+  letter-spacing: 0.16px;
+}
+@utility t-body-md {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.16px;
+}
+@utility t-body-strong {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0.16px;
+}
+@utility t-body-sm {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 21px;
+  letter-spacing: 0.14px;
+}
+@utility t-caption {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+@utility t-caption-uppercase {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 15px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+}
+@utility t-button {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+@utility t-nav-link {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+/* App (dashboard) scale: denser than the marketing scale above, tuned for desktop reading. */
+@utility t-page-title {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: -0.4px;
+}
+@utility t-stat {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: -0.3px;
+}
+@utility t-heading {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+@utility t-text {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+@utility t-text-strong {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+@utility t-small {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+@utility t-label {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 13px;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+@utility t-mini {
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0;
+}
+@utility t-overline {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/*
+ * One elevation language for every card-like surface.
+ * Light: lifted surface with a hairline edge and a wide, soft shadow.
+ * Dark: a surface step plus a hairline edge, no shadow.
+ */
+@utility surface-card {
+  background-color: var(--surface);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--elev-card);
+}
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes sv-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+@keyframes sv-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes sv-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes sv-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes sv-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes sv-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-skeleton {
+  animation: sv-pulse 1.4s ease-in-out infinite;
+}
+@utility animate-fade-in {
+  animation: sv-fade-in 180ms ease-out both;
+}
+@utility animate-sheet-in {
+  animation: sv-sheet-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@utility animate-pop-in {
+  animation: sv-pop-in 200ms ease-out both;
+}
+@utility animate-rise {
+  animation: sv-rise 520ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@utility animate-toast-in {
+  animation: sv-toast-in 220ms ease-out both;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--background);
+    color: var(--text);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+    min-height: 100dvh;
+  }
+  button,
+  [role="button"],
+  [role="link"],
+  [role="tab"],
+  [role="radio"],
+  [role="checkbox"],
+  [role="switch"] {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: default;
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  input,
+  textarea {
+    caret-color: var(--accent);
+  }
+  ::selection {
+    background: var(--accent-soft);
+  }
+}
+
+/* Reduced motion: no transforms or entrance animations, only instant state changes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
