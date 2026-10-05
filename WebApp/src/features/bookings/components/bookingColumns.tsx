@@ -21,6 +21,8 @@ export function bookingColumns(f: Format, { showCustomer = true }: { showCustome
       key: 'when',
       header: 'Date',
       primary: !showCustomer,
+      // With a customer column, phones show the date inside the customer cell instead.
+      hideBelow: showCustomer ? 'sm' : undefined,
       cell: (b) => (
         <span className="flex flex-col">
           <AppText variant="text-strong" numeric className="whitespace-nowrap">
@@ -43,7 +45,10 @@ export function bookingColumns(f: Format, { showCustomer = true }: { showCustome
           <AppText variant="text-strong" lines={1}>
             {b.customerName}
           </AppText>
-          <AppText variant="small" tone="muted" lines={1} className="md:hidden">
+          <AppText variant="small" tone="muted" lines={1} className="sm:hidden">
+            {when(b)} · {formatTime(b.startAt, f.timeZone)} · {b.courtName}
+          </AppText>
+          <AppText variant="small" tone="muted" lines={1} className="hidden sm:block md:hidden">
             {b.courtName}
           </AppText>
         </span>

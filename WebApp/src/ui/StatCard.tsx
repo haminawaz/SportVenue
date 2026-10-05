@@ -35,7 +35,7 @@ export function StatCard({ label, value, valueA11y, trend, upIsGood = true, supp
       <div role="group" aria-label={a11y} className="flex min-w-0 flex-col gap-2">
         <div aria-hidden className="flex items-center gap-2">
           {Icon && <Icon size={16} className={tint === 'warning' ? 'text-warning' : 'text-text-subtle'} />}
-          <AppText variant="label" tone="muted" lines={1}>
+          <AppText variant="label" tone="muted" lines={2}>
             {label}
           </AppText>
         </div>

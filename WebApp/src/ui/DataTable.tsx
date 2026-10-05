@@ -61,7 +61,7 @@ export function DataTable<T>({ rows, columns, rowKey, rowHref, rowLabel, caption
               <th
                 key={c.key}
                 scope="col"
-                className={cn('t-overline h-10 px-4 font-semibold whitespace-nowrap text-text-subtle first:pl-5 last:pr-5', c.align === 'right' && 'text-right', c.hideBelow && HIDE[c.hideBelow], c.className)}
+                className={cn('t-overline h-10 px-3 font-semibold whitespace-nowrap text-text-subtle first:pl-4 last:pr-4 sm:px-4 sm:first:pl-5 sm:last:pr-5', c.align === 'right' && 'text-right', c.hideBelow && HIDE[c.hideBelow], c.className)}
               >
                 <span className={c.srOnlyHeader ? 'sr-only' : undefined}>{c.header}</span>
               </th>
@@ -76,7 +76,7 @@ export function DataTable<T>({ rows, columns, rowKey, rowHref, rowLabel, caption
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={cn('t-text px-4 align-middle first:pl-5 last:pr-5', dense ? 'py-2' : 'py-3', c.align === 'right' && 'text-right tabular-nums', c.hideBelow && HIDE[c.hideBelow], c.className)}
+                    className={cn('t-text px-3 align-middle first:pl-4 last:pr-4 sm:px-4 sm:first:pl-5 sm:last:pr-5', dense ? 'py-2' : 'py-3', c.align === 'right' && 'text-right tabular-nums', c.hideBelow && HIDE[c.hideBelow], c.className)}
                   >
                     {c.primary && href ? (
                       <Link
