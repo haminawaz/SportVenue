@@ -10,9 +10,9 @@ import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
-import { Chip, ChipRow } from '@/ui/Chips';
 import { FieldShell, TextField } from '@/ui/Fields';
 import { Notice } from '@/ui/States';
+import { SegmentedControl } from '@/ui/Tabs';
 
 import { useRequestDemo, type DemoRequest, type LeadIntent } from '../api';
 import { AuthLayout } from '../components/AuthLayout';
@@ -95,14 +95,14 @@ export function RequestDemoScreen() {
   if (done) {
     return (
       <AuthLayout eyebrow={copy.eyebrow} title="Request sent">
-        <div className="surface-card flex flex-col items-center gap-3 p-6">
+        <div className="surface-card flex flex-col items-center gap-3 p-8">
           <span className="mb-1 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-accent-soft text-accent">
             <CheckCircle size={40} weight="fill" aria-hidden />
           </span>
           <AppText as="h2" variant="display-md" className="text-center">
             Thanks, {done}.
           </AppText>
-          <AppText tone="muted" className="text-center">
+          <AppText variant="body-md" tone="muted" className="text-center">
             {copy.done}
           </AppText>
           <Button label="Back to home" size="lg" variant="secondary" block onPress={home} className="w-full" />
@@ -115,7 +115,7 @@ export function RequestDemoScreen() {
     <AuthLayout eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} points={copy.points}>
       <form
         noValidate
-        className="surface-card flex flex-col gap-5 p-5"
+        className="flex flex-col gap-6"
         onSubmit={(e) => {
           e.preventDefault();
           void submit();
@@ -145,11 +145,9 @@ export function RequestDemoScreen() {
           <TextField label="Facility name" icon={Buildings} value={form.values.facilityName} onChangeText={(t) => form.set('facilityName', t)} error={form.errors.facilityName} autoCapitalize="words" autoComplete="organization" />
           <TextField label="City" icon={MapPin} value={form.values.city} onChangeText={(t) => form.set('city', t)} error={form.errors.city} autoCapitalize="words" autoComplete="address-level2" />
           <FieldShell label="How many courts?">
-            <ChipRow bleed={false}>
-              {COURTS.map((c) => (
-                <Chip key={c} label={c} selected={form.values.courts === c} onPress={() => form.set('courts', c)} />
-              ))}
-            </ChipRow>
+            <div>
+              <SegmentedControl label="How many courts?" value={form.values.courts} options={COURTS.map((c) => ({ value: c, label: c }))} onChange={(c) => form.set('courts', c)} />
+            </div>
           </FieldShell>
           <TextField
             label="Anything else?"

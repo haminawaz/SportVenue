@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 
 import { routes, type Href } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
-import { useDocumentTitle } from '@/ui/LargeTitle';
+import { useDocumentTitle } from '@/ui/Page';
 
 import { CTASection } from '../components/landing/CTASection';
 import { Features } from '../components/landing/Features';

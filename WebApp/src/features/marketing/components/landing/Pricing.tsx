@@ -17,7 +17,7 @@ export function Pricing({ onGetQuote }: { onGetQuote: () => void }) {
           <AppText as="h2" variant="display-lg">
             Pricing that fits your facility.
           </AppText>
-          <AppText as="p" tone="muted">
+          <AppText as="p" variant="body-md" tone="muted">
             Plans depend on how many courts you run. Tell us about your facility and we will send you a quote.
           </AppText>
         </div>

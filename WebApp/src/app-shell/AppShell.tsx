@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -223,9 +223,6 @@ function TopBar({ onMenu, onLogout }: { onMenu: () => void; onLogout: () => void
 export function LogoutDialog({ visible, onCancel }: { visible: boolean; onCancel: () => void }) {
   const { signOut } = useAuth();
   const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    if (!visible) setBusy(false);
-  }, [visible]);
   return (
     <ConfirmDialog
       visible={visible}
@@ -235,7 +232,10 @@ export function LogoutDialog({ visible, onCancel }: { visible: boolean; onCancel
       cancelLabel="Stay"
       destructive
       loading={busy}
-      onCancel={onCancel}
+      onCancel={() => {
+        setBusy(false);
+        onCancel();
+      }}
       onConfirm={async () => {
         setBusy(true);
         await signOut();

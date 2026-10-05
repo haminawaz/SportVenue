@@ -33,7 +33,7 @@ export function HowItWorks() {
                 <AppText as="h3" variant="title-md">
                   {s.title}
                 </AppText>
-                <AppText as="p" tone="muted">
+                <AppText as="p" variant="body-md" tone="muted">
                   {s.body}
                 </AppText>
               </div>

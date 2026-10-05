@@ -50,7 +50,7 @@ export function SignInScreen() {
     <AuthLayout eyebrow="Welcome back" title="Owner login" lead="See today’s bookings, payments and courts in one place.">
       <form
         noValidate
-        className="surface-card flex flex-col gap-[18px] p-5"
+        className="flex flex-col gap-4"
         onSubmit={(e) => {
           e.preventDefault();
           void onSubmit();

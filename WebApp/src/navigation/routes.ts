@@ -73,9 +73,3 @@ export const routes = {
   requestDemo: (intent?: 'demo' | 'quote') => `/request-demo${q({ intent })}` as Href,
 };
 
-/** The five daily destinations shown in the tab bar (and the desktop sidebar). */
-export const TAB_PATHS = ['/', '/bookings', '/payments', '/customers', '/more'] as const;
-
-export function isTabPath(pathname: string) {
-  return (TAB_PATHS as readonly string[]).includes(pathname);
-}

@@ -55,14 +55,14 @@ export function Hero({ topInset, onGetStarted, onHowItWorks }: HeroProps) {
             </AppText>
           </div>
           <div className="animate-rise" style={rise(1)}>
-            <AppText as="p" tone="muted" className="max-w-[520px]">
+            <AppText as="p" tone="muted" variant="body-md" className="max-w-[520px]">
               Bookings, payments and customers for your whole facility, in one app built for owners.
             </AppText>
           </div>
           {/* Both actions share one line from 360px up; they wrap only on smaller screens. */}
           <div className="flex animate-rise flex-wrap gap-2" style={rise(2)}>
-            <Button label="Get started" variant="accent" onPress={onGetStarted} />
-            <Button label="See how it works" variant="secondary" onPress={onHowItWorks} />
+            <Button label="Get started" variant="accent" size="lg" onPress={onGetStarted} />
+            <Button label="See how it works" variant="secondary" size="lg" onPress={onHowItWorks} />
           </div>
         </div>
 

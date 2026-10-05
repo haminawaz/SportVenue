@@ -29,7 +29,7 @@ export function Features() {
         <AppText as="h2" variant="display-xl">
           Everything your facility runs on.
         </AppText>
-        <AppText as="p" tone="muted" className="max-w-[520px]">
+        <AppText as="p" tone="muted" variant="body-md" className="max-w-[520px]">
           One app for the front counter, the courts and the books.
         </AppText>
       </div>
@@ -57,7 +57,7 @@ export function Features() {
                 <AppText as="h3" variant="title-md" className={cn(featured && '@min-[520px]:t-display-md')}>
                   {f.title}
                 </AppText>
-                <AppText as="p" tone="muted">
+                <AppText as="p" variant="body-md" tone="muted">
                   {f.body}
                 </AppText>
               </li>

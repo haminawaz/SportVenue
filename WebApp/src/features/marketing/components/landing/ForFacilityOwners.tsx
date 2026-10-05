@@ -18,7 +18,7 @@ export function ForFacilityOwners({ onBookDemo }: { onBookDemo: () => void }) {
         <AppText as="h2" variant="display-xl" className="text-on-ink">
           Built for the people who run the venue.
         </AppText>
-        <AppText as="p" className="max-w-[560px] text-on-ink-muted">
+        <AppText as="p" variant="body-md" className="max-w-[560px] text-on-ink-muted">
           Players get a booking app. You get the back office that keeps the courts full and the books straight.
         </AppText>
       </div>
@@ -43,7 +43,7 @@ function Column({ title, items, icon: Icon, tone }: { title: string; items: stri
         {items.map((t) => (
           <li key={t} className="flex items-start gap-3">
             <Icon size={22} weight={tone === 'accent' ? 'fill' : 'regular'} className={cn('mt-px shrink-0', tone === 'accent' ? 'text-ink-accent' : 'text-on-ink-muted')} aria-hidden />
-            <AppText className={cn('flex-1', tone === 'accent' ? 'text-on-ink' : 'text-on-ink-muted')}>{t}</AppText>
+            <AppText variant="body-md" className={cn('flex-1', tone === 'accent' ? 'text-on-ink' : 'text-on-ink-muted')}>{t}</AppText>
           </li>
         ))}
       </ul>

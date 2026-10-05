@@ -44,7 +44,7 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
         <div className="flex flex-col gap-8 min-[600px]:flex-row min-[600px]:justify-between">
           <div className="flex flex-col gap-3">
             <BrandMark size={32} />
-            <AppText as="p" tone="muted" className="max-w-[260px]">
+            <AppText as="p" tone="muted" variant="body-md" className="max-w-[260px]">
               Software for sports facility owners.
             </AppText>
           </div>

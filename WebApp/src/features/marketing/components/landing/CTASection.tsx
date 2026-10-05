@@ -12,7 +12,7 @@ export function CTASection({ onGetStarted }: { onGetStarted: () => void }) {
       <AppText as="h2" variant="display-xl" className="text-center text-on-ink">
         Put your facility on SportVenue.
       </AppText>
-      <AppText as="p" className="max-w-[480px] text-center text-on-ink-muted">
+      <AppText as="p" variant="body-md" className="max-w-[480px] text-center text-on-ink-muted">
         We set it up with your courts and prices, then walk you through it.
       </AppText>
       <div className="mt-2">
