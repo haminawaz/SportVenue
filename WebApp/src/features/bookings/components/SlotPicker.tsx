@@ -55,7 +55,7 @@ export function SlotPicker({ value, onChange, ignoreBookingId, courtError, slotE
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {courts.isPending ? (
           <FieldShell label="Court">
             <Skeleton height={40} />

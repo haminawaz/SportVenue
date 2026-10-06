@@ -52,7 +52,7 @@ export const OutstandingPaymentCard = memo(function OutstandingPaymentCard({ pay
           </span>
         </span>
       </button>
-      <div className="flex gap-2 pl-11">
+      <div className="flex flex-wrap gap-2 pl-11">
         <Button size="sm" variant="secondary" label="Record payment" icon={Receipt} aria-label={`Record payment from ${p.customerName}`} onPress={() => onRecord(p.bookingId)} />
         {canRemind && (
           <Button size="sm" variant="ghost" label="Remind" icon={Bell} loading={reminding} disabled={remindDisabled} aria-label={`Remind ${p.customerName} to pay`} onPress={() => onRemind(p.bookingId)} />

@@ -53,11 +53,12 @@ const ICON_ONLY: Record<ButtonSize, string> = { sm: 'h-8 w-8 px-0', md: 'h-9 w-9
 
 export function buttonClass({ variant = 'primary', size = 'md', block, iconOnly, disabled }: { variant?: ButtonVariant; size?: ButtonSize; block?: boolean; iconOnly?: boolean; disabled?: boolean }) {
   return cn(
-    'inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap rounded-control transition-[background-color,opacity,box-shadow] duration-100',
+    'inline-flex select-none items-center justify-center whitespace-nowrap rounded-control transition-[background-color,opacity,box-shadow] duration-100',
     SIZE[size],
     iconOnly && ICON_ONLY[size],
     VARIANT[variant],
-    block && 'w-full',
+    // A block button fills its row but may shrink to share it; otherwise buttons keep their size.
+    block ? 'w-full min-w-0' : 'shrink-0',
     disabled && 'pointer-events-none opacity-45',
   );
 }

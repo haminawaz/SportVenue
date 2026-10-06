@@ -52,7 +52,7 @@ type DataTableProps<T> = {
 
 export function DataTable<T>({ rows, columns, rowKey, rowHref, rowLabel, caption, muted, dense }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead>
@@ -76,14 +76,14 @@ export function DataTable<T>({ rows, columns, rowKey, rowHref, rowLabel, caption
                 {columns.map((c) => (
                   <td
                     key={c.key}
-                    className={cn('t-text px-3 align-middle first:pl-4 last:pr-4 sm:px-4 sm:first:pl-5 sm:last:pr-5', dense ? 'py-2' : 'py-3', c.align === 'right' && 'text-right tabular-nums', c.hideBelow && HIDE[c.hideBelow], c.className)}
+                    className={cn('t-text px-3 align-middle first:pl-4 last:pr-4 sm:px-4 sm:first:pl-5 sm:last:pr-5', dense ? 'py-2' : 'py-3', c.align === 'right' && 'text-right tabular-nums', c.hideBelow && HIDE[c.hideBelow], c.primary && 'w-full max-w-0 overflow-hidden', c.className)}
                   >
                     {c.primary && href ? (
                       <Link
                         href={href}
                         onClick={notePush}
                         aria-label={rowLabel?.(row)}
-                        className="outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-[4px] focus-visible:after:outline-2 focus-visible:after:outline-accent"
+                        className="block min-w-0 outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-[4px] focus-visible:after:outline-2 focus-visible:after:outline-accent"
                       >
                         {c.cell(row)}
                       </Link>

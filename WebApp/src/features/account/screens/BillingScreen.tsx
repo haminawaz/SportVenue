@@ -34,7 +34,7 @@ export function BillingScreen() {
           return (
             <>
               {s.status === 'PAST_DUE' && <Notice tone="danger" title="Payment failed" message="Update your card to keep bookings running." />}
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <Card tint="accent" className="flex flex-col gap-1">
                   <div className="flex items-center">
                     <AppText variant="label" tone="muted" className="flex-1">

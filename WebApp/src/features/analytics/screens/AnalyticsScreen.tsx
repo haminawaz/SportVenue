@@ -92,7 +92,7 @@ export function AnalyticsScreen() {
           )
         }
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <SegmentedControl label="Period" value={preset} options={PRESETS} onChange={setPreset} />
             {preset === 'custom' && (
               <div className="flex items-center gap-1.5">

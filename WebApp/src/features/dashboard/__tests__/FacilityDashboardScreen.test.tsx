@@ -41,7 +41,7 @@ const mockDestinations = vi.mocked(dashboardDestinations);
 const TZ = 'Asia/Karachi';
 function makeSession(): Session {
   return {
-    user: { id: 'u1', firstName: 'Hamid', lastName: 'Nawaz', email: 'hamid@example.com', role: 'OWNER' },
+    user: { id: 'u1', firstName: 'John', lastName: 'Miller', email: 'john@example.com', role: 'OWNER' },
     facility: { id: 'fac_1', name: 'Baseline Padel Club', timezone: TZ, currency: 'PKR' },
   };
 }
@@ -74,7 +74,7 @@ function makeDashboard(overrides: Partial<FacilityDashboard> = {}): FacilityDash
     outstandingPayments: [
       {
         bookingId: 'booking_1',
-        customerName: 'Ahmed Khan',
+        customerName: 'James Carter',
         courtName: 'Court 1',
         startAt: `${today}T20:00:00`,
         endAt: `${today}T21:00:00`,
@@ -84,7 +84,7 @@ function makeDashboard(overrides: Partial<FacilityDashboard> = {}): FacilityDash
       },
     ],
     recentBookings: [
-      { bookingId: 'booking_120', customerName: 'Bilal Siddiqui', courtName: 'Court 1', startAt: `${today}T19:00:00`, endAt: `${today}T20:00:00`, amount: 2500, status: 'PAID' },
+      { bookingId: 'booking_120', customerName: 'Michael Turner', courtName: 'Court 1', startAt: `${today}T19:00:00`, endAt: `${today}T20:00:00`, amount: 2500, status: 'PAID' },
     ],
     capabilities: { paymentReminders: true },
     ...overrides,
@@ -228,7 +228,7 @@ describe('navigation', () => {
   test('booking row opens the booking by id only', async () => {
     const user = userEvent.setup();
     renderDashboard();
-    await user.click(await screen.findByRole('button', { name: /^Bilal Siddiqui/ }));
+    await user.click(await screen.findByRole('button', { name: /^Michael Turner/ }));
     expect(mockDestinations.bookingDetail).toHaveBeenCalledWith('booking_120');
     expect(mockPush).toHaveBeenCalledWith('/bookings/booking_120');
   });
@@ -256,13 +256,13 @@ describe('owner actions', () => {
   test('hides Remind when the facility plan has no reminder capability', async () => {
     service.getDashboard.mockResolvedValue(makeDashboard({ capabilities: { paymentReminders: false } }));
     renderDashboard();
-    expect(await screen.findByText('Ahmed Khan')).toBeInTheDocument();
+    expect(await screen.findByText('James Carter')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Remind/ })).not.toBeInTheDocument();
   });
 
   test('the owner sees every action', async () => {
     renderDashboard();
-    expect(await screen.findByRole('button', { name: 'Remind Ahmed Khan to pay' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Remind James Carter to pay' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'New booking' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Record payment' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add customer' })).toBeInTheDocument();
@@ -271,7 +271,7 @@ describe('owner actions', () => {
   test('outstanding payments and opportunities share one Needs attention list', async () => {
     renderDashboard();
     expect(await screen.findByText('Needs attention')).toBeInTheDocument();
-    expect(screen.getByText('Ahmed Khan')).toBeInTheDocument();
+    expect(screen.getByText('James Carter')).toBeInTheDocument();
     expect(screen.getByText('Low demand on Court 2')).toBeInTheDocument();
   });
 });
@@ -283,12 +283,12 @@ describe('payment reminder', () => {
     const user = userEvent.setup();
     renderDashboard();
 
-    const remind = await screen.findByRole('button', { name: 'Remind Ahmed Khan to pay' });
+    const remind = await screen.findByRole('button', { name: 'Remind James Carter to pay' });
     const callsBefore = service.getDashboard.mock.calls.length;
     await user.click(remind);
 
     expect(service.sendPaymentReminder).toHaveBeenCalledWith('booking_1');
-    expect(screen.getByRole('button', { name: 'Remind Ahmed Khan to pay' })).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: 'Remind James Carter to pay' })).toHaveAttribute('aria-busy', 'true');
     expect(screen.queryByText('Reminder sent')).not.toBeInTheDocument();
 
     confirm();
@@ -301,7 +301,7 @@ describe('payment reminder', () => {
     const user = userEvent.setup();
     renderDashboard();
 
-    await user.click(await screen.findByRole('button', { name: 'Remind Ahmed Khan to pay' }));
+    await user.click(await screen.findByRole('button', { name: 'Remind James Carter to pay' }));
     expect(await screen.findByText(/Couldn't send reminder/)).toBeInTheDocument();
     expect(screen.queryByText('Reminder sent')).not.toBeInTheDocument();
   });

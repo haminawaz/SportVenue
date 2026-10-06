@@ -60,7 +60,7 @@ import { ToastProvider } from '@/ui/Toast';
 import { handleMockRequest } from '@/dev/mockServer';
 import type { BookingDetail, Page, Booking, OutstandingBalance, Payment } from '@/domain/types';
 
-const TOKEN = 'mock.user_hamid.1';
+const TOKEN = 'mock.user_john.1';
 const SLOW = { timeout: 15_000 };
 
 function Ready({ children }: { children: ReactNode }) {
@@ -104,8 +104,8 @@ beforeEach(() => {
 describe('signed-out screens', () => {
   test('landing page', () => {
     show(<LandingScreen />, { signedIn: false });
-    expect(screen.getByRole('heading', { level: 1, name: /Run your courts/ })).toBeInTheDocument();
-    expect(screen.getByText('Everything your facility runs on.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: /The back office for your sports facility/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'One app for the courts, the counter and the books.' })).toBeInTheDocument();
   });
 
   test('log in with the seeded owner signs in', async () => {
@@ -113,13 +113,13 @@ describe('signed-out screens', () => {
     show(<SignInScreen />, { signedIn: false });
     await user.click(screen.getByRole('button', { name: 'Fill in the owner account with sample data' }));
     await user.click(screen.getByRole('button', { name: 'Log in' }));
-    await waitFor(() => expect(window.sessionStorage.getItem('sportvenue.accessToken')).toMatch(/^mock\.user_hamid\./), SLOW);
+    await waitFor(() => expect(window.sessionStorage.getItem('sportvenue.accessToken')).toMatch(/^mock\.user_john\./), SLOW);
   });
 
   test('log in shows the server message for a wrong password', async () => {
     const user = userEvent.setup();
     show(<SignInScreen />, { signedIn: false });
-    await user.type(screen.getByLabelText('Email'), 'hamid@baselinepadel.pk');
+    await user.type(screen.getByLabelText('Email'), 'john@baselinepadel.pk');
     await user.type(screen.getByLabelText('Password'), 'wrong');
     await user.click(screen.getByRole('button', { name: 'Log in' }));
     expect(await screen.findByText('Email or password is incorrect.', undefined, SLOW)).toBeInTheDocument();
@@ -131,13 +131,13 @@ describe('signed-out screens', () => {
     expect(screen.getAllByRole('heading', { name: 'Book a demo' }).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('button', { name: 'Request demo' }));
     expect(await screen.findByText('Enter your name.')).toBeInTheDocument();
-    await user.type(screen.getByLabelText('Your name'), 'Imran Aslam');
+    await user.type(screen.getByLabelText('Your name'), 'Mark Stevens');
     await user.type(screen.getByLabelText('Phone'), '+92 300 1234567');
     await user.type(screen.getByLabelText('Email'), 'imran@club.pk');
     await user.type(screen.getByLabelText('Facility name'), 'Smash Club');
     await user.type(screen.getByLabelText('City'), 'Lahore');
     await user.click(screen.getByRole('button', { name: 'Request demo' }));
-    expect(await screen.findByText('Thanks, Imran.', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText('Thanks, Mark.', undefined, SLOW)).toBeInTheDocument();
   });
 });
 
@@ -169,13 +169,13 @@ describe('tab screens', () => {
 
   test('customers', async () => {
     show(<CustomersScreen />);
-    expect(await screen.findByText('Ahmed Khan', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText('James Carter', undefined, SLOW)).toBeInTheDocument();
     expectNoErrors();
   });
 
   test('more', async () => {
     show(<MoreScreen />);
-    expect(await screen.findByText(/Hamid Nawaz · Owner, Baseline Padel Club/, undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByText(/John Miller · Owner, Baseline Padel Club/, undefined, SLOW)).toBeInTheDocument();
   });
 });
 
@@ -249,7 +249,7 @@ describe('customers', () => {
   test('detail, with adding a note', async () => {
     const user = userEvent.setup();
     show(<CustomerDetailScreen />, { params: { id: 'cust_1' } });
-    expect(await screen.findByRole('heading', { name: 'Ahmed Khan' }, SLOW)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'James Carter' }, SLOW)).toBeInTheDocument();
     await user.type(screen.getByLabelText('Add a note'), 'Smoke test note');
     await user.click(screen.getByRole('button', { name: 'Save note' }));
     expect(await screen.findByText('Smoke test note', undefined, SLOW)).toBeInTheDocument();
@@ -258,7 +258,7 @@ describe('customers', () => {
 
   test('edit form', async () => {
     show(<CustomerFormScreen />, { params: { id: 'cust_1' } });
-    expect(await screen.findByDisplayValue('Ahmed Khan', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('James Carter', undefined, SLOW)).toBeInTheDocument();
   });
 
   test('bookings and payments history', async () => {
@@ -343,7 +343,7 @@ describe('facility and account', () => {
     expect(window.localStorage.getItem('sportvenue.appearance')).toBe('dark');
     r.unmount();
     r = show(<ProfileScreen />);
-    expect(await screen.findByDisplayValue('Hamid', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByDisplayValue('John', undefined, SLOW)).toBeInTheDocument();
     r.unmount();
     r = show(<NotificationPreferencesScreen />);
     const push = await screen.findByRole('switch', { name: 'Push notifications' }, SLOW);

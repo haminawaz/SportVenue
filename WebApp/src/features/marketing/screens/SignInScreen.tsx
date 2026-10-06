@@ -1,14 +1,15 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { ArrowRight, EnvelopeSimple, LockSimple } from '@phosphor-icons/react';
+import Link from 'next/link';
+import { EnvelopeSimple, LockSimple } from '@phosphor-icons/react';
 
 import { ApiError } from '@/api/client';
 import { toUserFacingError } from '@/api/errors';
 import { USE_MOCKS } from '@/config/env';
 import { rules, useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
-import { useAppRouter } from '@/navigation/useAppRouter';
+import { notePush } from '@/navigation/useAppRouter';
 import { useAuth } from '@/session/SessionProvider';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
@@ -18,7 +19,6 @@ import { Notice } from '@/ui/States';
 import { AuthLayout } from '../components/AuthLayout';
 
 export function SignInScreen() {
-  const router = useAppRouter();
   const { signIn } = useAuth();
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -82,15 +82,16 @@ export function SignInScreen() {
         <Button type="submit" label="Log in" size="lg" block loading={submitting} />
       </form>
 
-      <div className="flex items-center gap-3 rounded-card bg-surface-muted py-4 pr-3 pl-5">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <AppText variant="body-strong">New to SportVenue?</AppText>
-          <AppText variant="body-sm" tone="muted">
-            We set it up with your courts.
-          </AppText>
-        </div>
-        <Button label="Get started" variant="accent" size="sm" trailingIcon={ArrowRight} onPress={() => router.push(routes.requestDemo())} className="self-center" />
-      </div>
+      <p className="text-center t-body-sm text-text-muted">
+        New to SportVenue?{' '}
+        <Link
+          href={routes.requestDemo()}
+          onClick={notePush}
+          className="rounded-badge font-semibold text-accent underline-offset-4 hover:underline"
+        >
+          Get started
+        </Link>
+      </p>
 
       {/* NODE_ENV repeated so production builds drop the sample accounts entirely. */}
       {process.env.NODE_ENV !== 'production' && USE_MOCKS && (
@@ -98,14 +99,14 @@ export function SignInScreen() {
           <AppText variant="body-sm" tone="muted">
             Development build: sample owners
           </AppText>
-          <div className="flex gap-2 self-stretch">
+          <div className="grid grid-cols-2 gap-2 self-stretch">
             <Button
               label="Seeded facility"
               variant="ghost"
               size="sm"
               block
               aria-label="Fill in the owner account with sample data"
-              onPress={() => form.patch({ email: 'hamid@baselinepadel.pk', password: 'sportvenue123' })}
+              onPress={() => form.patch({ email: 'john@baselinepadel.pk', password: 'sportvenue123' })}
             />
             <Button
               label="Empty facility"
@@ -113,7 +114,7 @@ export function SignInScreen() {
               size="sm"
               block
               aria-label="Fill in the owner account with no data"
-              onPress={() => form.patch({ email: 'sana@greenlinearena.pk', password: 'sportvenue123' })}
+              onPress={() => form.patch({ email: 'emma@greenlinearena.pk', password: 'sportvenue123' })}
             />
           </div>
         </div>

@@ -71,7 +71,7 @@ export function PageHeader({ title, description, breadcrumbs, meta, actions, lea
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
           {!hideRefresh && <RefreshButton />}
           {actions}
         </div>
@@ -136,7 +136,7 @@ export function DetailLayout({ main, side }: { main: ReactNode; side: ReactNode 
  */
 export function FormSection({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
   return (
-    <section className="grid gap-4 border-b border-border py-6 first:pt-0 last:border-b-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
+    <section className="grid grid-cols-1 gap-4 border-b border-border py-6 first:pt-0 last:border-b-0 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-10">
       <div className="flex flex-col gap-1">
         <AppText as="h2" variant="heading">
           {title}

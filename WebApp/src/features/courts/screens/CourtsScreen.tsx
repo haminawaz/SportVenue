@@ -27,7 +27,7 @@ type Filter = 'ALL' | CourtStatus;
 
 function GridSkeleton() {
   return (
-    <div role="progressbar" aria-label="Loading" aria-busy className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div role="progressbar" aria-label="Loading" aria-busy className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {[0, 1, 2].map((i) => (
         <div key={i} className="surface-card flex flex-col gap-3 p-5">
           <Skeleton width="50%" height={18} />
@@ -84,7 +84,7 @@ export function CourtsScreen() {
               {shown.length === 0 ? (
                 <EmptyState framed icon={CourtBasketball} title={`No ${filter === 'ALL' ? '' : COURT_STATUS[filter as CourtStatus].label.toLowerCase()} courts`} />
               ) : (
-                <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {shown.map((c) => (
                     <CourtCard key={c.id} court={c} />
                   ))}

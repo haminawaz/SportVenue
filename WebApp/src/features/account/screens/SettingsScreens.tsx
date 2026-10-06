@@ -106,7 +106,7 @@ export function ProfileScreen() {
     <SettingsLayout>
       <Card>
         <FormSection title="Profile" description="Your name and how to reach you. You sign in with this email.">
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="First name" value={form.values.firstName} onChangeText={(t) => form.set('firstName', t)} error={form.errors.firstName} autoComplete="given-name" />
             <TextField label="Last name" value={form.values.lastName} onChangeText={(t) => form.set('lastName', t)} error={form.errors.lastName} autoComplete="family-name" />
             <TextField label="Email" value={form.values.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" autoComplete="email" />

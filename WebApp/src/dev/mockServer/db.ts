@@ -128,10 +128,10 @@ function seed(): Db {
   ];
 
   const customerNames = [
-    'Ahmed Khan', 'Hira Malik', 'Bilal Siddiqui', 'Sana Javed', 'Faisal Raza', 'Zainab Qureshi', 'Usman Tariq', 'Mariam Aslam',
-    'Hamza Sheikh', 'Ayesha Butt', 'Omar Farooq', 'Fatima Nadeem', 'Saad Chaudhry', 'Mahnoor Iqbal', 'Ali Haider', 'Rabia Anwar',
-    'Danish Mirza', 'Iqra Rehman', 'Taimur Hassan', 'Noor ul Ain Abbasi', 'Shehryar Awan', 'Laiba Zafar', 'Muhammad Abdullah Rizwan Siddiqui',
-    'Kiran Yousaf', 'Asad Mehmood', 'Emaan Saleem', 'Junaid Akhtar', 'Sadia Khalid',
+    'James Carter', 'Olivia Brown', 'Michael Turner', 'Sophia Bennett', 'David Wilson', 'Emily Parker', 'Daniel Hughes', 'Grace Mitchell',
+    'Ryan Cooper', 'Chloe Adams', 'Thomas Reed', 'Lucy Morgan', 'Nathan Brooks', 'Hannah Scott', 'Adam Foster', 'Megan Price',
+    'Chris Walker', 'Amelia Ward', 'Lucas Gray', 'Isabella Fitzgerald', 'Ethan Collins', 'Ava Robinson', 'Alexander James Montgomery-Whitfield',
+    'Mia Harrison', 'Samuel Lewis', 'Ella Richardson', 'Oliver Hayes', 'Zoe Campbell',
   ];
   const customers: StoredCustomer[] = customerNames.map((name, i) => {
     const slug = name.toLowerCase().replace(/[^a-z]+/g, '.').replace(/\.$/, '');
@@ -151,9 +151,9 @@ function seed(): Db {
   customers[2].regularSlot = { courtId: 'court_1', weekday: 5, startTime: '19:00', durationMinutes: 60 };
   customers[5].regularSlot = { courtId: 'court_1', weekday: 4, startTime: '19:00', durationMinutes: 60 };
   customers[6].regularSlot = { courtId: 'court_4', weekday: 6, startTime: '21:00', durationMinutes: 90 };
-  customers[0].notes.push({ id: 'note_1', body: 'Prefers Court 1. Pays by bank transfer at the end of the month.', createdAt: at(-40, '14:10'), author: 'Hamid Nawaz' });
-  customers[6].notes.push({ id: 'note_2', body: 'Captain of the Saturday futsal league team (10 players).', createdAt: at(-75, '21:40'), author: 'Hamid Nawaz' });
-  customers[4].notes.push({ id: 'note_3', body: 'Two late cancellations in August. Ask for advance payment on weekend slots.', createdAt: at(-25, '11:00'), author: 'Hamid Nawaz' });
+  customers[0].notes.push({ id: 'note_1', body: 'Prefers Court 1. Pays by bank transfer at the end of the month.', createdAt: at(-40, '14:10'), author: 'John Miller' });
+  customers[6].notes.push({ id: 'note_2', body: 'Captain of the Saturday futsal league team (10 players).', createdAt: at(-75, '21:40'), author: 'John Miller' });
+  customers[4].notes.push({ id: 'note_3', body: 'Two late cancellations in August. Ask for advance payment on weekend slots.', createdAt: at(-25, '11:00'), author: 'John Miller' });
 
   /* ----- bookings and payments ----- */
   const bookings: StoredBooking[] = [];
@@ -210,11 +210,11 @@ function seed(): Db {
           price: q.price,
           discountAmount: 0,
           createdAt,
-          history: [{ id: `${id}_h1`, at: createdAt, type: 'CREATED', description: `Booked ${court.name}`, actor: pick(['Hamid Nawaz', 'Online booking', 'Online booking']) }],
+          history: [{ id: `${id}_h1`, at: createdAt, type: 'CREATED', description: `Booked ${court.name}`, actor: pick(['John Miller', 'Online booking', 'Online booking']) }],
         };
         if (status === 'CANCELLED') {
           booking.cancelReason = pick(cancelReasons);
-          booking.history.push({ id: `${id}_h2`, at: naive(date, Math.max(cursor - 240, 0)), type: 'CANCELLED', description: `Cancelled: ${booking.cancelReason}`, actor: 'Hamid Nawaz' });
+          booking.history.push({ id: `${id}_h2`, at: naive(date, Math.max(cursor - 240, 0)), type: 'CANCELLED', description: `Cancelled: ${booking.cancelReason}`, actor: 'John Miller' });
         }
         seq += 1;
         bookings.push(booking);
@@ -232,9 +232,9 @@ function seed(): Db {
               amount,
               method: pick(methods),
               receivedAt,
-              recordedBy: 'Hamid Nawaz',
+              recordedBy: 'John Miller',
             });
-            booking.history.push({ id: `${id}_h3`, at: receivedAt, type: 'PAYMENT', description: `Payment received`, actor: 'Hamid Nawaz' });
+            booking.history.push({ id: `${id}_h3`, at: receivedAt, type: 'PAYMENT', description: `Payment received`, actor: 'John Miller' });
           }
         }
         cursor += duration;
@@ -296,10 +296,10 @@ function seed(): Db {
       id: 'opp_3',
       type: 'REPEAT_CUSTOMER',
       status: 'OPEN',
-      title: 'Zainab Qureshi has not booked in 3 weeks',
+      title: 'Emily Parker has not booked in 3 weeks',
       description: 'She played Court 1 every Thursday at 7 PM until early September.',
       customerId: 'cust_6',
-      customerName: 'Zainab Qureshi',
+      customerName: 'Emily Parker',
       courtId: 'court_1',
       courtName: 'Court 1',
       recommendedAction: { type: 'CONTACT' },
@@ -326,12 +326,12 @@ function seed(): Db {
             id: 'opp_5',
             type: 'CANCELLATION_RISK',
             status: 'OPEN',
-            title: 'Faisal Raza may cancel',
+            title: 'David Wilson may cancel',
             description: 'Faisal cancelled 2 of his last 5 bookings less than 12 hours before start.',
             bookingId: riskBooking.id,
             bookingReference: riskBooking.reference,
             customerId: 'cust_5',
-            customerName: 'Faisal Raza',
+            customerName: 'David Wilson',
             courtId: riskBooking.courtId,
             courtName: courts.find((c) => c.id === riskBooking.courtId)!.name,
             startAt: riskBooking.startAt,
@@ -353,7 +353,7 @@ function seed(): Db {
       recommendedAction: { type: 'PRICE_INCREASE', value: 10, unit: 'PERCENT' },
       potentialRevenue: 18000,
       createdAt: at(-30, '06:00'),
-      resolution: { outcome: 'ACTIONED', note: 'Added the Floodlit evenings rate.', at: at(-28, '10:15'), by: 'Hamid Nawaz' },
+      resolution: { outcome: 'ACTIONED', note: 'Added the Floodlit evenings rate.', at: at(-28, '10:15'), by: 'John Miller' },
     },
     {
       id: 'opp_7',
@@ -364,7 +364,7 @@ function seed(): Db {
       courtId: 'court_5',
       courtName: 'Squash Court',
       createdAt: at(-40, '06:00'),
-      resolution: { outcome: 'DISMISSED', note: 'Court closed for the season.', at: at(-38, '09:00'), by: 'Hamid Nawaz' },
+      resolution: { outcome: 'DISMISSED', note: 'Court closed for the season.', at: at(-38, '09:00'), by: 'John Miller' },
     },
   ];
 
@@ -393,21 +393,21 @@ function seed(): Db {
       ? [{ id: 'ntf_5', type: 'BOOKING_CANCELLED' as const, title: 'Booking cancelled', body: `${nameOf(lastCancelled.customerId)} cancelled ${lastCancelled.reference} (${lastCancelled.cancelReason}).`, createdAt: minutesAgo(60 * 26), read: true, link: { kind: 'booking' as const, id: lastCancelled.id } }]
       : []),
     { id: 'ntf_6', type: 'SYSTEM', title: 'New revenue opportunity', body: 'Court 2 is quiet on weekday afternoons. See the suggested action.', createdAt: minutesAgo(60 * 40), read: true, link: { kind: 'opportunity', id: 'opp_1' } },
-    { id: 'ntf_7', type: 'BOOKING_CREATED', title: 'New booking', body: 'Usman Tariq booked the Futsal Pitch for Saturday at 9:00 PM.', createdAt: minutesAgo(60 * 50), read: true, link: { kind: 'customer', id: 'cust_7' } },
+    { id: 'ntf_7', type: 'BOOKING_CREATED', title: 'New booking', body: 'Daniel Hughes booked the Futsal Pitch for Saturday at 9:00 PM.', createdAt: minutesAgo(60 * 50), read: true, link: { kind: 'customer', id: 'cust_7' } },
     { id: 'ntf_8', type: 'SYSTEM', title: 'Your invoice is ready', body: 'The September invoice for the Growth plan has been paid.', createdAt: minutesAgo(60 * 24 * 6), read: true },
   ];
 
   const users: UserProfile[] = [
-    { id: 'user_hamid', firstName: 'Hamid', lastName: 'Nawaz', email: 'hamid@baselinepadel.pk', phone: '+92 321 4550918', role: 'OWNER' },
+    { id: 'user_john', firstName: 'John', lastName: 'Miller', email: 'john@baselinepadel.pk', phone: '+92 321 4550918', role: 'OWNER' },
   ];
 
   const pricingHistory: PricingHistoryEntry[] = [
-    { id: 'ph_1', at: at(-10, '18:00'), actor: 'Hamid Nawaz', subject: 'DISCOUNT', subjectName: 'League night', change: 'Deactivated' },
-    { id: 'ph_2', at: at(-20, '10:00'), actor: 'Hamid Nawaz', subject: 'DISCOUNT', subjectName: 'Weekday afternoons', change: 'Created: 15% off on Court 2, weekdays 1:00 PM - 5:00 PM' },
-    { id: 'ph_3', at: at(-30, '16:40'), actor: 'Hamid Nawaz', subject: 'RULE', subjectName: 'Morning off-peak', change: 'Court 2 rate changed from Rs 4,000 to Rs 3,500 per hour' },
-    { id: 'ph_4', at: at(-45, '09:05'), actor: 'Hamid Nawaz', subject: 'RULE', subjectName: 'Weekend', change: 'Created: Court 1, Sat and Sun, Rs 6,500 per hour' },
-    { id: 'ph_5', at: at(-60, '11:22'), actor: 'Hamid Nawaz', subject: 'RULE', subjectName: 'Evening peak', change: 'Court 2 rate changed from Rs 5,000 to Rs 5,500 per hour' },
-    { id: 'ph_6', at: at(-90, '12:00'), actor: 'Hamid Nawaz', subject: 'COURT_RATE', subjectName: 'Futsal Pitch', change: 'Base rate changed from Rs 8,000 to Rs 9,000 per hour' },
+    { id: 'ph_1', at: at(-10, '18:00'), actor: 'John Miller', subject: 'DISCOUNT', subjectName: 'League night', change: 'Deactivated' },
+    { id: 'ph_2', at: at(-20, '10:00'), actor: 'John Miller', subject: 'DISCOUNT', subjectName: 'Weekday afternoons', change: 'Created: 15% off on Court 2, weekdays 1:00 PM - 5:00 PM' },
+    { id: 'ph_3', at: at(-30, '16:40'), actor: 'John Miller', subject: 'RULE', subjectName: 'Morning off-peak', change: 'Court 2 rate changed from Rs 4,000 to Rs 3,500 per hour' },
+    { id: 'ph_4', at: at(-45, '09:05'), actor: 'John Miller', subject: 'RULE', subjectName: 'Weekend', change: 'Created: Court 1, Sat and Sun, Rs 6,500 per hour' },
+    { id: 'ph_5', at: at(-60, '11:22'), actor: 'John Miller', subject: 'RULE', subjectName: 'Evening peak', change: 'Court 2 rate changed from Rs 5,000 to Rs 5,500 per hour' },
+    { id: 'ph_6', at: at(-90, '12:00'), actor: 'John Miller', subject: 'COURT_RATE', subjectName: 'Futsal Pitch', change: 'Base rate changed from Rs 8,000 to Rs 9,000 per hour' },
   ];
 
   return {
@@ -465,7 +465,7 @@ function emptyFacility(): FacilityData {
       address: '',
       city: 'Karachi',
       phone: '+92 300 7718245',
-      email: 'sana@greenlinearena.pk',
+      email: 'emma@greenlinearena.pk',
       timezone: TZ,
       currency: 'PKR',
       businessHours: ALL_DAYS.map((weekday) => ({ weekday, closed: false, open: '08:00', close: '22:00' })),
@@ -520,11 +520,11 @@ const seeded = seed();
 export const db: Db = seeded;
 
 const stores = new Map<string, FacilityData>([
-  ['user_hamid', pickFacility(seeded)],
-  ['user_sana', emptyFacility()],
+  ['user_john', pickFacility(seeded)],
+  ['user_emma', emptyFacility()],
 ]);
 
-db.users.push({ id: 'user_sana', firstName: 'Sana', lastName: 'Tariq', email: 'sana@greenlinearena.pk', phone: '+92 333 5102847', role: 'OWNER' });
+db.users.push({ id: 'user_emma', firstName: 'Emma', lastName: 'Clarke', email: 'emma@greenlinearena.pk', phone: '+92 333 5102847', role: 'OWNER' });
 
 function pickFacility(source: Db | FacilityData): FacilityData {
   const out = {} as Record<string, unknown>;

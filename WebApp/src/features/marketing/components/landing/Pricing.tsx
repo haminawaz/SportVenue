@@ -1,27 +1,23 @@
-import { Receipt } from '@phosphor-icons/react';
-
-import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
 
-import { Section } from './LandingScroll';
+import { Lede, Section, SectionTitle } from './LandingScroll';
 
-/** Pricing tiers are not published yet, so this section asks for a quote instead. */
-export function Pricing({ onGetQuote }: { onGetQuote: () => void }) {
+/**
+ * Pricing and the closing call to action in one place: plans are quoted per
+ * facility, so the section offers a quote or a demo instead of a price table.
+ */
+export function Pricing({ onGetQuote, onBookDemo }: { onGetQuote: () => void; onBookDemo: () => void }) {
   return (
     <Section id="pricing">
-      <div className="surface-card flex flex-col items-start gap-5 p-6 md:flex-row md:items-center md:p-8">
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
-          <Receipt size={26} weight="bold" aria-hidden />
-        </span>
-        <div className="flex flex-col gap-2 md:flex-1">
-          <AppText as="h2" variant="display-lg">
-            Pricing that fits your facility.
-          </AppText>
-          <AppText as="p" variant="body-md" tone="muted">
-            Plans depend on how many courts you run. Tell us about your facility and we will send you a quote.
-          </AppText>
+      <div className="flex flex-col gap-8 rounded-hero border border-border bg-surface p-8 sm:p-10 lg:flex-row lg:items-end lg:justify-between lg:gap-16 lg:p-14">
+        <div className="flex flex-col gap-4">
+          <SectionTitle>Pricing that fits your facility.</SectionTitle>
+          <Lede>Plans depend on how many courts you run. Tell us about your facility and we will send you a quote, or book a demo first.</Lede>
         </div>
-        <Button label="Get a quote" variant="secondary" size="lg" onPress={onGetQuote} className="md:self-center" />
+        <div className="flex shrink-0 flex-wrap gap-3">
+          <Button label="Get a quote" variant="accent" size="lg" onPress={onGetQuote} />
+          <Button label="Book a demo" variant="secondary" size="lg" onPress={onBookDemo} />
+        </div>
       </div>
     </Section>
   );

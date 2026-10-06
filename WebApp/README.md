@@ -11,8 +11,8 @@ npm run dev        # http://localhost:3000
 
 `.env.development` sets `NEXT_PUBLIC_USE_MOCKS=1`, so development builds answer API calls from the in-browser mock server (`src/dev/mockServer`). On the log-in screen, the development-only buttons fill in a sample owner:
 
-- Seeded facility: `hamid@baselinepadel.pk` / `sportvenue123`
-- Empty facility: `sana@greenlinearena.pk` / `sportvenue123`
+- Seeded facility: `john@baselinepadel.pk` / `sportvenue123`
+- Empty facility: `emma@greenlinearena.pk` / `sportvenue123`
 
 Mock data lives in memory and resets when the page reloads. Production builds never include the mock server; they call the backend at `NEXT_PUBLIC_API_URL`.
 

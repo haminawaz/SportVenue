@@ -55,7 +55,7 @@ export function Tabs<V extends string>({ value, items, onChange, label, classNam
 /** Compact segmented buttons for a small, exclusive choice (period, view, type). */
 export function SegmentedControl<V extends string>({ value, options, onChange, label, size = 'md' }: { value: V; options: { value: V; label: string }[]; onChange: (v: V) => void; label: string; size?: 'sm' | 'md' }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full rounded-control border border-border bg-surface-muted p-0.5">
+    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full overflow-x-auto rounded-control border border-border bg-surface-muted p-0.5 scrollbar-none">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -66,7 +66,7 @@ export function SegmentedControl<V extends string>({ value, options, onChange, l
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={cn(
-              't-label flex min-w-0 flex-1 items-center justify-center rounded-[8px] px-3 whitespace-nowrap transition-colors',
+              't-label flex shrink-0 grow items-center justify-center rounded-[8px] px-3 whitespace-nowrap transition-colors',
               size === 'sm' ? 'h-7' : 'h-8',
               on ? 'bg-surface text-text shadow-[0_1px_2px_rgba(42,33,23,0.12)]' : 'text-text-muted hover:text-text',
             )}

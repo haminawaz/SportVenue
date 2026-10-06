@@ -1,52 +1,43 @@
-import { CheckCircle, XCircle } from '@phosphor-icons/react';
+import { ArrowRight } from '@phosphor-icons/react';
 
-import { AppText } from '@/ui/AppText';
-import { Button } from '@/ui/Button';
-import { cn } from '@/ui/cn';
-import type { IconType } from '@/ui/icon';
+import { Lede, Section, SectionTitle } from './LandingScroll';
 
-import { Section } from './LandingScroll';
+/** The daily problems an owner names first, and what SportVenue replaces each one with. */
+const CHANGES = [
+  { before: 'Bookings buried in WhatsApp chats', after: 'Every booking on one calendar, for every court' },
+  { before: 'Balances tracked in Excel, or not at all', after: 'Outstanding balances per customer, with a reminder button' },
+  { before: 'Double-booked courts on busy evenings', after: 'Slots that can only be sold once' },
+  { before: 'No idea which hours make money', after: 'Revenue and utilization by court and by hour' },
+];
 
-const BEFORE = ['Bookings buried in WhatsApp chats', 'Balances tracked in Excel, or not at all', 'Double-booked courts on busy evenings', 'No idea which hours make money'];
-const AFTER = ['Every booking on one calendar', 'Outstanding balances with a reminder button', 'Slots that can only be sold once', 'Revenue and utilization by court and hour'];
+const SPORTS = 'padel, tennis, futsal, squash, badminton, pickleball and cricket nets';
 
-/** The owner-to-owner section: an ink panel naming the daily mess, then what changes. */
-export function ForFacilityOwners({ onBookDemo }: { onBookDemo: () => void }) {
+/** Raised band: who it is for on the left, the before-and-after list on the right. */
+export function ForFacilityOwners() {
   return (
-    <Section id="owners" bandClassName="px-3" className="gap-8 rounded-hero bg-ink px-6 py-10">
-      <div className="flex flex-col gap-3">
-        <AppText as="h2" variant="display-xl" className="text-on-ink">
-          Built for the people who run the venue.
-        </AppText>
-        <AppText as="p" variant="body-md" className="max-w-[560px] text-on-ink-muted">
-          Players get a booking app. You get the back office that keeps the courts full and the books straight.
-        </AppText>
+    <Section id="owners" bandClassName="border-y border-border bg-surface" className="grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+      <div className="flex flex-col gap-4">
+        <SectionTitle>Built for the people who run the venue.</SectionTitle>
+        <Lede>Players get a booking app. You get the back office that keeps the courts full and the books straight.</Lede>
+        <p className="max-w-[58ch] t-body-md text-text-subtle">
+          Made for facilities with {SPORTS}. One owner account runs the whole venue.
+        </p>
       </div>
-      <div className="flex flex-col gap-4 md:flex-row">
-        <Column title="Without SportVenue" items={BEFORE} icon={XCircle} tone="muted" />
-        <Column title="With SportVenue" items={AFTER} icon={CheckCircle} tone="accent" />
-      </div>
-      <div className="flex items-start">
-        <Button label="Book a demo" variant="inverse" size="lg" onPress={onBookDemo} />
-      </div>
-    </Section>
-  );
-}
-
-function Column({ title, items, icon: Icon, tone }: { title: string; items: string[]; icon: IconType; tone: 'muted' | 'accent' }) {
-  return (
-    <div className="flex flex-1 flex-col gap-4 rounded-card border border-ink-line p-5">
-      <AppText as="h3" variant="caption-uppercase" className={tone === 'accent' ? 'text-ink-accent' : 'text-on-ink-muted'}>
-        {title}
-      </AppText>
-      <ul className="flex flex-col gap-3">
-        {items.map((t) => (
-          <li key={t} className="flex items-start gap-3">
-            <Icon size={22} weight={tone === 'accent' ? 'fill' : 'regular'} className={cn('mt-px shrink-0', tone === 'accent' ? 'text-ink-accent' : 'text-on-ink-muted')} aria-hidden />
-            <AppText variant="body-md" className={cn('flex-1', tone === 'accent' ? 'text-on-ink' : 'text-on-ink-muted')}>{t}</AppText>
-          </li>
+      <dl className="flex flex-col">
+        {CHANGES.map((c) => (
+          <div key={c.before} className="grid grid-cols-1 gap-1.5 border-t border-border py-6 first:border-t-0 first:pt-0 sm:grid-cols-[minmax(0,1fr)_20px_minmax(0,1fr)] sm:items-baseline sm:gap-5">
+            <dt className="t-body-md text-text-subtle">
+              <span className="sr-only">Today: </span>
+              {c.before}
+            </dt>
+            <ArrowRight aria-hidden size={16} weight="bold" className="hidden translate-y-0.5 text-accent sm:block" />
+            <dd className="t-body-strong text-text">
+              <span className="sr-only">With SportVenue: </span>
+              {c.after}
+            </dd>
+          </div>
         ))}
-      </ul>
-    </div>
+      </dl>
+    </Section>
   );
 }

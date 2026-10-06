@@ -103,7 +103,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
           <>
             <Card padded={false}>
               <CardHeader title="Payment" />
-              <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_240px]">
+              <div className="grid grid-cols-1 gap-6 p-5 md:grid-cols-[minmax(0,1fr)_240px]">
                 <DescriptionList
                   items={[
                     { label: 'Court price', value: f.money(b.price) },

@@ -248,7 +248,7 @@ function DiscountForm({ discount }: { discount?: Discount }) {
       <Card>
         <FormSection title="Discount" description="What comes off the price, and an optional code customers quote.">
           <TextField label="Name" value={x.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Weekday afternoons" maxLength={40} />
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <FieldShell label="Type">
               <SegmentedControl
                 label="Discount type"
@@ -270,7 +270,7 @@ function DiscountForm({ discount }: { discount?: Discount }) {
               suffix={x.kind === 'PERCENT' ? '%' : undefined}
             />
           </div>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField
               label="Code"
               optional
@@ -306,12 +306,12 @@ function DiscountForm({ discount }: { discount?: Discount }) {
           </FieldShell>
           <SwitchRow label="Only at certain times" description="For example, quiet afternoon hours." value={x.timed} onChange={(t) => form.set('timed', t)} />
           {x.timed && (
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <SelectField label="From" value={x.startTime} options={times} onChange={(t) => form.set('startTime', t)} error={form.errors.startTime} />
               <SelectField label="Until" value={x.endTime} options={times} onChange={(t) => form.set('endTime', t)} error={form.errors.endTime} />
             </div>
           )}
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <DateField label="Starts" value={x.validFrom} onChange={(d) => form.set('validFrom', d)} />
             <DateField label="Ends" optional value={x.validTo} minimumDate={x.validFrom} onChange={(d) => form.set('validTo', d)} onClear={() => form.set('validTo', undefined)} error={form.errors.validTo} helper="Leave empty for no end date." />
           </div>

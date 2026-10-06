@@ -1,45 +1,32 @@
-import { AppText } from '@/ui/AppText';
-import { cn } from '@/ui/cn';
-
-import { Section } from './LandingScroll';
+import { Lede, Section, SectionTitle } from './LandingScroll';
 
 const STEPS = [
-  { title: 'Add your courts', body: 'Set opening hours, base rates and peak pricing once.' },
-  { title: 'Manage bookings', body: 'Book customers into open slots and see every court at a glance.' },
-  { title: 'Grow revenue', body: 'Collect what you are owed and fill the hours that sit empty.' },
+  { title: 'Add your courts', body: 'Enter each court with its sport, opening hours, base rate and any peak or off-peak pricing. You do this once.' },
+  { title: 'Take bookings', body: 'Book customers into open slots from the calendar. A slot can only be sold once, so busy evenings stop getting double-booked.' },
+  { title: 'Collect and grow', body: 'Record payments as they come in, follow up on what is still owed, and use analytics to fill the hours that sit empty.' },
 ];
 
-/** Three numbered steps: a row from 768px, a connected vertical list on phones. */
+/** Headline, then the three steps in a row under one rule (a stacked list on phones). */
 export function HowItWorks() {
   return (
-    <Section id="how">
-      <AppText as="h2" variant="display-xl">
-        Up and running in an afternoon.
-      </AppText>
-      <ol className="flex flex-col md:flex-row md:gap-6">
-        {STEPS.map((s, i) => {
-          const last = i === STEPS.length - 1;
-          return (
-            <li key={s.title} aria-label={`Step ${i + 1}: ${s.title}. ${s.body}`} className="flex gap-4 md:flex-1 md:flex-col">
-              <div aria-hidden className="flex flex-col items-center md:flex-row md:self-stretch">
-                <span className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-accent">
-                  <AppText variant="display-md" tone="accent">
-                    {i + 1}
-                  </AppText>
-                </span>
-                {!last && <span className="my-2 w-[1.5px] flex-1 bg-border md:mx-3 md:my-0 md:h-[1.5px] md:w-auto" />}
-              </div>
-              <div className={cn('flex flex-1 flex-col gap-1 pt-3', !last && 'pb-8 md:pb-0')}>
-                <AppText as="h3" variant="title-md">
-                  {s.title}
-                </AppText>
-                <AppText as="p" variant="body-md" tone="muted">
-                  {s.body}
-                </AppText>
-              </div>
-            </li>
-          );
-        })}
+    <Section id="how" className="gap-12">
+      <div className="flex flex-col gap-4">
+        <SectionTitle>Set up in an afternoon.</SectionTitle>
+        <Lede>We set it up with your courts and prices, then walk you through it.</Lede>
+      </div>
+      <ol className="grid grid-cols-1 gap-x-10 md:grid-cols-3">
+        {STEPS.map((s, i) => (
+          <li key={s.title} className="flex flex-col gap-3 border-t border-border-strong py-7 md:pb-0">
+            <span aria-hidden className="font-display text-[40px] leading-none font-light text-accent tabular-nums">
+              {i + 1}
+            </span>
+            <h3 className="pt-2 t-title-md text-text">
+              <span className="sr-only">Step {i + 1}: </span>
+              {s.title}
+            </h3>
+            <p className="max-w-[44ch] t-body-md text-text-muted">{s.body}</p>
+          </li>
+        ))}
       </ol>
     </Section>
   );

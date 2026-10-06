@@ -115,7 +115,7 @@ export function RevenueOpportunityCard({ opportunity: o, currency, timeZone, tod
         </div>
       )}
       {actions.length > 0 && (
-        <div className="flex gap-2 pl-11">
+        <div className="flex flex-wrap gap-2 pl-11">
           {actions.slice(0, 2).map((a, i) => (
             <Button key={a.key} size="sm" variant={i === 0 ? 'secondary' : 'ghost'} label={a.label} icon={a.icon} onPress={a.onPress} loading={a.loading} />
           ))}

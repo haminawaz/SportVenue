@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowRight, EnvelopeSimple, LockSimple } from 'phosphor-react-native';
+import { EnvelopeSimple, LockSimple } from 'phosphor-react-native';
 
 import { ApiError } from '@/api/client';
 import { toUserFacingError } from '@/api/errors';
@@ -10,7 +10,7 @@ import { AuthLayout } from '@/features/marketing/components/AuthLayout';
 import { rules, useForm } from '@/lib/useForm';
 import { useAuth } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { fontFamily, radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
 import { TextField } from '@/ui/Fields';
@@ -77,14 +77,20 @@ export default function SignInScreen() {
         <Button label="Log in" size="lg" block onPress={onSubmit} loading={submitting} />
       </View>
 
-      <View style={[styles.alt, { backgroundColor: colors.surfaceMuted }]}>
-        <View style={styles.flex}>
-          <AppText variant="body-strong">New to SportVenue?</AppText>
-          <AppText variant="body-sm" tone="muted">
-            We set it up with your courts.
+      <View style={styles.alt}>
+        <AppText variant="body-sm" tone="muted">
+          New to SportVenue?
+        </AppText>
+        <Pressable
+          accessibilityRole="link"
+          hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+          onPress={() => router.push('/request-demo')}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <AppText variant="body-sm" tone="accent" style={styles.link}>
+            Get started
           </AppText>
-        </View>
-        <Button label="Get started" variant="accent" size="sm" trailingIcon={ArrowRight} onPress={() => router.push('/request-demo')} />
+        </Pressable>
       </View>
 
       {USE_MOCKS && (
@@ -99,7 +105,7 @@ export default function SignInScreen() {
               size="sm"
               block
               aria-label="Fill in the owner account with sample data"
-              onPress={() => form.patch({ email: 'hamid@baselinepadel.pk', password: 'sportvenue123' })}
+              onPress={() => form.patch({ email: 'john@baselinepadel.pk', password: 'sportvenue123' })}
             />
             <Button
               label="Empty facility"
@@ -107,7 +113,7 @@ export default function SignInScreen() {
               size="sm"
               block
               aria-label="Fill in the owner account with no data"
-              onPress={() => form.patch({ email: 'sana@greenlinearena.pk', password: 'sportvenue123' })}
+              onPress={() => form.patch({ email: 'emma@greenlinearena.pk', password: 'sportvenue123' })}
             />
           </View>
         </View>
@@ -118,8 +124,9 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   card: { padding: spacing.xl, gap: spacing.lg + 2 },
-  alt: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.card, paddingVertical: spacing.lg, paddingLeft: spacing.xl, paddingRight: spacing.md },
-  flex: { flex: 1, gap: 2 },
+  alt: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
+  link: { fontFamily: fontFamily.semibold },
+  pressed: { opacity: 0.6 },
   demo: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.card, padding: spacing.lg, gap: spacing.md, alignItems: 'center' },
   demoRow: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
 });

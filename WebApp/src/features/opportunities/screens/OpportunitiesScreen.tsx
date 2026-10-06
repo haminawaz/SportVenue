@@ -32,7 +32,7 @@ export function OpportunitiesScreen() {
       <QueryView
         query={query}
         skeleton={
-          <div role="progressbar" aria-label="Loading" aria-busy className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div role="progressbar" aria-label="Loading" aria-busy className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {[0, 1, 2].map((i) => (
               <div key={i} className="surface-card flex flex-col gap-3 p-5">
                 <Skeleton width="40%" height={12} />
@@ -64,7 +64,7 @@ function List({ all, status, setStatus }: { all: Opportunity[]; status: Opportun
           message={status === 'OPEN' ? 'New opportunities appear here as your booking patterns change.' : undefined}
         />
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {shown.map((o) => (
             <OpportunityCard key={o.id} opportunity={o} />
           ))}

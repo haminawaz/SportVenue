@@ -24,12 +24,12 @@ const slot = (h: number, status: AvailabilitySlot['status'], customerName?: stri
   bookingId,
 });
 const SAMPLE_SLOTS: AvailabilitySlot[] = [
-  slot(16, 'BOOKED', 'Zara Qureshi', 'b1'),
+  slot(16, 'BOOKED', 'Lily Evans', 'b1'),
   slot(17, 'FREE'),
-  slot(18, 'BOOKED', 'Bilal Siddiqui', 'b2'),
-  slot(19, 'BOOKED', 'Bilal Siddiqui', 'b2'),
+  slot(18, 'BOOKED', 'Michael Turner', 'b2'),
+  slot(19, 'BOOKED', 'Michael Turner', 'b2'),
   slot(20, 'FREE'),
-  slot(21, 'BOOKED', 'Ahmed Khan', 'b3'),
+  slot(21, 'BOOKED', 'James Carter', 'b3'),
 ];
 
 type HeroProps = { topInset: number; onGetStarted: () => void; onHowItWorks: () => void };

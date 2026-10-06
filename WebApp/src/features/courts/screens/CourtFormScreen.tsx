@@ -100,7 +100,7 @@ function CourtForm({ court }: { court?: Court }) {
       />
       <Card>
         <FormSection title="Court" description="How the court appears in bookings and schedules.">
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="Name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Court 4" maxLength={40} autoCapitalize="words" />
             <SelectField label="Sport" value={form.values.sport || undefined} options={sportOptions} onChange={(v) => form.set('sport', v)} error={form.errors.sport} placeholder="Choose a sport" />
           </div>
@@ -108,7 +108,7 @@ function CourtForm({ court }: { court?: Court }) {
           <SwitchRow label="Indoor court" description="Shown to customers and used for weather-related opportunities." value={form.values.indoor} onChange={(v) => form.set('indoor', v)} />
         </FormSection>
         <FormSection title="Booking and price" description="The base rate applies when no time-based rate does.">
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="Base hourly rate" value={form.values.hourlyRate} onChangeText={(t) => form.set('hourlyRate', t)} error={form.errors.hourlyRate} inputMode="decimal" prefix={f.currency} helper="Used when no time-based rate applies." />
             <FieldShell label="Slot length" helper="Bookings start on these intervals.">
               <SegmentedControl

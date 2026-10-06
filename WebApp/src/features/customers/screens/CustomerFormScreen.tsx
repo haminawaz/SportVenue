@@ -118,7 +118,7 @@ function CustomerForm({ customer }: { customer?: CustomerDetail }) {
       <Card>
         <FormSection title="Contact details" description="The phone number is used for reminders and to find them quickly.">
           <TextField label="Full name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} autoCapitalize="words" autoComplete="name" maxLength={80} />
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="Phone" value={form.values.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" autoComplete="tel" placeholder="+92 300 1234567" />
             <TextField label="Email" optional value={form.values.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" autoComplete="email" />
           </div>
@@ -126,7 +126,7 @@ function CustomerForm({ customer }: { customer?: CustomerDetail }) {
         <FormSection title="Regular customer" description="Regulars are highlighted and can keep a fixed weekly slot.">
           <SwitchRow label="Plays every week" value={form.values.isRegular} onChange={(v) => form.set('isRegular', v)} />
           {form.values.isRegular && (
-            <div className="grid gap-5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
               <SelectField
                 label="Usual court"
                 optional

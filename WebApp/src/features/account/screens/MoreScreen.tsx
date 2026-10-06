@@ -38,7 +38,7 @@ export function MoreScreen() {
   return (
     <Page>
       <PageHeader title="Workspace" leading={<Avatar name={name} size={48} tone="accent" />} description={`${name} · Owner, ${facility.name}`} hideRefresh />
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {tiles.map((t) => (
           <li key={t.href}>
             <Link href={t.href} onClick={notePush} className="surface-card flex h-full items-start gap-4 p-5 transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-[0_4px_12px_rgba(42,33,23,0.06)]">

@@ -220,7 +220,7 @@ function FacilityEditForm({ facility: fac }: { facility: Facility }) {
         </FormSection>
         <FormSection title="Location and contact" description="Shown on receipts and reminders.">
           <TextField label="Street address" value={v.address} onChangeText={(t) => form.set('address', t)} error={form.errors.address} autoComplete="street-address" />
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="City" value={v.city} onChangeText={(t) => form.set('city', t)} error={form.errors.city} autoComplete="address-level2" />
             <TextField label="Phone" value={v.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" />
             <TextField label="Email" value={v.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" />
@@ -398,7 +398,7 @@ function SettingsForm({ facility: fac }: { facility: Facility }) {
       <Card>
         <FormSection title="Region" description="Every amount and time in the app follows these.">
           {sensitive && <Notice tone="warning" message="Changing the currency or timezone affects how every amount and booking time is shown. You'll be asked to confirm." />}
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <SelectField
               label="Currency"
               value={v.currency}
@@ -432,7 +432,7 @@ function SettingsForm({ facility: fac }: { facility: Facility }) {
               />
             </div>
           </FieldShell>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <SelectField
               label="Free cancellation until"
               value={v.cancel}

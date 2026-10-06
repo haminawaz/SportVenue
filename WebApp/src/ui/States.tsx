@@ -26,7 +26,7 @@ export function DetailSkeleton() {
           </div>
         ))}
       </div>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="surface-card flex flex-col gap-4 p-5">
           {[0, 1, 2, 3, 4].map((i) => (
             <Skeleton key={i} height={14} width={`${90 - i * 10}%`} />

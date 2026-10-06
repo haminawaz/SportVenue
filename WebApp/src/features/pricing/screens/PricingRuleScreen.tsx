@@ -109,7 +109,7 @@ function RuleForm({ rule }: { rule?: PricingRule }) {
       {params.opportunityId && !rule && <Notice message="Pre-filled from a revenue opportunity. Set the rate, then save to mark it resolved." />}
       <Card>
         <FormSection title="Rate" description="Name it so it's easy to recognise in bookings and history.">
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="Name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} placeholder="Evening peak" maxLength={40} />
             <SelectField
               label="Court"
@@ -133,7 +133,7 @@ function RuleForm({ rule }: { rule?: PricingRule }) {
           <FieldShell label="Days" error={form.errors.weekdays}>
             <DayToggles label="Days" value={form.values.weekdays} onChange={(d) => form.set('weekdays', d)} />
           </FieldShell>
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <SelectField label="From" value={form.values.startTime} options={times} onChange={(t) => form.set('startTime', t)} error={form.errors.startTime} />
             <SelectField label="Until" value={form.values.endTime} options={times} onChange={(t) => form.set('endTime', t)} error={form.errors.endTime} />
           </div>
