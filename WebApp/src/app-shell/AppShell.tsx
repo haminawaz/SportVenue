@@ -8,7 +8,6 @@ import {
   Buildings,
   CalendarBlank,
   CalendarPlus,
-  ChartLine,
   CourtBasketball,
   Gear,
   House,
@@ -60,7 +59,6 @@ const NAV: { title?: string; items: NavItem[] }[] = [
   {
     title: 'Insights',
     items: [
-      { href: routes.analytics, label: 'Analytics', icon: ChartLine, match: ['/analytics'] },
       { href: routes.opportunities, label: 'Opportunities', icon: Lightbulb, match: ['/opportunities'], badge: 'opportunities' },
     ],
   },

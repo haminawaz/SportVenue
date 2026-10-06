@@ -3,7 +3,7 @@
 import { CreditCard } from '@phosphor-icons/react';
 
 import type { Subscription } from '@/domain/types';
-import { BarList } from '@/features/analytics/components/Charts';
+import { BarList } from '@/features/dashboard/components/Charts';
 import { formatCalendarDate } from '@/lib/datetime';
 import { formatMoney } from '@/lib/money';
 import { AppText } from '@/ui/AppText';

@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 import { useAuth } from '@/session/SessionProvider';
 
 import { facilityWallClock, formatCalendarDate, relativeDayLabel, todayIn, type CalendarDate } from './datetime';
-import { formatMoney, formatMoneyForA11y } from './money';
+import { formatMoney, formatMoneyForA11y, moneySymbol } from './money';
 
 export const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 export const WEEKDAY_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
@@ -47,19 +47,25 @@ export function initials(name: string): string {
   return ((parts[0][0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 }
 
-const compactCache = new Map<string, Intl.NumberFormat>();
-/** "Rs 1.2M" style for chart labels and tight spaces. */
+const COMPACT_STEPS: [number, string][] = [
+  [1e9, 'B'],
+  [1e6, 'M'],
+  [1e3, 'K'],
+];
+
+/**
+ * "Rs 1.2M" style for chart labels and tight spaces. Built by hand rather
+ * than with Intl's compact notation, which Hermes on Android ignores (it
+ * printed "PKR 4,445,750.0").
+ */
 export function formatCompactMoney(amount: number, currency: string): string {
-  try {
-    let f = compactCache.get(currency);
-    if (!f) {
-      f = new Intl.NumberFormat(undefined, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', notation: 'compact', maximumFractionDigits: 1 });
-      compactCache.set(currency, f);
-    }
-    return f.format(amount);
-  } catch {
-    return formatMoney(amount, currency);
-  }
+  const abs = Math.abs(amount);
+  const step = COMPACT_STEPS.find(([size]) => abs >= size);
+  if (!step) return formatMoney(amount, currency);
+  const [size, suffix] = step;
+  const scaled = Math.round((abs / size) * 10) / 10;
+  const symbol = moneySymbol(currency);
+  return `${amount < 0 ? '-' : ''}${symbol}${symbol.length > 1 ? ' ' : ''}${String(scaled)}${suffix}`;
 }
 
 export function formatNumber(n: number, maxFractionDigits = 1): string {

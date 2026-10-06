@@ -43,7 +43,7 @@ export function Hero({ onGetStarted, onBookDemo }: HeroProps) {
           <ProductShot
             name="dashboard"
             priority
-            alt="The SportVenue dashboard for a padel club: today's revenue, bookings, court utilization and outstanding payments, with recent bookings and customers who still owe money."
+            alt="The SportVenue dashboard for a padel club: revenue, bookings, utilization and average booking for this week, with revenue by day and by court."
             className="max-h-[640px]"
           />
         </div>

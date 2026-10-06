@@ -42,7 +42,6 @@ export const routes = {
   opportunities: '/opportunities' as Href,
   opportunity: (id: string) => `/opportunities/${e(id)}` as Href,
 
-  analytics: '/analytics' as Href,
 
   pricing: (courtId?: string) => `/pricing${q({ courtId })}` as Href,
   pricingRule: (id: string) => `/pricing/rules/${e(id)}` as Href,

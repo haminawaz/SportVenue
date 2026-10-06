@@ -11,8 +11,8 @@ import { BottomSheet } from '@/ui/BottomSheet';
 import { Button } from '@/ui/Button';
 import { InlineDatePicker } from '@/ui/InlineDatePicker';
 
-import type { DateRange } from '../types/facilityDashboard.types';
-import { buildCustomDayRange, buildPresetRange, rangeLabel, RANGE_RULES, validateRange } from '../utils/dashboardFormatters';
+import type { DateRange, DateRangePreset } from '../types/facilityDashboard.types';
+import { buildCustomRange, buildPresetRange, PRESET_TITLES, rangeLabel, RANGE_RULES, validateRange } from '../utils/dashboardFormatters';
 
 type DateRangeSelectorProps = {
   value: DateRange;
@@ -20,17 +20,23 @@ type DateRangeSelectorProps = {
   onChange: (range: DateRange) => void;
 };
 
-const PRESETS = [
-  { preset: 'today', label: 'Today' },
-  { preset: 'yesterday', label: 'Yesterday' },
-  { preset: 'this_week', label: 'This week' },
-] as const;
+type Preset = Exclude<DateRangePreset, 'custom'>;
+const PRESETS = Object.keys(PRESET_TITLES) as Preset[];
 
+type End = 'start' | 'end';
+
+/**
+ * Period filter: a chip showing the period, opening a sheet with Today, This
+ * week, This month, This quarter, This year and a custom date range (from and
+ * to). On iOS the range is picked with an inline calendar per end; on Android
+ * each end opens the system date picker.
+ */
 export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorProps) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const [pickingCustom, setPickingCustom] = useState(false);
-  const [draftDate, setDraftDate] = useState<CalendarDate>(value.endDate);
+  const [draft, setDraft] = useState({ start: value.startDate, end: value.endDate });
+  const [editing, setEditing] = useState<End>('start');
   const [error, setError] = useState<string | null>(null);
 
   const label = rangeLabel(value);
@@ -54,20 +60,35 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
 
   const openCustom = () => {
     setError(null);
-    if (Platform.OS === 'android') {
-      // Android shows its own modal calendar; close the sheet first so they do not stack.
-      close();
-      DateTimePickerAndroid.open({
-        value: pickerValueFromCalendarDate(value.endDate),
-        mode: 'date',
-        maximumDate: pickerValueFromCalendarDate(maxDate),
-        onValueChange: (_event, date) => apply(buildCustomDayRange(calendarDateFromPicker(date))),
-      });
-      return;
-    }
-    setDraftDate(value.endDate);
+    setDraft(value.preset === 'custom' ? { start: value.startDate, end: value.endDate } : { start: addDays(today, -6), end: today });
+    setEditing('start');
     setPickingCustom(true);
   };
+
+  const setEnd = (which: End, d: CalendarDate) => {
+    setError(null);
+    setDraft((cur) => {
+      const next = { ...cur, [which]: d };
+      // Keep the range the right way round while picking.
+      if (which === 'start' && next.end < d) next.end = d;
+      if (which === 'end' && next.start > d) next.start = d;
+      return next;
+    });
+  };
+
+  const pickEnd = (which: End) => {
+    setEditing(which);
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: pickerValueFromCalendarDate(draft[which]),
+        mode: 'date',
+        maximumDate: pickerValueFromCalendarDate(maxDate),
+        onValueChange: (_event, date) => setEnd(which, calendarDateFromPicker(date)),
+      });
+    }
+  };
+
+  const draftRange = buildCustomRange(draft.start, draft.end);
 
   return (
     <>
@@ -85,10 +106,42 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
         <CaretDown size={16} color={colors.textMuted} weight="bold" />
       </Pressable>
 
-      <BottomSheet visible={open} title={pickingCustom ? 'Pick a date' : 'Show period'} onClose={close}>
+      <BottomSheet visible={open} title={pickingCustom ? 'Date range' : 'Show period'} onClose={close}>
         {pickingCustom ? (
           <View style={styles.custom}>
-            <InlineDatePicker value={draftDate} maximumDate={maxDate} accentColor={colors.accent} onChange={setDraftDate} />
+            <View style={styles.ends}>
+              {(['start', 'end'] as const).map((which) => {
+                const active = editing === which && Platform.OS !== 'android';
+                return (
+                  <Pressable
+                    key={which}
+                    role="button"
+                    aria-label={`${which === 'start' ? 'From' : 'To'} ${formatCalendarDate(draft[which])}. Change`}
+                    onPress={() => pickEnd(which)}
+                    style={({ pressed }) => [
+                      styles.end,
+                      { borderColor: active ? colors.accent : colors.border, backgroundColor: colors.surface },
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <AppText variant="caption-uppercase" tone="muted">
+                      {which === 'start' ? 'From' : 'To'}
+                    </AppText>
+                    <AppText variant="body-strong">{formatCalendarDate(draft[which])}</AppText>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {Platform.OS !== 'android' && (
+              <InlineDatePicker
+                key={editing}
+                value={draft[editing]}
+                minimumDate={editing === 'end' ? draft.start : undefined}
+                maximumDate={editing === 'start' ? draft.end : maxDate}
+                accentColor={colors.accent}
+                onChange={(d) => setEnd(editing, d)}
+              />
+            )}
             {error && (
               <AppText variant="body-sm" tone="danger" role="alert">
                 {error}
@@ -96,13 +149,14 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
             )}
             <View style={styles.customActions}>
               <Button label="Back" variant="secondary" onPress={() => setPickingCustom(false)} />
-              <Button label={`Show ${formatCalendarDate(draftDate)}`} block onPress={() => apply(buildCustomDayRange(draftDate))} />
+              <Button label={`Show ${rangeLabel(draftRange).title}`} block onPress={() => apply(draftRange)} />
             </View>
           </View>
         ) : (
           <View role="radiogroup">
-            {PRESETS.map(({ preset, label: text }) => {
+            {PRESETS.map((preset) => {
               const selected = value.preset === preset;
+              const text = PRESET_TITLES[preset];
               return (
                 <Pressable
                   key={preset}
@@ -119,15 +173,15 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
             })}
             <Pressable
               role="button"
-              aria-label="Pick a specific date"
+              aria-label="Pick a date range"
               onPress={openCustom}
               style={({ pressed }) => [styles.option, pressed && { backgroundColor: colors.surfaceMuted }]}
             >
-              <View>
-                <AppText variant="body-strong">Pick a date</AppText>
+              <View style={styles.flex}>
+                <AppText variant="body-strong">Date range</AppText>
                 {value.preset === 'custom' && (
                   <AppText variant="body-sm" tone="muted">
-                    {formatCalendarDate(value.startDate)}
+                    {label.title}
                   </AppText>
                 )}
               </View>
@@ -164,10 +218,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.md,
     paddingHorizontal: spacing.md,
     borderRadius: radius.control,
   },
+  flex: { flex: 1 },
   custom: { gap: spacing.md },
+  ends: { flexDirection: 'row', gap: spacing.sm },
+  end: { flex: 1, gap: 2, borderWidth: 1.5, borderRadius: radius.control, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, minHeight: touchTarget },
   customActions: { flexDirection: 'row', gap: spacing.sm },
   error: { paddingHorizontal: spacing.sm, paddingTop: spacing.sm },
 });

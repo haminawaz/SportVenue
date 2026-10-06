@@ -4,7 +4,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.hoisted(() => {
@@ -22,7 +22,6 @@ vi.mock('next/navigation', () => ({
   usePathname: () => nav.pathname,
 }));
 
-import { AnalyticsScreen } from '@/features/analytics/screens/AnalyticsScreen';
 import { BillingScreen } from '@/features/account/screens/BillingScreen';
 import { MoreScreen } from '@/features/account/screens/MoreScreen';
 import { NotificationPreferencesScreen, ProfileScreen, SettingsScreen } from '@/features/account/screens/SettingsScreens';
@@ -144,7 +143,8 @@ describe('signed-out screens', () => {
 describe('tab screens', () => {
   test('home dashboard', async () => {
     show(<FacilityDashboardScreen />);
-    expect(await screen.findByText('Needs attention', undefined, SLOW)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Peak and off-peak hours' }, SLOW)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Revenue by court' })).toBeInTheDocument();
     expect(screen.getByText('Baseline Padel Club')).toBeInTheDocument();
     expectNoErrors();
   });
@@ -376,11 +376,4 @@ describe('insights', () => {
     expectNoErrors();
   });
 
-  test('analytics', async () => {
-    show(<AnalyticsScreen />);
-    const section = await screen.findByRole('heading', { name: 'Peak and off-peak hours' }, SLOW);
-    expect(section).toBeInTheDocument();
-    expect(within(document.body).getByText('Revenue by court')).toBeInTheDocument();
-    expectNoErrors();
-  });
 });

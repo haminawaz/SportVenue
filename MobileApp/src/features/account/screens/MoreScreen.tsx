@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Bell, Buildings, CaretRight, ChartLine, CourtBasketball, Gear, Lightbulb, SignOut } from 'phosphor-react-native';
+import { Bell, Buildings, CaretRight, CourtBasketball, Gear, Lightbulb, SignOut } from 'phosphor-react-native';
 
 import { useUnreadCount } from '@/features/notifications/api';
 import { useOpportunities } from '@/features/opportunities/api';
@@ -52,7 +52,6 @@ export function MoreScreen() {
           subtitle={open.data?.length ? `${open.data.length} open to review` : 'Ways to fill courts and collect payments'}
           onPress={() => router.push(routes.opportunities)}
         />
-        <ListRow icon={ChartLine} title="Analytics" subtitle="Revenue, utilization and peak hours" onPress={() => router.push(routes.analytics)} />
       </ListGroup>
 
       <ListGroup title="Facility">

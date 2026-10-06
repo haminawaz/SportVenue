@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Buildings, ChartLine, CourtBasketball, Gear, Lightbulb, Tag } from '@phosphor-icons/react';
+import { Bell, Buildings, CourtBasketball, Gear, Lightbulb, Tag } from '@phosphor-icons/react';
 import Link from 'next/link';
 
 import { useUnreadCount } from '@/features/notifications/api';
@@ -29,7 +29,6 @@ export function MoreScreen() {
     { href: routes.courts, icon: CourtBasketball, title: 'Courts', subtitle: 'Schedules and status for each court' },
     { href: routes.pricing(), icon: Tag, title: 'Pricing', subtitle: 'Base rates, peak rates and discounts' },
     { href: routes.opportunities, icon: Lightbulb, title: 'Revenue opportunities', subtitle: open.data?.length ? `${open.data.length} open to review` : 'Ways to fill courts and collect payments' },
-    { href: routes.analytics, icon: ChartLine, title: 'Analytics', subtitle: 'Revenue, utilization and peak hours' },
     { href: routes.facility, icon: Buildings, title: 'Facility profile', subtitle: 'Contact details, hours and settings' },
     { href: routes.notifications, icon: Bell, title: 'Notifications', subtitle: unread.data?.count ? `${unread.data.count} new` : 'Reminders, payments and updates' },
     { href: routes.settings, icon: Gear, title: 'Settings', subtitle: 'Account, appearance and billing' },

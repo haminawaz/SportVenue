@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, Receipt, Table, UserPlus, Users, XCircle } from '@phosphor-icons/react';
+import { useMemo } from 'react';
+import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, Receipt, UserPlus, Users, XCircle } from '@phosphor-icons/react';
 
 import type { Analytics } from '@/domain/types';
-import { percentTrend } from '@/features/dashboard/utils/dashboardFormatters';
-import { addDays, daysBetween, formatCalendarDate, formatMonthDay, type CalendarDate } from '@/lib/datetime';
+import { daysBetween } from '@/lib/datetime';
 import { formatNumber, useFormat, WEEK_ORDER, WEEKDAY_SHORT } from '@/lib/format';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
@@ -14,122 +13,33 @@ import { Button } from '@/ui/Button';
 import { Card, CardHeader } from '@/ui/Card';
 import { cn } from '@/ui/cn';
 import { DataTable } from '@/ui/DataTable';
-import { Page, PageHeader } from '@/ui/Page';
 import { StatCard, StatGrid } from '@/ui/StatCard';
-import { DetailSkeleton, Notice, QueryView } from '@/ui/States';
-import { SegmentedControl } from '@/ui/Tabs';
+import { Notice } from '@/ui/States';
 
-import { useAnalytics } from '../api';
-import { BarList, ColumnChart, Heatmap } from '../components/Charts';
+import { percentTrend } from '../utils/dashboardFormatters';
+import { revenueSeries } from '../utils/revenueSeries';
 
-type Preset = '7d' | '30d' | '90d' | 'month' | 'lastMonth' | 'custom';
-const PRESETS: { value: Preset; label: string }[] = [
-  { value: '7d', label: '7 days' },
-  { value: '30d', label: '30 days' },
-  { value: '90d', label: '90 days' },
-  { value: 'month', label: 'This month' },
-  { value: 'lastMonth', label: 'Last month' },
-  { value: 'custom', label: 'Custom' },
-];
-
-function presetRange(p: Exclude<Preset, 'custom'>, today: CalendarDate) {
-  switch (p) {
-    case '7d':
-      return { start: addDays(today, -6), end: today };
-    case '30d':
-      return { start: addDays(today, -29), end: today };
-    case '90d':
-      return { start: addDays(today, -89), end: today };
-    case 'month':
-      return { start: `${today.slice(0, 8)}01`, end: today };
-    case 'lastMonth': {
-      const firstThis = `${today.slice(0, 8)}01`;
-      const lastPrev = addDays(firstThis, -1);
-      return { start: `${lastPrev.slice(0, 8)}01`, end: lastPrev };
-    }
-  }
-}
+import { BarList, ColumnChart, Heatmap } from './Charts';
 
 const hourLabel = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' : 'PM'}`;
 const hourShort = (h: number) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}`;
 
-const dateInput = 't-label h-9 rounded-control border border-border-strong bg-surface px-2.5 text-text outline-none focus:border-text focus:ring-3 focus:ring-text/10';
-
-export function AnalyticsScreen() {
-  const f = useFormat();
-  const today = f.today();
-  const [preset, setPreset] = useState<Preset>('30d');
-  const [custom, setCustom] = useState({ start: addDays(today, -13), end: today });
-  const [rangeError, setRangeError] = useState<string>();
-  const range = preset === 'custom' ? custom : presetRange(preset, today);
-  const query = useAnalytics(range.start, range.end);
-
-  const pick = (which: 'start' | 'end', d: CalendarDate) => {
-    const next = which === 'start' ? { ...custom, start: d } : { ...custom, end: d };
-    if (next.end < next.start) {
-      setRangeError('The end date must be on or after the start date.');
-      return;
-    }
-    if (daysBetween(next.start, next.end) > 365) {
-      setRangeError('Choose a period of one year or less.');
-      return;
-    }
-    setRangeError(undefined);
-    setCustom(next);
-  };
-
-  return (
-    <Page onRefresh={() => query.refetch()}>
-      <PageHeader
-        title="Analytics"
-        description={
-          rangeError ? (
-            <span role="alert" className="text-danger">
-              {rangeError}
-            </span>
-          ) : (
-            `${formatCalendarDate(range.start)} - ${formatCalendarDate(range.end)}, compared with the ${daysBetween(range.start, range.end) + 1} days before`
-          )
-        }
-        actions={
-          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-            <SegmentedControl label="Period" value={preset} options={PRESETS} onChange={setPreset} />
-            {preset === 'custom' && (
-              <div className="flex items-center gap-1.5">
-                <input type="date" aria-label="Start date" value={custom.start} max={today} onChange={(e) => e.target.value && pick('start', e.target.value)} className={dateInput} />
-                <AppText variant="small" tone="muted">
-                  to
-                </AppText>
-                <input type="date" aria-label="End date" value={custom.end} max={today} onChange={(e) => e.target.value && pick('end', e.target.value)} className={dateInput} />
-              </div>
-            )}
-          </div>
-        }
-      />
-      <QueryView query={query} skeleton={<DetailSkeleton />} errorTitle="Couldn't load analytics">
-        {(a) => <Report a={a} fetching={query.isFetching} />}
-      </QueryView>
-    </Page>
-  );
-}
-
-function Report({ a, fetching }: { a: Analytics; fetching: boolean }) {
+/**
+ * The facility report for the dashboard's selected period: headline numbers
+ * against the period before, revenue over time and by court, peak hours,
+ * court utilization, customers, outstanding payments and cancellations.
+ */
+export function AnalyticsReport({ a, fetching }: { a: Analytics; fetching: boolean }) {
   const router = useAppRouter();
   const f = useFormat();
-  const [table, setTable] = useState(false);
   const span = daysBetween(a.period.startDate, a.period.endDate) + 1;
   const against = 'vs previous period';
 
+  // One bar per day up to a month, per week up to about four months, then per month.
+  const series = useMemo(() => revenueSeries(a.revenue.byDay, a.period.startDate, a.period.endDate), [a.revenue.byDay, a.period.startDate, a.period.endDate]);
   const byDay = useMemo(
-    () =>
-      a.revenue.byDay.map((d) => ({
-        key: d.date,
-        label: formatCalendarDate(d.date),
-        value: d.amount,
-        valueLabel: f.money(d.amount),
-        axisLabel: span <= 14 ? WEEKDAY_SHORT[new Date(`${d.date}T00:00:00Z`).getUTCDay()] : formatMonthDay(d.date),
-      })),
-    [a.revenue.byDay, f, span],
+    () => series.points.map((p) => ({ key: p.key, label: p.label, value: p.amount, valueLabel: f.money(p.amount), axisLabel: p.axisLabel })),
+    [series, f],
   );
 
   const peakTop = [...a.peakHours].sort((x, y) => y.utilization - x.utilization)[0];
@@ -146,25 +56,9 @@ function Report({ a, fetching }: { a: Analytics; fetching: boolean }) {
 
       <div className="grid items-start gap-6 xl:grid-cols-3">
         <Card padded={false} as="section" className="xl:col-span-2">
-          <CardHeader title="Revenue over time" actions={<Button size="sm" variant="ghost" label={table ? 'Show chart' : 'Show as table'} icon={table ? ChartBar : Table} onPress={() => setTable((t) => !t)} />} />
+          <CardHeader title="Revenue over time" />
           <div className="p-5">
-            {table ? (
-              <table className="w-full">
-                <caption className="sr-only">Revenue per day</caption>
-                <tbody>
-                  {byDay.map((d) => (
-                    <tr key={d.key} className="border-b border-border last:border-b-0">
-                      <th scope="row" className="t-text py-1.5 text-left font-normal text-text-muted">
-                        {d.label}
-                      </th>
-                      <td className="t-text py-1.5 text-right tabular-nums">{d.valueLabel}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <ColumnChart data={byDay} height={220} summary={{ label: `Total for ${span} days · hover or select a bar for one day`, value: f.money(a.revenue.total) }} />
-            )}
+            <ColumnChart data={byDay} height={220} summary={{ label: span === 1 ? 'Total for the day' : `Total for ${span} days · hover or select a bar for one ${series.bucket}`, value: f.money(a.revenue.total) }} />
           </div>
         </Card>
         <Card padded={false} as="section">

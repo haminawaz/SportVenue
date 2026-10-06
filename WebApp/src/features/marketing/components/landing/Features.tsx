@@ -45,7 +45,7 @@ const FEATURES: Feature[] = [
     tab: 'Analytics',
     title: 'See which hours make money',
     body: 'Revenue, bookings and utilization by court and by hour, for any period, compared with the period before.',
-    alt: 'The analytics screen with revenue over 30 days, revenue by court and court utilization.',
+    alt: 'The dashboard report: peak and off-peak hours by weekday, court utilization, customers and outstanding payments.',
   },
 ];
 

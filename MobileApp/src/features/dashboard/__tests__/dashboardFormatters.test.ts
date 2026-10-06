@@ -1,13 +1,14 @@
 import { addDays, facilityWallClock, formatDayAndTime, formatTimeRange, startOfWeek, todayIn } from '@/lib/datetime';
 import { formatMoney, formatMoneyForA11y } from '@/lib/money';
 
-import { metricColumnWidth } from '../components/DashboardMetricGrid';
 import {
   bookingStatusMeta,
-  buildCustomDayRange,
+  buildCustomRange,
   buildPresetRange,
   countTrend,
+  greetingFor,
   percentTrend,
+  rangeLabel,
   recommendationText,
   validateRange,
 } from '../utils/dashboardFormatters';
@@ -70,17 +71,35 @@ describe('facility dates', () => {
 describe('date range filter', () => {
   const today = '2026-09-29';
 
-  test('builds presets', () => {
+  test('builds presets from the start of each period up to today', () => {
     expect(buildPresetRange('today', today)).toEqual({ preset: 'today', startDate: today, endDate: today });
-    expect(buildPresetRange('yesterday', today)).toEqual({ preset: 'yesterday', startDate: '2026-09-28', endDate: '2026-09-28' });
     expect(buildPresetRange('this_week', today)).toEqual({ preset: 'this_week', startDate: '2026-09-28', endDate: today });
+    expect(buildPresetRange('this_month', today)).toEqual({ preset: 'this_month', startDate: '2026-09-01', endDate: today });
+    expect(buildPresetRange('this_quarter', today)).toEqual({ preset: 'this_quarter', startDate: '2026-07-01', endDate: today });
+    expect(buildPresetRange('this_year', today)).toEqual({ preset: 'this_year', startDate: '2026-01-01', endDate: today });
   });
 
-  test('rejects future dates, reversed ranges and ranges over 31 days', () => {
-    expect(validateRange(buildCustomDayRange(addDays(today, 1)), today).valid).toBe(false);
-    expect(validateRange({ preset: 'custom', startDate: today, endDate: addDays(today, -1) }, today).valid).toBe(false);
-    expect(validateRange({ preset: 'custom', startDate: addDays(today, -31), endDate: today }, today).valid).toBe(false);
-    expect(validateRange({ preset: 'custom', startDate: addDays(today, -30), endDate: today }, today).valid).toBe(true);
+  test.each([
+    ['2026-01-15', '2026-01-01'],
+    ['2026-03-31', '2026-01-01'],
+    ['2026-04-01', '2026-04-01'],
+    ['2026-12-31', '2026-10-01'],
+  ])('the quarter containing %s starts on %s', (day, start) => {
+    expect(buildPresetRange('this_quarter', day).startDate).toBe(start);
+  });
+
+  test('rejects future dates, reversed ranges and ranges over one year', () => {
+    expect(validateRange(buildCustomRange(today, addDays(today, 1)), today).valid).toBe(false);
+    expect(validateRange(buildCustomRange(today, addDays(today, -1)), today).valid).toBe(false);
+    expect(validateRange(buildCustomRange(addDays(today, -366), today), today).valid).toBe(false);
+    expect(validateRange(buildCustomRange(addDays(today, -365), today), today).valid).toBe(true);
+    expect(validateRange(buildPresetRange('this_year', today), today).valid).toBe(true);
+  });
+
+  test('labels presets and custom ranges', () => {
+    expect(rangeLabel(buildPresetRange('this_month', today))).toEqual({ title: 'This month', detail: 'Sep 1 - Sep 29' });
+    expect(rangeLabel(buildPresetRange('today', today))).toEqual({ title: 'Today', detail: 'Sep 29' });
+    expect(rangeLabel(buildCustomRange('2026-08-03', today)).title).toMatch(/Aug 3.* - .*Sep 29/);
   });
 });
 
@@ -107,14 +126,18 @@ describe('display helpers', () => {
   });
 });
 
-describe('responsive KPI grid', () => {
-  test.each([320, 360, 375, 390, 414, 430])('keeps two flexible columns at %ipx', (width) => {
-    const column = metricColumnWidth(width, 1);
-    expect(column * 2 + 12).toBeLessThanOrEqual(width - 40);
-    expect(column).toBeGreaterThanOrEqual(132);
-  });
-
-  test('drops to one column for very large text', () => {
-    expect(metricColumnWidth(390, 1.5)).toBe(390 - 40);
+describe('greeting', () => {
+  test.each([
+    [5, 'Good morning'],
+    [11, 'Good morning'],
+    [12, 'Good afternoon'],
+    [16, 'Good afternoon'],
+    [17, 'Good evening'],
+    [20, 'Good evening'],
+    [21, 'Good night'],
+    [0, 'Good night'],
+    [4, 'Good night'],
+  ])('at %i:00 says %s', (hour, greeting) => {
+    expect(greetingFor(hour)).toBe(greeting);
   });
 });

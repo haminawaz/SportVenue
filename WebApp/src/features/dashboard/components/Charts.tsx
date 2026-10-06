@@ -46,11 +46,12 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
               aria-pressed={active === i}
               onClick={() => setActive(active === i ? null : i)}
               onMouseEnter={() => setHover(i)}
-              className="flex h-full min-w-0 flex-1 flex-col justify-end"
+              className={cn('flex h-full min-w-0 flex-1 flex-col items-center justify-end', dense ? 'px-[1.5px]' : 'px-[3px]')}
             >
+              {/* Bars cap at 48px so a short period (one day, one week) reads as bars, not a wall. */}
               <span
                 aria-hidden
-                className={cn('block rounded-t bg-accent transition-opacity', dense ? 'mx-[1.5px]' : 'mx-[3px]')}
+                className="block w-full max-w-12 rounded-t bg-accent transition-opacity"
                 style={{ height: h, opacity: focus === null || on ? 1 : 0.35 }}
               />
             </button>
@@ -61,7 +62,7 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
         {/* Each label spans a group of bars, so dates are never squeezed into one bar's width. */}
         {axisGroups(data).map((g) => (
           <div key={g.key} className="min-w-0" style={{ flex: g.span }}>
-            <AppText variant="mini" tone="muted" lines={1}>
+            <AppText variant="mini" tone="muted" lines={1} className={cn(data.length <= 14 && 'text-center')}>
               {g.label}
             </AppText>
           </div>

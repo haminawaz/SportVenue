@@ -89,7 +89,7 @@ export type FacilityDashboard = {
   capabilities?: { paymentReminders?: boolean };
 };
 
-export type DateRangePreset = 'today' | 'yesterday' | 'this_week' | 'custom';
+export type DateRangePreset = 'today' | 'this_week' | 'this_month' | 'this_quarter' | 'this_year' | 'custom';
 
 export type DateRange = {
   preset: DateRangePreset;

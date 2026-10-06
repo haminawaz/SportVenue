@@ -12,7 +12,7 @@ const BAR_HEIGHT = 72;
 
 /**
  * The owner's five daily destinations, in a floating pill that sits above the
- * home indicator. Courts, pricing, analytics and the rest live under More so
+ * home indicator. Courts, pricing and the rest live under More so
  * the bar never needs to shrink its labels.
  */
 export default function TabsLayout() {

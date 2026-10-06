@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { CreditCard, Receipt } from 'phosphor-react-native';
 
 import type { Subscription } from '@/domain/types';
-import { BarList } from '@/features/analytics/components/Charts';
+import { BarList } from '@/features/dashboard/components/Charts';
 import { formatCalendarDate } from '@/lib/datetime';
 import { formatMoney } from '@/lib/money';
 import { spacing } from '@/theme/tokens';

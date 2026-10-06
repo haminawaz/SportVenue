@@ -167,7 +167,7 @@ export function Heatmap({
       <View style={styles.heat}>
         {rows.map((r) => (
           <View key={r} style={styles.heatRow}>
-            <AppText variant="caption-uppercase" tone="muted" style={styles.heatRowLabel}>
+            <AppText variant="caption" tone="muted" numberOfLines={1} allowFontScaling={false} style={styles.heatRowLabel}>
               {rowLabel(r)}
             </AppText>
             {cols.map((c) => {
@@ -193,7 +193,7 @@ export function Heatmap({
           {cols.map((c, i) => (
             <View key={c} style={styles.heatColLabel}>
               {i % 3 === 0 && (
-                <AppText variant="caption-uppercase" tone="subtle" numberOfLines={1} style={styles.heatAxisText}>
+                <AppText variant="caption" tone="subtle" numberOfLines={1} allowFontScaling={false} style={styles.heatAxisText}>
                   {colShort(c)}
                 </AppText>
               )}
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   heat: { gap: 2 },
   heatRow: { flexDirection: 'row', gap: 2, alignItems: 'center' },
-  heatRowLabel: { width: 32 },
+  heatRowLabel: { width: 34 },
   heatCell: { flex: 1, aspectRatio: 1, borderRadius: 3, borderWidth: 1.5 },
   heatFill: { borderRadius: 3 },
   heatColLabel: { flex: 1, overflow: 'visible' },
