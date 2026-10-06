@@ -6,7 +6,7 @@ import { cn } from '@/ui/cn';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
 import { Lede, Section, SectionTitle } from './LandingScroll';
-import { ProductShot, type ShotName } from './ProductShot';
+import { ProductShot, SHOT_FRAME, type ShotName } from './ProductShot';
 
 type Feature = { key: ShotName; tab: string; title: string; body: string; alt: string };
 
@@ -49,6 +49,8 @@ const FEATURES: Feature[] = [
   },
 ];
 
+const SHOT_SIZES = '(min-width: 1200px) 824px, (min-width: 1024px) 66vw, 100vw';
+
 /** How long each point stays open before the tour moves on. */
 const SLIDE_MS = 5000;
 
@@ -58,14 +60,17 @@ const SLIDE_MS = 5000;
  * tab row, the screen, then the description.
  *
  * Autoplay: every 5 seconds the next point opens. A line beside the active
- * point (under it on phones) fills from bottom to top as the time runs, and
- * the new screen slides up into place. The timer is the CSS fill animation
+ * point (under it on phones) fills from top to bottom as the time runs. Then
+ * the screens swap like a vertical carousel: the old one slides up and out
+ * while the new one rises in from the bottom. The timer is the CSS fill animation
  * itself, so it pauses while the tour is hovered, focused or off screen, and
  * restarts when a point is chosen by hand. Off under reduced motion.
  */
 export function Features() {
   const reduced = useReducedMotion();
   const [active, setActive] = useState(0);
+  /** The point whose screen is sliding out (up) while the active one slides in from below. */
+  const [leaving, setLeaving] = useState<number | null>(null);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [inView, setInView] = useState(false);
@@ -92,14 +97,19 @@ export function Features() {
     row.scrollTo({ left: tab.offsetLeft - row.offsetLeft - 20, behavior: reduced ? 'auto' : 'smooth' });
   }, [active, reduced]);
 
-  const next = () => setActive((a) => (a + 1) % FEATURES.length);
+  const go = (i: number) => {
+    if (i === active) return;
+    setLeaving(active);
+    setActive(i);
+  };
+  const next = () => go((active + 1) % FEATURES.length);
 
   const onKeyDown = (e: KeyboardEvent) => {
     const step = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : e.key === 'ArrowUp' || e.key === 'ArrowLeft' ? -1 : 0;
     const to = e.key === 'Home' ? 0 : e.key === 'End' ? FEATURES.length - 1 : step ? (active + step + FEATURES.length) % FEATURES.length : -1;
     if (to < 0) return;
     e.preventDefault();
-    setActive(to);
+    go(to);
     tabs.current[to]?.focus();
   };
 
@@ -145,18 +155,18 @@ export function Features() {
                 aria-selected={selected}
                 aria-controls="tour-panel"
                 tabIndex={selected ? 0 : -1}
-                onClick={() => setActive(i)}
+                onClick={() => go(i)}
                 className={cn(
                   'group relative shrink-0 overflow-hidden rounded-control px-4 py-2 text-left transition-colors lg:overflow-visible lg:rounded-none lg:py-5 lg:pr-5 lg:pl-6',
                   selected ? 'bg-surface-muted lg:bg-transparent' : 'hover:bg-surface-muted lg:hover:bg-transparent',
                 )}
               >
-                {/* Desktop rail: grey track on every point; on the active one it fills from bottom to top. */}
+                {/* Desktop rail: grey track on every point; on the active one it fills from top to bottom. */}
                 <span aria-hidden className="absolute inset-y-0 left-0 hidden w-0.5 bg-border lg:block">
                   {selected && (
                     <span
                       key={`rail-${active}`}
-                      className={cn('absolute inset-0 bg-accent', autoplay && 'animate-fill-up')}
+                      className={cn('absolute inset-0 bg-accent', autoplay && 'animate-fill-down')}
                       style={autoplay ? fillStyle : undefined}
                       onAnimationEnd={next}
                     />
@@ -179,8 +189,16 @@ export function Features() {
         </div>
 
         <div id="tour-panel" role="tabpanel" aria-labelledby={`tour-tab-${current.key}`} aria-live={paused ? 'polite' : 'off'} className="flex min-w-0 flex-col gap-5">
-          <div key={current.key} className="animate-slide-up">
-            <ProductShot name={current.key} alt={current.alt} sizes="(min-width: 1200px) 824px, (min-width: 1024px) 66vw, 100vw" />
+          <div className={cn(SHOT_FRAME, 'relative')}>
+            {/* The incoming screen stays in flow (it sets the frame's height); the outgoing one sits over it and leaves upwards. */}
+            <div key={current.key} className={cn(leaving !== null && 'animate-shot-in')} onAnimationEnd={(e) => e.target === e.currentTarget && setLeaving(null)}>
+              <ProductShot bare name={current.key} alt={current.alt} sizes={SHOT_SIZES} />
+            </div>
+            {leaving !== null && (
+              <div key={`out-${FEATURES[leaving].key}`} aria-hidden className="absolute inset-0 animate-shot-out">
+                <ProductShot bare name={FEATURES[leaving].key} alt="" sizes={SHOT_SIZES} />
+              </div>
+            )}
           </div>
           <div key={`${current.key}-text`} className="flex animate-slide-up flex-col gap-1.5 lg:hidden">
             <h3 className="t-title-md text-text">{current.title}</h3>
