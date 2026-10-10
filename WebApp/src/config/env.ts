@@ -1,13 +1,19 @@
 /**
- * Development boundary for mock data.
+ * Mock data configuration.
  *
- * Mocks are used only when BOTH are true:
- *   - this is a development build (NODE_ENV is not "production")
- *   - NEXT_PUBLIC_USE_MOCKS=1 is set explicitly
+ * Mocks are enabled if:
+ *   1. NEXT_PUBLIC_USE_MOCKS is explicitly set to '1' or 'true', OR
+ *   2. NEXT_PUBLIC_API_URL is not set (empty/undefined) and NEXT_PUBLIC_USE_MOCKS is not explicitly set to '0' or 'false'.
  *
- * A production build can never read mock data, even if the variable leaks:
- * NODE_ENV is inlined at build time, so the mock server is dropped from the bundle.
+ * This allows both local development and hosted demos (such as Vercel preview/production deployments)
+ * to run with seeded mock data out of the box when no backend API URL is configured.
+ * When NEXT_PUBLIC_API_URL is provided, requests will hit the live backend unless NEXT_PUBLIC_USE_MOCKS=1 is set.
  */
-export const USE_MOCKS = process.env.NODE_ENV !== 'production' && process.env.NEXT_PUBLIC_USE_MOCKS === '1';
+const rawUseMocks = process.env.NEXT_PUBLIC_USE_MOCKS;
+
+export const USE_MOCKS =
+  rawUseMocks === '1' ||
+  rawUseMocks === 'true' ||
+  (!process.env.NEXT_PUBLIC_API_URL && rawUseMocks !== '0' && rawUseMocks !== 'false');
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';

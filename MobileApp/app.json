@@ -16,7 +16,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hamidnawaz30.sportvenue"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,6 +29,12 @@
       "expo-font",
       "expo-secure-store"
     ],
-    "scheme": "sportvenue"
+    "scheme": "sportvenue",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2c854f82-8aee-442e-bc74-d3edaa67f298"
+      }
+    }
   }
 }

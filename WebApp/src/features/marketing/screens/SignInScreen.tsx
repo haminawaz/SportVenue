@@ -93,11 +93,10 @@ export function SignInScreen() {
         </Link>
       </p>
 
-      {/* NODE_ENV repeated so production builds drop the sample accounts entirely. */}
-      {process.env.NODE_ENV !== 'production' && USE_MOCKS && (
+      {USE_MOCKS && (
         <div className="flex flex-col items-center gap-3 rounded-card border border-dashed border-border p-4">
           <AppText variant="body-sm" tone="muted">
-            Development build: sample owners
+            Demo mode: sample owners
           </AppText>
           <div className="grid grid-cols-2 gap-2 self-stretch">
             <Button

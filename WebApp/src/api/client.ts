@@ -63,10 +63,10 @@ function buildQueryString(query?: Query) {
 export async function apiRequest<T>(path: string, { method = 'GET', query, body, signal }: RequestOptions = {}): Promise<T> {
   const token = await authHooks.getAccessToken();
 
-  // The NODE_ENV check is repeated here (not only in USE_MOCKS) so the bundler can
-  // drop this branch, and with it the whole mock server, from production builds.
-  if (process.env.NODE_ENV !== 'production' && USE_MOCKS) {
-    // Development boundary: the in-memory mock server answers instead of the network.
+  // When USE_MOCKS is enabled (e.g. local dev, preview/demo deployment, or no backend URL),
+  // the in-memory mock server answers instead of the network.
+  if (USE_MOCKS) {
+    // The in-memory mock server answers instead of the network.
     const { handleMockRequest } = await import('@/dev/mockServer');
     try {
       return (await handleMockRequest({ method, path, query: query ?? {}, body, token })) as T;
