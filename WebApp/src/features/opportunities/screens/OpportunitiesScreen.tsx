@@ -87,7 +87,6 @@ function OpportunityCard({ opportunity: o }: { opportunity: Opportunity }) {
       <Link
         href={routes.opportunity(o.id)}
         onClick={notePush}
-        aria-label={[type.label, o.title, status.label, related, o.potentialRevenue ? `up to ${f.moneyA11y(o.potentialRevenue)}` : undefined].filter(Boolean).join(', ')}
         className="surface-card flex h-full flex-col gap-3 p-5 transition-[border-color,box-shadow] hover:border-border-strong hover:shadow-[0_4px_12px_rgba(42,33,23,0.06)]"
       >
         <span className="flex items-center gap-2">

@@ -147,7 +147,6 @@ const NotificationRow = memo(function NotificationRow({ notification: n }: { not
       <Link
         href={routes.notification(n.id)}
         onClick={notePush}
-        aria-label={`${n.read ? '' : 'Unread. '}${meta.label}. ${n.title}. ${n.body}. ${when}`}
         className={cn('flex items-start gap-3 px-5 py-3.5 transition-colors hover:bg-surface-muted/60', !n.read && 'bg-accent-soft/30')}
       >
         <span className={cn('mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full', n.read ? 'bg-surface-muted text-text-muted' : 'bg-accent-soft text-accent')}>
@@ -157,6 +156,11 @@ const NotificationRow = memo(function NotificationRow({ notification: n }: { not
           <span className="flex items-baseline gap-2">
             <AppText variant={n.read ? 'text' : 'text-strong'} lines={1} className="flex-1">
               {n.title}
+              <span className="sr-only">
+                {', '}
+                {meta.label}
+                {n.read ? '' : ', unread'}
+              </span>
             </AppText>
             <AppText variant="mini" tone="subtle" numeric className="shrink-0">
               {when}

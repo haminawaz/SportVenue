@@ -41,7 +41,7 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
           const canOpen = !!onOpenBooking && !!s.bookingId;
           return (
             <li key={s.startAt}>
-              <button type="button" aria-label={`Booked, ${range}, ${s.customerName ?? ''}`} disabled={!canOpen} onClick={() => s.bookingId && onOpenBooking?.(s.bookingId)} className="flex w-full gap-3 text-left disabled:cursor-default">
+              <button type="button" disabled={!canOpen} onClick={() => s.bookingId && onOpenBooking?.(s.bookingId)} className="flex w-full gap-3 text-left disabled:cursor-default">
                 {timeLabel}
                 <span className="flex min-w-0 flex-1 flex-col rounded-[8px] border-l-[3px] border-accent bg-accent-soft px-2.5 py-1.5 transition-[filter] hover:brightness-95">
                   <AppText variant="label" lines={1}>
@@ -50,6 +50,7 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
                   <AppText variant="mini" tone="muted" numeric>
                     {range}
                   </AppText>
+                  <span className="sr-only">, booked</span>
                 </span>
               </button>
             </li>
@@ -58,7 +59,7 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
         if (s.status === 'FREE') {
           return (
             <li key={s.startAt}>
-              <button type="button" aria-label={`Free, ${range}${s.rate ? `, ${f.moneyA11y(s.rate)} per hour` : ''}. Book this slot`} disabled={!onBook} onClick={() => onBook?.(s)} className="group flex w-full gap-3 text-left disabled:cursor-default">
+              <button type="button" disabled={!onBook} onClick={() => onBook?.(s)} className="group flex w-full gap-3 text-left disabled:cursor-default">
                 {timeLabel}
                 <span className="flex min-h-9 flex-1 items-center rounded-[8px] border border-dashed border-border-strong px-2.5 transition-colors group-enabled:group-hover:border-accent group-enabled:group-hover:bg-accent-soft/50">
                   <AppText variant="small" tone="muted" className="flex-1">

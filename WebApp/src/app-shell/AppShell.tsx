@@ -151,7 +151,9 @@ function SidebarContent({ pathname, onLogout }: { pathname: string; onLogout: ()
   return (
     <nav aria-label="Main" className="flex min-h-0 w-full flex-1 flex-col">
       <div className="flex h-14 shrink-0 items-center border-b border-border px-5">
-        <BrandMark size={26} />
+        <Link href={routes.home} aria-label="SportVenue, go to the dashboard" className="rounded-control">
+          <BrandMark size={26} />
+        </Link>
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-3 py-4">
         {NAV.map((group, i) => (
@@ -192,7 +194,9 @@ function TopBar({ onMenu, onLogout }: { onMenu: () => void; onLogout: () => void
     <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/85 px-4 pt-[env(safe-area-inset-top)] backdrop-blur-md sm:px-6 lg:px-8">
       <div className="flex items-center gap-2 lg:hidden">
         <IconButton icon={List} label="Open navigation" onPress={onMenu} />
-        <BrandMark size={24} withName={false} />
+        <Link href={routes.home} aria-label="SportVenue, go to the dashboard" className="rounded-control">
+          <BrandMark size={24} withName={false} />
+        </Link>
       </div>
       <AppText variant="small" tone="muted" lines={1} className="hidden lg:block">
         {session.facility.name}

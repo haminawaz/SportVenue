@@ -121,7 +121,6 @@ export function ScheduleBoard({ columns, onBook, onOpenBooking }: ScheduleBoardP
                       <div key={s.startAt} role="listitem" className="absolute inset-x-1" style={style}>
                         <button
                           type="button"
-                          aria-label={`Booked, ${court.name}, ${range}, ${s.customerName ?? ''}`}
                           disabled={!canOpen}
                           onClick={() => s.bookingId && onOpenBooking?.(s.bookingId)}
                           className="flex h-full w-full flex-col overflow-hidden rounded-[8px] border-l-[3px] border-accent bg-accent-soft px-2 py-1 text-left transition-[filter] enabled:hover:brightness-95"
@@ -134,6 +133,11 @@ export function ScheduleBoard({ columns, onBook, onOpenBooking }: ScheduleBoardP
                               {range}
                             </AppText>
                           )}
+                          {/* The visible text names the button; screen readers also hear the court (and the time when it is too short to show). */}
+                          <span className="sr-only">
+                            , booked on {court.name}
+                            {h > 36 ? '' : `, ${range}`}
+                          </span>
                         </button>
                       </div>
                     );
@@ -143,11 +147,13 @@ export function ScheduleBoard({ columns, onBook, onOpenBooking }: ScheduleBoardP
                       <div key={s.startAt} role="listitem" className="absolute inset-x-1" style={style}>
                         <button
                           type="button"
-                          aria-label={`Free, ${court.name}, ${range}${s.rate ? `, ${f.moneyA11y(s.rate)} per hour` : ''}. Book this slot`}
                           disabled={!onBook}
                           onClick={() => onBook?.(court.id, s)}
                           className="group flex h-full w-full items-start justify-between gap-1 overflow-hidden rounded-[8px] border border-dashed border-transparent px-2 py-1 text-left transition-colors enabled:hover:border-accent enabled:hover:bg-accent-soft/50 focus-visible:border-accent"
                         >
+                          <span className="sr-only">
+                            Free slot, {court.name}, {range},{' '}
+                          </span>
                           <AppText variant="mini" tone="subtle" numeric>
                             {s.rate ? `${f.money(s.rate)}/h` : 'Free'}
                           </AppText>

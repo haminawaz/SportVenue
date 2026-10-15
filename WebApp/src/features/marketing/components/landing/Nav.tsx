@@ -1,7 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import { List, X } from '@phosphor-icons/react';
+
 import { Button } from '@/ui/Button';
 import { cn } from '@/ui/cn';
+import { Drawer } from '@/ui/Dialogs';
 
 import { BrandMark } from '../BrandMark';
 
@@ -17,11 +21,24 @@ const LINKS: { id: SectionId; label: string }[] = [
   { id: 'pricing', label: 'Pricing' },
 ];
 
+const MENU_ID = 'landing-menu';
+
 type NavProps = { onLogin: () => void; onGetStarted: () => void };
 
-/** Sticky header: brand, section links (desktop), log in and the one sign-up action. */
+/**
+ * Sticky header: brand, section links, log in and the one sign-up action.
+ * Below 1024px the section links move into a menu (a focus-trapped drawer that
+ * closes on Escape and hands focus back to the menu button).
+ */
 export function Nav({ onLogin, onGetStarted }: NavProps) {
   const { scrollTo } = useLandingScroll();
+  const [open, setOpen] = useState(false);
+
+  // Close first, then scroll once the drawer has released the page's scroll lock.
+  const go = (id: SectionId) => {
+    setOpen(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => scrollTo(id)));
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
@@ -48,8 +65,49 @@ export function Nav({ onLogin, onGetStarted }: NavProps) {
         <div className="flex items-center gap-2">
           <Button label="Log in" variant="ghost" size="md" onPress={onLogin} />
           <Button label="Get started" variant="accent" size="md" onPress={onGetStarted} className="hidden sm:inline-flex" />
+          <button
+            type="button"
+            aria-label="Menu"
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            aria-controls={open ? MENU_ID : undefined}
+            onClick={() => setOpen(true)}
+            className="-mr-1 inline-flex h-10 w-10 items-center justify-center rounded-control text-text hover:bg-surface-muted lg:hidden"
+          >
+            <List size={22} weight="bold" aria-hidden />
+          </button>
         </div>
       </nav>
+
+      <Drawer visible={open} title="Menu" side="right" onClose={() => setOpen(false)}>
+        <div id={MENU_ID} className="flex h-full flex-col pt-[env(safe-area-inset-top)]">
+          <div className="flex h-16 items-center justify-between border-b border-border px-5">
+            <BrandMark size={26} />
+            <button type="button" aria-label="Close menu" onClick={() => setOpen(false)} className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-control text-text hover:bg-surface-muted">
+              <X size={20} weight="bold" aria-hidden />
+            </button>
+          </div>
+          <nav aria-label="Sections" className="flex flex-col p-3">
+            {LINKS.map((l) => (
+              <a
+                key={l.id}
+                href={`#${l.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  go(l.id);
+                }}
+                className="flex min-h-12 items-center rounded-control px-3 t-body-strong text-text hover:bg-surface-muted"
+              >
+                {l.label}
+              </a>
+            ))}
+          </nav>
+          <div className="mt-auto flex flex-col gap-2 border-t border-border p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+            <Button label="Get started" variant="accent" size="lg" block onPress={() => (setOpen(false), onGetStarted())} />
+            <Button label="Log in" variant="secondary" size="lg" block onPress={() => (setOpen(false), onLogin())} />
+          </div>
+        </div>
+      </Drawer>
     </header>
   );
 }

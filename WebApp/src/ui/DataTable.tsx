@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 
@@ -42,7 +42,7 @@ type DataTableProps<T> = {
   rowKey: (row: T) => string;
   /** Makes each row open this link (the whole row is clickable, and it can open in a new tab). */
   rowHref?: (row: T) => string;
-  /** Accessible description of what a row link opens. */
+  /** Spoken description of the row, announced after the row link's visible name. */
   rowLabel?: (row: T) => string;
   caption: string;
   /** Visually de-emphasise rows, for example cancelled bookings. */
@@ -50,9 +50,37 @@ type DataTableProps<T> = {
   dense?: boolean;
 };
 
+/**
+ * True while the element is wider inside than out (its content scrolls
+ * sideways), so the scroll area joins the tab order only when it needs to.
+ */
+function useScrollsX<E extends HTMLElement>() {
+  const ref = useRef<E>(null);
+  const [scrolls, setScrolls] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const check = () => setScrolls(el.scrollWidth > el.clientWidth + 1);
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, scrolls] as const;
+}
+
 export function DataTable<T>({ rows, columns, rowKey, rowHref, rowLabel, caption, muted, dense }: DataTableProps<T>) {
+  const uid = useId();
+  const [scroller, scrolls] = useScrollsX<HTMLDivElement>();
   return (
-    <div className="relative overflow-x-auto">
+    // When the table is wider than the screen, keyboard users can focus the area and scroll it with the arrow keys.
+    <div
+      ref={scroller}
+      className="relative overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+      tabIndex={scrolls ? 0 : undefined}
+      role={scrolls ? 'region' : undefined}
+      aria-label={scrolls ? caption : undefined}
+    >
       <table className="w-full border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead>
@@ -82,10 +110,15 @@ export function DataTable<T>({ rows, columns, rowKey, rowHref, rowLabel, caption
                       <Link
                         href={href}
                         onClick={notePush}
-                        aria-label={rowLabel?.(row)}
+                        aria-describedby={rowLabel ? `${uid}-${rowKey(row)}` : undefined}
                         className="block min-w-0 outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:rounded-[4px] focus-visible:after:outline-2 focus-visible:after:outline-accent"
                       >
                         {c.cell(row)}
+                        {rowLabel && (
+                          <span id={`${uid}-${rowKey(row)}`} className="sr-only">
+                            {rowLabel(row)}
+                          </span>
+                        )}
                       </Link>
                     ) : (
                       <div className={cn(href && !c.primary && 'relative z-10 [&:not(:has(button,a))]:pointer-events-none')}>{c.cell(row)}</div>

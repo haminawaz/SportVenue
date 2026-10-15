@@ -105,7 +105,7 @@ export function BarList({ data, max: fixedMax }: { data: BarDatum[]; max?: numbe
         return (
           <li key={d.key} aria-label={d.onPress ? undefined : `${d.label}: ${d.valueLabel}`}>
             {d.onPress ? (
-              <button type="button" aria-label={`${d.label}: ${d.valueLabel}`} onClick={d.onPress} className="flex w-full flex-col gap-1.5 text-left transition-opacity hover:opacity-80 active:opacity-70">
+              <button type="button" onClick={d.onPress} className="flex w-full flex-col gap-1.5 text-left transition-opacity hover:opacity-80 active:opacity-70">
                 {content}
               </button>
             ) : (

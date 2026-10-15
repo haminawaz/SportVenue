@@ -69,7 +69,7 @@ export function CustomerPicker({ value, onChange, error, disabled, helper, onCre
             {value ? 'Loading...' : 'No customer chosen'}
           </AppText>
         )}
-        <Button label={value ? 'Change' : 'Choose customer'} aria-label={`Customer: ${c ? `${c.name} · ${c.phone}` : 'not set'}. ${value ? 'Change' : 'Choose'}`} variant="secondary" size="sm" disabled={disabled} onPress={() => setOpen(true)} />
+        <Button label={value ? 'Change' : 'Choose customer'} aria-label={`${value ? 'Change' : 'Choose customer'}${c ? `, current customer ${c.name}, ${c.phone}` : ', no customer chosen yet'}`} variant="secondary" size="sm" disabled={disabled} onPress={() => setOpen(true)} />
       </div>
 
       <Modal

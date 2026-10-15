@@ -54,6 +54,8 @@ export function ResetPasswordScreen() {
       }),
       [],
     ),
+    // This screen prints its own inline error.
+    { reportErrors: false },
   );
 
   const save = async () => {

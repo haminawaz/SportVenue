@@ -113,7 +113,7 @@ describe('signed-out screens', () => {
   test('log in with the seeded owner signs in', async () => {
     const user = userEvent.setup();
     show(<SignInScreen />, { signedIn: false });
-    await user.click(screen.getByRole('button', { name: 'Fill in the owner account with sample data' }));
+    await user.click(screen.getByRole('button', { name: 'Seeded facility: fill in the owner account with sample data' }));
     await user.click(screen.getByRole('button', { name: 'Log in' }));
     await waitFor(() => expect(window.sessionStorage.getItem('sportvenue.accessToken')).toMatch(/^mock\.user_john\./), SLOW);
   });

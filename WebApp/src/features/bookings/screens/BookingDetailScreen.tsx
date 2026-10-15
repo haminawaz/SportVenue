@@ -172,7 +172,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
             <Card padded={false}>
               <CardHeader title="Customer" />
               <div className="flex flex-col gap-4 p-5">
-                <Link href={routes.customer(b.customerId)} className="group flex items-center gap-3" aria-label={`${b.customerName}, open customer profile`}>
+                <Link href={routes.customer(b.customerId)} className="group flex items-center gap-3">
                   <Avatar name={b.customerName} size={44} tone="accent" />
                   <span className="flex min-w-0 flex-col">
                     <AppText variant="text-strong" className="group-hover:underline">

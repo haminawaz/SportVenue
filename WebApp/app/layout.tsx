@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Instrument_Sans } from 'next/font/google';
 
 import { Providers } from '@/app-shell/Providers';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/config/site';
 import { themeBootScript } from '@/theme/appearanceStorage';
 
 import './globals.css';
@@ -23,9 +24,14 @@ const instrument = Instrument_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'SportVenue',
-  description: 'Bookings, payments and customers for your sports facility, in one app built for owners.',
-  applicationName: 'SportVenue',
+  ...(SITE_URL ? { metadataBase: SITE_URL } : {}),
+  title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: { type: 'website', siteName: SITE_NAME, title: SITE_NAME, description: SITE_DESCRIPTION, locale: 'en_US' },
+  twitter: { card: 'summary_large_image', title: SITE_NAME, description: SITE_DESCRIPTION },
+  // Numbers and addresses in the app are real links already; stop iOS from guessing extra ones.
+  formatDetection: { telephone: false, email: false, address: false },
 };
 
 export const viewport: Viewport = {

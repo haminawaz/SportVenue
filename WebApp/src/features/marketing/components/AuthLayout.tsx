@@ -90,9 +90,10 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
           <BrandMark size={32} onInk />
         </Link>
         {desktop && <CourtScene3D palette="onInk" interactive className="-mx-10 my-6 min-h-[260px] flex-1 xl:-mx-14" />}
-        <div className="max-w-[460px]">{intro}</div>
+        {/* The title renders once, in whichever column is showing, so the page has a single h1. */}
+        {desktop && <div className="max-w-[460px]">{intro}</div>}
         <AppText variant="small" className="text-on-ink-muted">
-          © 2026 SportVenue
+          © {new Date().getFullYear()} SportVenue
         </AppText>
       </aside>
 
@@ -107,13 +108,13 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
             <ArrowLeft size={16} weight="bold" aria-hidden />
             Back
           </button>
-          <span className="lg:hidden">
+          <Link href={routes.welcome} aria-label="SportVenue home" className="rounded-control lg:hidden">
             <BrandMark size={28} />
-          </span>
+          </Link>
         </div>
         {!desktop && <CourtScene3D palette={scheme === 'dark' ? 'dark' : 'light'} className="-mx-5 mt-2 h-44 sm:-mx-8 sm:h-56" />}
         <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center gap-6 py-8">
-          <div className="text-text lg:hidden">{intro}</div>
+          {!desktop && <div className="text-text">{intro}</div>}
           <div className="flex animate-rise flex-col gap-5">{children}</div>
         </div>
       </main>

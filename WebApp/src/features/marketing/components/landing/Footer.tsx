@@ -44,7 +44,9 @@ export function Footer({ onLogin, onGetStarted, onBookDemo, onGetQuote }: Footer
       <div className={cn(COLUMN, 'flex flex-col gap-12')}>
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div className="flex flex-col gap-3">
-            <BrandMark size={30} />
+            <a href="#top" aria-label="SportVenue, back to top" onClick={(e) => (e.preventDefault(), window.scrollTo({ top: 0, behavior: 'smooth' }))} className="self-start rounded-control">
+              <BrandMark size={30} />
+            </a>
             <p className="max-w-[300px] t-body-sm text-text-muted">Bookings, payments and customers for sports facility owners.</p>
           </div>
           <div className="grid grid-cols-2 gap-10 sm:gap-20">

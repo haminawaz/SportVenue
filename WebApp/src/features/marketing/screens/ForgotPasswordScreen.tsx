@@ -33,6 +33,8 @@ export function ForgotPasswordScreen() {
   const form = useForm(
     { email: params.get('email') ?? '' },
     useCallback((v: { email: string }) => ({ email: rules.email(v.email) }), []),
+    // This screen prints its own inline error.
+    { reportErrors: false },
   );
 
   const send = async () => {

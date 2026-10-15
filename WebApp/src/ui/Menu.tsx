@@ -82,7 +82,7 @@ export function Menu({ label, actions, triggerLabel, triggerIcon: TriggerIcon, t
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        aria-label={label}
+        aria-label={triggerLabel ? `${triggerLabel}, ${label}` : label}
         title={triggerLabel ? undefined : label}
         onClick={() => setOpen((o) => !o)}
         className={buttonClass({ variant, size, iconOnly: !triggerLabel })}

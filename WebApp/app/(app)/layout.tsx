@@ -1,8 +1,12 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 
 import { AppShell } from '@/app-shell/AppShell';
 import { AuthGate } from '@/app-shell/AuthGate';
 import { Spinner } from '@/ui/Spinner';
+
+/** The signed-in app is private: keep every screen out of search results. */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /** Signed-in area: the tabs at the root, every detail and form pushed on top. */
 export default function AppLayout({ children }: LayoutProps<'/'>) {

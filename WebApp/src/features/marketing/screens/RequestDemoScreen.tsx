@@ -73,6 +73,8 @@ export function RequestDemoScreen() {
       }),
       [],
     ),
+    // This screen prints its own inline error.
+    { reportErrors: false },
   );
 
   const submit = async () => {
