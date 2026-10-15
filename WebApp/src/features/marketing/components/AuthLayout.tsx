@@ -1,15 +1,32 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useSyncExternalStore, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle } from '@phosphor-icons/react';
 
 import { routes } from '@/navigation/routes';
+import { useTheme } from '@/theme/ThemeProvider';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { useDocumentTitle } from '@/ui/Page';
 
 import { BrandMark } from './BrandMark';
+import { CourtScene3D } from './CourtScene3D';
+
+const DESKTOP = '(min-width: 1024px)';
+
+/** True from the lg breakpoint, where the brand panel (and its 3D court) is shown. */
+function useDesktop() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia(DESKTOP);
+      mql.addEventListener('change', onChange);
+      return () => mql.removeEventListener('change', onChange);
+    },
+    () => window.matchMedia(DESKTOP).matches,
+    () => false,
+  );
+}
 
 type AuthLayoutProps = {
   /** Small label above the title (with the landing page's accent dot). */
@@ -22,12 +39,15 @@ type AuthLayoutProps = {
 };
 
 /**
- * Frame for the signed-out screens (Log in, Get started). On desktop a brand
- * panel with the title and points sits beside the form; on smaller screens
- * the title stacks above it.
+ * Frame for the signed-out screens (log in, get started, password help). On
+ * desktop an ink brand panel with a 3D padel court, the title and points sits
+ * beside the form; on smaller screens the court is a banner above the title.
+ * Only one court is ever mounted, so there is only one WebGL context.
  */
 export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayoutProps) {
   const router = useAppRouter();
+  const { scheme } = useTheme();
+  const desktop = useDesktop();
   useDocumentTitle(title);
 
   const intro = title && (
@@ -69,6 +89,7 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
         <Link href={routes.welcome} aria-label="SportVenue home" className="self-start">
           <BrandMark size={32} onInk />
         </Link>
+        {desktop && <CourtScene3D palette="onInk" interactive className="-mx-10 my-6 min-h-[260px] flex-1 xl:-mx-14" />}
         <div className="max-w-[460px]">{intro}</div>
         <AppText variant="small" className="text-on-ink-muted">
           © 2026 SportVenue
@@ -90,6 +111,7 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
             <BrandMark size={28} />
           </span>
         </div>
+        {!desktop && <CourtScene3D palette={scheme === 'dark' ? 'dark' : 'light'} className="-mx-5 mt-2 h-44 sm:-mx-8 sm:h-56" />}
         <div className="mx-auto flex w-full max-w-[440px] flex-1 flex-col justify-center gap-6 py-8">
           <div className="text-text lg:hidden">{intro}</div>
           <div className="flex animate-rise flex-col gap-5">{children}</div>

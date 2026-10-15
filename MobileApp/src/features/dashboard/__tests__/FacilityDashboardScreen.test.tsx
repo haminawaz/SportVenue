@@ -86,7 +86,9 @@ test('shows the full report for today in the facility zone by default', async ()
   for (const heading of ['Revenue by court', 'Court utilization', 'Customers', 'Outstanding payments', 'Cancellations']) {
     expect(screen.getByText(heading)).toBeOnTheScreen();
   }
-  expect(screen.getByText('+12% vs previous period')).toBeOnTheScreen();
+  // Narrow tiles say "vs prior"; screen readers still hear the full comparison.
+  expect(screen.getByText('+12% vs prior')).toBeOnTheScreen();
+  expect(screen.getByLabelText(/Revenue.*up 12 percent vs previous period/)).toBeOnTheScreen();
 });
 
 test('changing the period reloads the report for the new dates', async () => {

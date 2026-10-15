@@ -38,7 +38,10 @@ function RootNavigator() {
           <Stack.Screen name="welcome" />
           <Stack.Screen name="sign-in" />
           <Stack.Screen name="request-demo" />
+          <Stack.Screen name="forgot-password" />
         </Stack.Protected>
+        {/* Opened from the emailed link, signed in or not; a reset signs every session out. */}
+        <Stack.Screen name="reset-password" />
       </Stack>
       <OfflineBanner />
     </View>

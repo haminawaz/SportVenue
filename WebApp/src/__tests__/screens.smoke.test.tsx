@@ -41,7 +41,9 @@ import { CustomersScreen } from '@/features/customers/screens/CustomersScreen';
 import { FacilityDashboardScreen } from '@/features/dashboard/FacilityDashboardScreen';
 import { BusinessHoursScreen, FacilityEditScreen, FacilityScreen, FacilitySettingsScreen } from '@/features/facility/screens/FacilityScreens';
 import { LandingScreen } from '@/features/marketing/screens/LandingScreen';
+import { ForgotPasswordScreen } from '@/features/marketing/screens/ForgotPasswordScreen';
 import { RequestDemoScreen } from '@/features/marketing/screens/RequestDemoScreen';
+import { ResetPasswordScreen } from '@/features/marketing/screens/ResetPasswordScreen';
 import { SignInScreen } from '@/features/marketing/screens/SignInScreen';
 import { NotificationDetailScreen, NotificationsScreen } from '@/features/notifications/screens/NotificationScreens';
 import { OpportunitiesScreen } from '@/features/opportunities/screens/OpportunitiesScreen';
@@ -57,6 +59,7 @@ import { SessionProvider } from '@/session/SessionProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ToastProvider } from '@/ui/Toast';
 import { handleMockRequest } from '@/dev/mockServer';
+import { resetAuthStore } from '@/dev/mockServer/authStore';
 import type { BookingDetail, Page, Booking, OutstandingBalance, Payment } from '@/domain/types';
 
 const TOKEN = 'mock.user_john.1';
@@ -137,6 +140,44 @@ describe('signed-out screens', () => {
     await user.type(screen.getByLabelText('City'), 'Lahore');
     await user.click(screen.getByRole('button', { name: 'Request demo' }));
     expect(await screen.findByText('Thanks, Mark.', undefined, SLOW)).toBeInTheDocument();
+  });
+
+  test('forgot password sends the link, then the reset sets a new password that logs in', async () => {
+    const user = userEvent.setup();
+    const r = show(<ForgotPasswordScreen />, { signedIn: false, search: 'email=john@baselinepadel.pk' });
+    expect(screen.getByLabelText('Email')).toHaveValue('john@baselinepadel.pk');
+    await user.click(screen.getByRole('button', { name: 'Send reset link' }));
+    expect((await screen.findAllByRole('heading', { name: 'Check your email' }, SLOW)).length).toBeGreaterThan(0);
+    const demoLink = screen.getByRole('link', { name: 'Open the reset link' });
+    const token = new URL(demoLink.getAttribute('href')!, 'http://x').searchParams.get('token')!;
+    r.unmount();
+
+    show(<ResetPasswordScreen />, { signedIn: false, search: `token=${token}` });
+    expect((await screen.findAllByText(/For the account j\*\*\*@baselinepadel\.pk/, undefined, SLOW)).length).toBeGreaterThan(0);
+    await user.type(screen.getByLabelText('New password'), 'short');
+    await user.click(screen.getByRole('button', { name: 'Set new password' }));
+    expect(await screen.findByText('Use at least 8 characters.')).toBeInTheDocument();
+    await user.clear(screen.getByLabelText('New password'));
+    await user.type(screen.getByLabelText('New password'), 'newcourts42');
+    await user.type(screen.getByLabelText('Confirm new password'), 'newcourts42');
+    await user.click(screen.getByRole('button', { name: 'Set new password' }));
+    expect((await screen.findAllByRole('heading', { name: 'Password updated' }, SLOW)).length).toBeGreaterThan(0);
+
+    const ok = (await handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email: 'john@baselinepadel.pk', password: 'newcourts42' }, token: null })) as { accessToken: string };
+    expect(ok.accessToken).toMatch(/^mock\.user_john\./);
+    resetAuthStore();
+  });
+
+  test('a reset link that is not valid offers a new one', async () => {
+    show(<ResetPasswordScreen />, { signedIn: false, search: 'token=made-up' });
+    expect((await screen.findAllByRole('heading', { name: 'This link is not valid' }, SLOW)).length).toBeGreaterThan(0);
+    expect(screen.getByRole('link', { name: 'Request a new link' })).toHaveAttribute('href', '/forgot-password');
+  });
+
+  test('a reset page without a token explains instead of showing the form', () => {
+    show(<ResetPasswordScreen />, { signedIn: false });
+    expect(screen.getAllByRole('heading', { name: 'This link is not valid' }).length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
   });
 });
 

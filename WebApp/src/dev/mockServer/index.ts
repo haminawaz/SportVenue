@@ -1,8 +1,8 @@
 /**
- * DEVELOPMENT MOCK SERVER.
+ * DEMO MOCK SERVER.
  *
  * Answers apiRequest() in place of the network when USE_MOCKS is on
- * (development build and NEXT_PUBLIC_USE_MOCKS=1). Implements the proposed REST
+ * (see config/env.ts: on by default until NEXT_PUBLIC_API_URL is set). Implements the proposed REST
  * contract in docs/facility-dashboard-api.md with server-side validation,
  * owner authentication and calculations, so every app flow can be exercised.
  */
@@ -11,6 +11,7 @@
 
 import { ApiError } from '@/api/client';
 import { daysBetween } from '@/lib/datetime';
+import { maskEmail, passwordProblem } from '@/lib/passwordRules';
 import type {
   BookingEvent,
   BookingStatus,
@@ -23,7 +24,8 @@ import type {
   Weekday,
 } from '@/domain/types';
 
-import { DEMO_PASSWORD, activateOwner, db, persistOwner, type StoredBooking, type StoredCustomer } from './db';
+import { checkResetToken, completeReset, issueResetToken, issuedBeforePasswordChange, passwordFor } from './authStore';
+import { activateOwner, db, persistOwner, type StoredBooking, type StoredCustomer } from './db';
 import { quote } from './pricing';
 import { conflict, invalid, newId, notFound, paginate, round2, toEpoch, dateOf, minutesOf, clockOf, overlaps, weekdayOf, wait, rng } from './util';
 import {
@@ -80,8 +82,8 @@ export async function handleMockRequest(req: Req): Promise<unknown> {
   // The in-memory session table empties on every JS reload; accept our own
   // well-formed dev tokens again so a reload doesn't sign you out. Dev only.
   if (req.token && !db.sessions.has(req.token)) {
-    const match = /^mock\.(user_[a-z]+)\.\d+$/.exec(req.token);
-    if (match && db.users.some((u) => u.id === match[1])) db.sessions.set(req.token, match[1]);
+    const match = /^mock\.(user_[a-z]+)\.(\d+)$/.exec(req.token);
+    if (match && db.users.some((u) => u.id === match[1]) && !issuedBeforePasswordChange(match[1], Number(match[2]))) db.sessions.set(req.token, match[1]);
   }
   const userId = req.token ? db.sessions.get(req.token) : undefined;
   const user = db.users.find((u) => u.id === userId);
@@ -176,10 +178,50 @@ route('POST', '/api/auth/sign-in', ({ body }) => {
   if (!body.password) errors.password = 'Enter your password.';
   if (Object.keys(errors).length) throw invalid(errors);
   const user = db.users.find((u) => u.email === email);
-  if (!user || body.password !== DEMO_PASSWORD) throw new ApiError(401, 'Email or password is incorrect.', 'BAD_CREDENTIALS');
+  if (!user || body.password !== passwordFor(user.id)) throw new ApiError(401, 'Email or password is incorrect.', 'BAD_CREDENTIALS');
   const token = `mock.${user.id}.${Date.now()}`;
   db.sessions.set(token, user.id);
   return { accessToken: token };
+}, true);
+
+/**
+ * Forgot password. Always answers the same way, so the response never says
+ * whether an account exists. A real backend emails the link; the demo has no
+ * inbox, so it returns the link's token for the app to offer in demo mode.
+ */
+route('POST', '/api/auth/forgot-password', ({ body }) => {
+  const email = String(body.email ?? '').trim().toLowerCase();
+  if (!EMAIL.test(email)) throw invalid({ email: 'Enter a valid email address.' });
+  const user = db.users.find((u) => u.email === email);
+  return user ? { demoResetToken: issueResetToken(user.id) } : {};
+}, true);
+
+const RESET_ERRORS = {
+  invalid: ['This reset link is not valid. Request a new one.', 'RESET_INVALID'],
+  expired: ['This reset link has expired. Request a new one.', 'RESET_EXPIRED'],
+  used: ['This reset link has already been used. Request a new one if you need to.', 'RESET_USED'],
+} as const;
+
+function resetLink(token: string) {
+  const check = checkResetToken(token);
+  if (!check.ok) {
+    const [message, code] = RESET_ERRORS[check.reason];
+    throw new ApiError(410, message, code);
+  }
+  return db.users.find((u) => u.id === check.userId) ?? (() => { throw new ApiError(410, RESET_ERRORS.invalid[0], RESET_ERRORS.invalid[1]); })();
+}
+
+/** Checks a reset link before the form is shown, and names the account (masked). */
+route('GET', '/api/auth/reset-password/:token', ({ params }) => ({ email: maskEmail(resetLink(params.token).email) }), true);
+
+/** Sets the new password, uses up the link and signs out every existing session of that owner. */
+route('POST', '/api/auth/reset-password', ({ body }) => {
+  const user = resetLink(String(body.token ?? ''));
+  const problem = passwordProblem(String(body.password ?? ''));
+  if (problem) throw invalid({ password: problem });
+  completeReset(String(body.token), user.id, String(body.password));
+  for (const [token, owner] of db.sessions) if (owner === user.id) db.sessions.delete(token);
+  return undefined;
 }, true);
 
 route('POST', '/api/leads', ({ body }) => {

@@ -66,4 +66,6 @@ export const routes = {
   notificationPreferences: '/settings/notifications' as Href,
   billing: '/settings/billing' as Href,
   signIn: '/sign-in' as Href,
+  forgotPassword: (email?: string) => `/forgot-password${q({ email })}` as Href,
+  resetPassword: (token: string) => `/reset-password${q({ token })}` as Href,
 };

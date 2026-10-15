@@ -1,12 +1,20 @@
 /**
- * Development boundary for mock data.
+ * Mock data configuration (same rules as the web app).
  *
- * Mocks are used only when BOTH are true:
- *   - this is a development build (__DEV__)
- *   - EXPO_PUBLIC_USE_MOCKS=1 is set explicitly
+ * Mocks are on when:
+ *   1. EXPO_PUBLIC_USE_MOCKS is '1' or 'true', OR
+ *   2. EXPO_PUBLIC_API_URL is not set and EXPO_PUBLIC_USE_MOCKS is not '0' or 'false'.
  *
- * A production build can never read mock data, even if the variable leaks.
+ * Development and release builds (EAS preview and production) therefore run
+ * on the seeded demo data out of the box. Set EXPO_PUBLIC_API_URL (and
+ * EXPO_PUBLIC_USE_MOCKS=0) for a build that talks to the live backend.
+ *
+ * Expo inlines EXPO_PUBLIC_* at build time only for direct property access,
+ * so each variable is read as process.env.EXPO_PUBLIC_NAME.
  */
-export const USE_MOCKS = __DEV__ && process.env.EXPO_PUBLIC_USE_MOCKS === '1';
+const rawUseMocks = process.env.EXPO_PUBLIC_USE_MOCKS;
+
+export const USE_MOCKS =
+  rawUseMocks === '1' || rawUseMocks === 'true' || (!process.env.EXPO_PUBLIC_API_URL && rawUseMocks !== '0' && rawUseMocks !== 'false');
 
 export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? '';

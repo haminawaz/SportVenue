@@ -79,6 +79,13 @@ export function SignInScreen() {
           autoComplete="current-password"
           enterKeyHint="go"
         />
+        <Link
+          href={routes.forgotPassword(form.values.email.trim() || undefined)}
+          onClick={notePush}
+          className="-mt-2 self-end rounded-badge t-label text-accent underline-offset-4 hover:underline"
+        >
+          Forgot password?
+        </Link>
         <Button type="submit" label="Log in" size="lg" block loading={submitting} />
       </form>
 

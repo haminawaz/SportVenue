@@ -8,6 +8,7 @@ import { toUserFacingError } from '@/api/errors';
 import { USE_MOCKS } from '@/config/env';
 import { AuthLayout } from '@/features/marketing/components/AuthLayout';
 import { rules, useForm } from '@/lib/useForm';
+import { routes } from '@/navigation/routes';
 import { useAuth } from '@/session/SessionProvider';
 import { useTheme } from '@/theme/ThemeProvider';
 import { fontFamily, radius, spacing } from '@/theme/tokens';
@@ -74,6 +75,16 @@ export default function SignInScreen() {
           returnKeyType="go"
           onSubmitEditing={onSubmit}
         />
+        <Pressable
+          accessibilityRole="link"
+          hitSlop={{ top: 10, bottom: 10, left: 12, right: 12 }}
+          onPress={() => router.push(routes.forgotPassword(form.values.email.trim() || undefined))}
+          style={({ pressed }) => [styles.forgot, pressed && styles.pressed]}
+        >
+          <AppText variant="body-sm" tone="accent" style={styles.link}>
+            Forgot password?
+          </AppText>
+        </Pressable>
         <Button label="Log in" size="lg" block onPress={onSubmit} loading={submitting} />
       </View>
 
@@ -96,7 +107,7 @@ export default function SignInScreen() {
       {USE_MOCKS && (
         <View style={[styles.demo, { borderColor: colors.border }]}>
           <AppText variant="body-sm" tone="muted">
-            Development build: sample owners
+            Demo mode: sample owners
           </AppText>
           <View style={styles.demoRow}>
             <Button
@@ -127,6 +138,7 @@ const styles = StyleSheet.create({
   alt: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
   link: { fontFamily: fontFamily.semibold },
   pressed: { opacity: 0.6 },
+  forgot: { alignSelf: 'flex-end', marginTop: -spacing.sm, paddingVertical: spacing.xxs },
   demo: { borderWidth: 1, borderStyle: 'dashed', borderRadius: radius.card, padding: spacing.lg, gap: spacing.md, alignItems: 'center' },
   demoRow: { flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' },
 });

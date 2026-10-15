@@ -64,7 +64,7 @@ export async function apiRequest<T>(path: string, { method = 'GET', query, body,
   const token = await authHooks.getAccessToken();
 
   if (USE_MOCKS) {
-    // Development boundary: the in-memory mock server answers instead of the network.
+    // Demo data: the in-memory mock server answers instead of the network (see config/env.ts).
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { handleMockRequest } = require('@/dev/mockServer') as typeof import('@/dev/mockServer');
     try {

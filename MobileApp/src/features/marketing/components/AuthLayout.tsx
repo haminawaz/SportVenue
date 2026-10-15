@@ -10,6 +10,7 @@ import { AppText } from '@/ui/AppText';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
 import { BrandMark } from './BrandMark';
+import { CourtScene3D } from './CourtScene3D';
 
 type AuthLayoutProps = {
   /** Small label above the title (with the landing page's accent dot). */
@@ -22,14 +23,13 @@ type AuthLayoutProps = {
 };
 
 /**
- * Shared frame for the signed-out screens (Log in, Get started), in the landing
- * page's language: a soft grey panel (the same tone as the page's secondary
- * cards) with the brand, title and optional points, then the form card
- * overlapping its bottom edge.
+ * Shared frame for the signed-out screens (log in, get started, password
+ * help): a soft grey panel with the brand, a 3D padel court, the title and
+ * optional points, then the form card overlapping its bottom edge.
  */
 export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayoutProps) {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, scheme } = useTheme();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const [intro] = useState(() => new Animated.Value(0));
@@ -58,6 +58,8 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
               <BrandMark size={30} />
               <View style={styles.spacer} />
             </View>
+
+            <CourtScene3D palette={scheme === 'dark' ? 'dark' : 'light'} style={styles.scene} />
 
             {title && (
               <View style={styles.titles}>
@@ -115,7 +117,9 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 56 },
   back: { width: 44, height: 44, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center' },
   spacer: { width: 44 },
-  titles: { gap: spacing.md, marginTop: spacing.xxl },
+  // The court bleeds to the panel edges; its canvas is transparent, so the panel colour shows through.
+  scene: { height: 176, marginHorizontal: -spacing.xl, marginTop: spacing.sm },
+  titles: { gap: spacing.md, marginTop: spacing.md },
   eyebrow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   dot: { width: 8, height: 8, borderRadius: radius.full },
   lead: { maxWidth: 440 },
