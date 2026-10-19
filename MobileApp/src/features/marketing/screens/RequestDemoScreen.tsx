@@ -4,7 +4,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Buildings, CheckCircle, EnvelopeSimple, MapPin, Phone, User } from 'phosphor-react-native';
 
 import { toUserFacingError } from '@/api/errors';
+import { USE_MOCKS } from '@/config/env';
 import { rules, useForm } from '@/lib/useForm';
+import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -48,6 +50,10 @@ const COPY: Record<LeadIntent, { eyebrow: string; title: string; lead: string; p
 };
 
 const COURTS = ['1-2', '3-5', '6-10', '11+'];
+
+/** The mock server drops leads, so demo builds must not promise a reply. */
+const DEMO_NOTICE = 'This form is not connected to SportVenue yet, so nothing you enter here is sent to anyone.';
+const DEMO_DONE = 'This is a demo, so your details were not sent and nobody will contact you.';
 
 /** Sign-up intake: the owner tells us about the facility, as a new account, a demo or a quote request. */
 export function RequestDemoScreen() {
@@ -95,7 +101,7 @@ export function RequestDemoScreen() {
 
   if (done) {
     return (
-      <AuthLayout eyebrow={copy.eyebrow} title="Request sent">
+      <AuthLayout eyebrow={copy.eyebrow} title={USE_MOCKS ? 'Demo complete' : 'Request sent'}>
         <View style={[surface, styles.done]}>
           <View style={[styles.doneIcon, { backgroundColor: colors.accentSoft }]}>
             <CheckCircle size={40} color={colors.accent} weight="fill" />
@@ -104,7 +110,7 @@ export function RequestDemoScreen() {
             Thanks, {done}.
           </AppText>
           <AppText tone="muted" style={styles.center}>
-            {copy.done}
+            {USE_MOCKS ? DEMO_DONE : copy.done}
           </AppText>
           <Button label="Back to home" size="lg" variant="secondary" block onPress={home} />
         </View>
@@ -115,6 +121,7 @@ export function RequestDemoScreen() {
   return (
     <AuthLayout eyebrow={copy.eyebrow} title={copy.title} lead={copy.lead} points={copy.points}>
       <View style={[surface, styles.card]}>
+        {USE_MOCKS && <Notice tone="warning" title="Demo mode" message={DEMO_NOTICE} />}
         {formError && <Notice tone="danger" message={formError} />}
 
         <FormGroup title="About you">
@@ -173,6 +180,13 @@ export function RequestDemoScreen() {
         </FormGroup>
 
         <Button label={copy.submit} variant="accent" size="lg" block onPress={submit} loading={saving} />
+        <AppText variant="body-sm" tone="muted" style={styles.center}>
+          We use these details only to reply to your request. See our{' '}
+          <AppText variant="body-sm" tone="accent" role="link" onPress={() => router.push(routes.privacy)} style={styles.underline}>
+            Privacy Policy
+          </AppText>
+          .
+        </AppText>
       </View>
 
       <View style={styles.alt}>
@@ -204,4 +218,5 @@ const styles = StyleSheet.create({
   done: { alignItems: 'center', gap: spacing.md, padding: spacing.xxl },
   doneIcon: { width: 72, height: 72, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
   center: { textAlign: 'center' },
+  underline: { textDecorationLine: 'underline' },
 });

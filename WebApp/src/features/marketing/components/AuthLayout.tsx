@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle } from '@phosphor-icons/react';
 
 import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
-import { useAppRouter } from '@/navigation/useAppRouter';
+import { notePush, useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { useDocumentTitle } from '@/ui/Page';
 
@@ -92,7 +92,7 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
         {desktop && <CourtScene3D palette="onInk" interactive className="-mx-10 my-6 min-h-[260px] flex-1 xl:-mx-14" />}
         {/* The title renders once, in whichever column is showing, so the page has a single h1. */}
         {desktop && <div className="max-w-[460px]">{intro}</div>}
-        <AppText variant="small" className="text-on-ink-muted">
+        <AppText variant="small" className="text-on-ink-muted" suppressHydrationWarning>
           © {new Date().getFullYear()} SportVenue
         </AppText>
       </aside>
@@ -117,6 +117,17 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
           {!desktop && <div className="text-text">{intro}</div>}
           <div className="flex animate-rise flex-col gap-5">{children}</div>
         </div>
+        <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-5 gap-y-1 pb-2">
+          {[
+            { href: routes.privacy, label: 'Privacy' },
+            { href: routes.terms, label: 'Terms' },
+            { href: routes.cookies, label: 'Cookies' },
+          ].map((l) => (
+            <Link key={l.href} href={l.href} onClick={notePush} className="t-small inline-flex min-h-9 items-center text-text-muted underline-offset-4 hover:text-text hover:underline">
+              {l.label}
+            </Link>
+          ))}
+        </nav>
       </main>
     </div>
   );

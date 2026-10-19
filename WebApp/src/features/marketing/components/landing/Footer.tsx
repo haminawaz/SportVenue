@@ -1,46 +1,57 @@
 'use client';
 
+import Link from 'next/link';
+
+import { CookieSettingsButton } from '@/features/legal/CookieSettingsButton';
+import { routes } from '@/navigation/routes';
+import { notePush } from '@/navigation/useAppRouter';
 import { cn } from '@/ui/cn';
 
 import { BrandMark } from '../BrandMark';
 
-import { COLUMN, useLandingScroll, type SectionId } from './LandingScroll';
+import { COLUMN, useLandingScroll, type LandingLinks, type SectionId } from './LandingScroll';
 
-type Link = { label: string; onPress: () => void; href: string };
+/** A section of this page (smooth-scrolled) or another page (a plain link). */
+type FooterLink = { label: string } & ({ section: SectionId } | { href: string });
 
-type FooterProps = { onLogin: () => void; onGetStarted: () => void; onBookDemo: () => void; onGetQuote: () => void };
+const LINK_CLASS = 'flex min-h-9 items-center t-body-sm text-text-muted transition-colors hover:text-text';
 
-/**
- * Footer with only links that work today: page sections and account actions.
- * Company and legal columns join once those pages exist.
- */
-export function Footer({ onLogin, onGetStarted, onBookDemo, onGetQuote }: FooterProps) {
+/** Footer with only links that work today: page sections, account actions and the legal pages. */
+export function Footer({ links }: { links: LandingLinks }) {
   const { scrollTo } = useLandingScroll();
-  const to = (id: SectionId): Link['onPress'] => () => scrollTo(id);
 
-  const columns: { title: string; links: Link[] }[] = [
+  const columns: { title: string; links: FooterLink[] }[] = [
     {
       title: 'Product',
       links: [
-        { label: 'Product tour', onPress: to('features'), href: '#features' },
-        { label: 'How it works', onPress: to('how'), href: '#how' },
-        { label: 'For owners', onPress: to('owners'), href: '#owners' },
-        { label: 'Pricing', onPress: to('pricing'), href: '#pricing' },
+        { label: 'Product tour', section: 'features' },
+        { label: 'How it works', section: 'how' },
+        { label: 'For owners', section: 'owners' },
+        { label: 'Pricing', section: 'pricing' },
       ],
     },
     {
       title: 'Get in touch',
       links: [
-        { label: 'Get started', onPress: onGetStarted, href: '/request-demo' },
-        { label: 'Book a demo', onPress: onBookDemo, href: '/request-demo?intent=demo' },
-        { label: 'Get a quote', onPress: onGetQuote, href: '/request-demo?intent=quote' },
-        { label: 'Log in', onPress: onLogin, href: '/sign-in' },
+        { label: 'Get started', href: links.getStarted },
+        { label: 'Book a demo', href: links.bookDemo },
+        { label: 'Get a quote', href: links.getQuote },
+        { label: 'Log in', href: links.login },
+      ],
+    },
+    {
+      title: 'Legal',
+      links: [
+        { label: 'Privacy Policy', href: routes.privacy },
+        { label: 'Terms and Conditions', href: routes.terms },
+        { label: 'Cookie Policy', href: routes.cookies },
       ],
     },
   ];
 
   return (
-    <footer className="border-t border-border pt-14 pb-[calc(env(safe-area-inset-bottom)+28px)]">
+    // Extra bottom room keeps the floating cookie badge clear of the last line.
+    <footer className="border-t border-border pt-14 pb-[calc(env(safe-area-inset-bottom)+84px)]">
       <div className={cn(COLUMN, 'flex flex-col gap-12')}>
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div className="flex flex-col gap-3">
@@ -49,28 +60,38 @@ export function Footer({ onLogin, onGetStarted, onBookDemo, onGetQuote }: Footer
             </a>
             <p className="max-w-[300px] t-body-sm text-text-muted">Bookings, payments and customers for sports facility owners.</p>
           </div>
-          <div className="grid grid-cols-2 gap-10 sm:gap-20">
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 sm:gap-14 lg:gap-20">
             {columns.map((c) => (
               <nav key={c.title} aria-label={c.title} className="flex flex-col gap-1">
                 <h2 className="pb-2 t-label text-text-subtle">{c.title}</h2>
-                {c.links.map((l) => (
-                  <a
-                    key={l.label}
-                    href={l.href}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      l.onPress();
-                    }}
-                    className="flex min-h-9 items-center t-body-sm text-text-muted transition-colors hover:text-text"
-                  >
-                    {l.label}
-                  </a>
-                ))}
+                {c.links.map((l) =>
+                  'section' in l ? (
+                    <a
+                      key={l.label}
+                      href={`#${l.section}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        scrollTo(l.section);
+                      }}
+                      className={LINK_CLASS}
+                    >
+                      {l.label}
+                    </a>
+                  ) : (
+                    <Link key={l.label} href={l.href} onClick={notePush} className={LINK_CLASS}>
+                      {l.label}
+                    </Link>
+                  ),
+                )}
+                {c.title === 'Legal' && <CookieSettingsButton asLink className={LINK_CLASS} />}
               </nav>
             ))}
           </div>
         </div>
-        <p className="border-t border-border pt-6 t-caption text-text-subtle">© {new Date().getFullYear()} SportVenue</p>
+        {/* Prerendered at build time: the year can differ from the visitor's clock. */}
+        <p suppressHydrationWarning className="border-t border-border pt-6 t-caption text-text-subtle">
+          © {new Date().getFullYear()} SportVenue
+        </p>
       </div>
     </footer>
   );

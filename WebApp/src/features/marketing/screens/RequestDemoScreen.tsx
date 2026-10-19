@@ -1,13 +1,15 @@
 'use client';
 
 import { useCallback, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Buildings, CheckCircle, EnvelopeSimple, MapPin, Phone, User } from '@phosphor-icons/react';
 
 import { toUserFacingError } from '@/api/errors';
+import { USE_MOCKS } from '@/config/env';
 import { rules, useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
-import { useAppRouter } from '@/navigation/useAppRouter';
+import { notePush, useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
 import { FieldShell, TextField } from '@/ui/Fields';
@@ -49,12 +51,23 @@ const COPY: Record<LeadIntent, { eyebrow: string; title: string; lead: string; p
 
 const COURTS = ['1-2', '3-5', '6-10', '11+'];
 
-/** Sign-up intake: the owner tells us about the facility, as a new account, a demo or a quote request. */
+/** The mock server drops leads, so demo builds must not promise a reply. */
+const DEMO_NOTICE = 'This form is not connected to SportVenue yet, so nothing you enter here is sent to anyone.';
+const DEMO_DONE = 'This is a demo, so your details were not sent and nobody will contact you.';
+
+/** Sign-up intake: the owner tells us about the facility, as a new account, a demo or a quote request (?intent=demo|quote). */
 export function RequestDemoScreen() {
+  const raw = useSearchParams().get('intent');
+  return <RequestDemoForm intent={raw === 'demo' || raw === 'quote' ? raw : 'start'} />;
+}
+
+/**
+ * The intake form for one intent. Search params are only known in the
+ * browser, so the page also prerenders this with "start" as the Suspense
+ * fallback: the static HTML then carries the real form instead of nothing.
+ */
+export function RequestDemoForm({ intent }: { intent: LeadIntent }) {
   const router = useAppRouter();
-  const params = useSearchParams();
-  const raw = params.get('intent');
-  const intent: LeadIntent = raw === 'demo' || raw === 'quote' ? raw : 'start';
   const copy = COPY[intent];
   const request = useRequestDemo();
   const [done, setDone] = useState<string | null>(null);
@@ -96,7 +109,7 @@ export function RequestDemoScreen() {
 
   if (done) {
     return (
-      <AuthLayout eyebrow={copy.eyebrow} title="Request sent">
+      <AuthLayout eyebrow={copy.eyebrow} title={USE_MOCKS ? 'Demo complete' : 'Request sent'}>
         <div className="surface-card flex flex-col items-center gap-3 p-8">
           <span className="mb-1 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-accent-soft text-accent">
             <CheckCircle size={40} weight="fill" aria-hidden />
@@ -105,7 +118,7 @@ export function RequestDemoScreen() {
             Thanks, {done}.
           </AppText>
           <AppText variant="body-md" tone="muted" className="text-center">
-            {copy.done}
+            {USE_MOCKS ? DEMO_DONE : copy.done}
           </AppText>
           <Button label="Back to home" size="lg" variant="secondary" block onPress={home} className="w-full" />
         </div>
@@ -123,6 +136,7 @@ export function RequestDemoScreen() {
           void submit();
         }}
       >
+        {USE_MOCKS && <Notice tone="warning" title="Demo mode" message={DEMO_NOTICE} />}
         {formError && <Notice tone="danger" message={formError} />}
 
         <FormGroup title="About you">
@@ -163,6 +177,13 @@ export function RequestDemoScreen() {
         </FormGroup>
 
         <Button type="submit" label={copy.submit} variant="accent" size="lg" block loading={saving} />
+        <AppText as="p" variant="small" tone="muted" className="-mt-2 text-center">
+          We use these details only to reply to your request. See our{' '}
+          <Link href={routes.privacy} onClick={notePush} className="font-semibold text-accent underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          .
+        </AppText>
       </form>
 
       <div className="flex items-center justify-center gap-1">

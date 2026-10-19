@@ -96,9 +96,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <div className="min-h-dvh bg-background lg:pl-[248px]">
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] border-r border-border bg-surface lg:flex">
+        {/* A plain box: the nav inside is the landmark, and pages use <aside> for their side columns. */}
+        <div className="fixed inset-y-0 left-0 z-40 hidden w-[248px] border-r border-border bg-surface lg:flex">
           <SidebarContent pathname={pathname} onLogout={() => setLogout(true)} />
-        </aside>
+        </div>
         <Drawer visible={drawer} title="Navigation" onClose={() => setDrawer(false)}>
           <SidebarContent pathname={pathname} onLogout={() => setLogout(true)} />
         </Drawer>

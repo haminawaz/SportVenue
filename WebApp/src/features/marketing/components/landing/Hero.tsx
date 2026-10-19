@@ -3,13 +3,14 @@
 import type { CSSProperties } from 'react';
 import { ArrowRight } from '@phosphor-icons/react';
 
+import { notePush } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
 import { cn } from '@/ui/cn';
 
-import { COLUMN } from './LandingScroll';
+import { COLUMN, type LandingLinks } from './LandingScroll';
 import { ProductShot } from './ProductShot';
 
-type HeroProps = { onGetStarted: () => void; onBookDemo: () => void };
+type HeroProps = { links: LandingLinks };
 
 /** Staggered entrance: copy, actions, then the product (static under reduced motion). */
 const rise = (i: number): CSSProperties => ({ animationDelay: `${i * 90}ms` });
@@ -19,7 +20,7 @@ const rise = (i: number): CSSProperties => ({ animationDelay: `${i * 90}ms` });
  * screenshot is cropped by a fade so the page continues below it without a
  * hard edge; the headline and actions always sit above the fold.
  */
-export function Hero({ onGetStarted, onBookDemo }: HeroProps) {
+export function Hero({ links }: HeroProps) {
   return (
     <div id="top" className="overflow-hidden pt-14 sm:pt-20 lg:pt-24">
       <div className={cn(COLUMN, 'flex flex-col gap-6')}>
@@ -33,8 +34,8 @@ export function Hero({ onGetStarted, onBookDemo }: HeroProps) {
           Bookings, payments and customers for every court, in one place. Built for padel, tennis, futsal and squash venues.
         </p>
         <div className="flex animate-rise flex-wrap gap-3 pt-2" style={rise(2)}>
-          <Button label="Get started" variant="accent" size="lg" trailingIcon={ArrowRight} onPress={onGetStarted} />
-          <Button label="Book a demo" variant="secondary" size="lg" onPress={onBookDemo} />
+          <Button label="Get started" variant="accent" size="lg" trailingIcon={ArrowRight} href={links.getStarted} onPress={notePush} />
+          <Button label="Book a demo" variant="secondary" size="lg" href={links.bookDemo} onPress={notePush} />
         </div>
       </div>
 

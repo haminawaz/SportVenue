@@ -9,6 +9,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { bindAppStateToQueryFocus, createQueryClient } from '@/api/queryClient';
+import { PrivacyChoicesProvider } from '@/features/legal/PrivacyChoices';
 import { SessionProvider, useAuth } from '@/session/SessionProvider';
 import { ThemeProvider, useTheme } from '@/theme/ThemeProvider';
 import { bindNetworkToQueries, OfflineBanner } from '@/ui/OfflineBanner';
@@ -29,20 +30,26 @@ function RootNavigator() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
-        <Stack.Protected guard={status === 'signedIn'}>
-          <Stack.Screen name="(app)" />
-        </Stack.Protected>
-        {/* Signed-out visitors land on the marketing page first. */}
-        <Stack.Protected guard={status === 'signedOut'}>
-          <Stack.Screen name="welcome" />
-          <Stack.Screen name="sign-in" />
-          <Stack.Screen name="request-demo" />
-          <Stack.Screen name="forgot-password" />
-        </Stack.Protected>
-        {/* Opened from the emailed link, signed in or not; a reset signs every session out. */}
-        <Stack.Screen name="reset-password" />
-      </Stack>
+      <PrivacyChoicesProvider>
+        <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+          <Stack.Protected guard={status === 'signedIn'}>
+            <Stack.Screen name="(app)" />
+          </Stack.Protected>
+          {/* Signed-out visitors land on the marketing page first. */}
+          <Stack.Protected guard={status === 'signedOut'}>
+            <Stack.Screen name="welcome" />
+            <Stack.Screen name="sign-in" />
+            <Stack.Screen name="request-demo" />
+            <Stack.Screen name="forgot-password" />
+          </Stack.Protected>
+          {/* Opened from the emailed link, signed in or not; a reset signs every session out. */}
+          <Stack.Screen name="reset-password" />
+          {/* Legal pages: readable signed in or out. */}
+          <Stack.Screen name="privacy" />
+          <Stack.Screen name="terms" />
+          <Stack.Screen name="cookies" />
+        </Stack>
+      </PrivacyChoicesProvider>
       <OfflineBanner />
     </View>
   );

@@ -44,7 +44,8 @@ export function CourtScene3D({ palette, className, interactive }: CourtScene3DPr
         renderer.setClearColor(0x000000, 0);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        // three r186 removed PCFSoftShadowMap (it fell back to this with a console warning).
+        renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         el.appendChild(canvas);

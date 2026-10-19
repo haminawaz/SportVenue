@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { List, X } from '@phosphor-icons/react';
 
+import { notePush } from '@/navigation/useAppRouter';
 import { Button } from '@/ui/Button';
 import { cn } from '@/ui/cn';
 import { Drawer } from '@/ui/Dialogs';
 
 import { BrandMark } from '../BrandMark';
 
-import { COLUMN, useLandingScroll, type SectionId } from './LandingScroll';
+import { COLUMN, useLandingScroll, type LandingLinks, type SectionId } from './LandingScroll';
 
 /** Height of the sticky header (sections use scroll-mt-16 to clear it). */
 export const NAV_HEIGHT = 64;
@@ -23,16 +24,20 @@ const LINKS: { id: SectionId; label: string }[] = [
 
 const MENU_ID = 'landing-menu';
 
-type NavProps = { onLogin: () => void; onGetStarted: () => void };
+type NavProps = { links: LandingLinks };
 
 /**
  * Sticky header: brand, section links, log in and the one sign-up action.
  * Below 1024px the section links move into a menu (a focus-trapped drawer that
  * closes on Escape and hands focus back to the menu button).
  */
-export function Nav({ onLogin, onGetStarted }: NavProps) {
+export function Nav({ links }: NavProps) {
   const { scrollTo } = useLandingScroll();
   const [open, setOpen] = useState(false);
+  const leave = () => {
+    setOpen(false);
+    notePush();
+  };
 
   // Close first, then scroll once the drawer has released the page's scroll lock.
   const go = (id: SectionId) => {
@@ -63,8 +68,8 @@ export function Nav({ onLogin, onGetStarted }: NavProps) {
           ))}
         </ul>
         <div className="flex items-center gap-2">
-          <Button label="Log in" variant="ghost" size="md" onPress={onLogin} />
-          <Button label="Get started" variant="accent" size="md" onPress={onGetStarted} className="hidden sm:inline-flex" />
+          <Button label="Log in" variant="ghost" size="md" href={links.login} onPress={notePush} />
+          <Button label="Get started" variant="accent" size="md" href={links.getStarted} onPress={notePush} className="hidden sm:inline-flex" />
           <button
             type="button"
             aria-label="Menu"
@@ -103,8 +108,8 @@ export function Nav({ onLogin, onGetStarted }: NavProps) {
             ))}
           </nav>
           <div className="mt-auto flex flex-col gap-2 border-t border-border p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
-            <Button label="Get started" variant="accent" size="lg" block onPress={() => (setOpen(false), onGetStarted())} />
-            <Button label="Log in" variant="secondary" size="lg" block onPress={() => (setOpen(false), onLogin())} />
+            <Button label="Get started" variant="accent" size="lg" block href={links.getStarted} onPress={leave} />
+            <Button label="Log in" variant="secondary" size="lg" block href={links.login} onPress={leave} />
           </div>
         </div>
       </Drawer>

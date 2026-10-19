@@ -1,6 +1,9 @@
 import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { PRIVACY_CHOICES_LABEL, useOpenPrivacyChoices } from '@/features/legal/PrivacyChoices';
+import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -13,13 +16,12 @@ type Link = { label: string; onPress: () => void };
 
 type FooterProps = { onLogin: () => void; onGetStarted: () => void; onBookDemo: () => void };
 
-/**
- * Raised footer with only links that work today: page sections and account
- * actions. Company and legal columns join once those pages exist.
- */
+/** Raised footer with only links that work today: page sections, account actions and the legal pages. */
 export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const openChoices = useOpenPrivacyChoices();
   const { scrollTo } = useLandingScroll();
   const row = useWindowDimensions().width >= 600;
   const to = (id: SectionId) => () => scrollTo(id);
@@ -42,10 +44,20 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
         { label: 'Log in', onPress: onLogin },
       ],
     },
+    {
+      title: 'Legal',
+      links: [
+        { label: 'Privacy Policy', onPress: () => router.push(routes.privacy) },
+        { label: 'Terms and Conditions', onPress: () => router.push(routes.terms) },
+        { label: 'Cookie Policy', onPress: () => router.push(routes.cookies) },
+        { label: PRIVACY_CHOICES_LABEL, onPress: openChoices },
+      ],
+    },
   ];
 
   return (
-    <View style={[styles.band, { backgroundColor: colors.surfaceRaised, borderTopColor: colors.border, paddingBottom: insets.bottom + spacing.xxl }]}>
+    // Extra bottom room keeps the floating privacy badge clear of the last line.
+    <View style={[styles.band, { backgroundColor: colors.surfaceRaised, borderTopColor: colors.border, paddingBottom: insets.bottom + 72 }]}>
       <View style={styles.inner}>
         <View style={[styles.top, row && styles.topRow]}>
           <View style={styles.brand}>
@@ -71,7 +83,7 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
         </View>
         <View style={[styles.bottom, { borderTopColor: colors.border }]}>
           <AppText variant="body-sm" tone="muted">
-            © 2026 SportVenue
+            © {new Date().getFullYear()} SportVenue
           </AppText>
         </View>
       </View>

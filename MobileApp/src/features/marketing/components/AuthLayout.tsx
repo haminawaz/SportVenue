@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
@@ -48,7 +49,8 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
 
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + spacing.xxxl }]} keyboardShouldPersistTaps="handled">
+      {/* Extra bottom room keeps the floating privacy badge clear of the legal links. */}
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 72 }]} keyboardShouldPersistTaps="handled">
         <View style={[styles.panel, { backgroundColor: colors.surfaceMuted, paddingTop: insets.top + spacing.sm }]}>
           <View style={styles.inner}>
             <View style={styles.top}>
@@ -105,6 +107,19 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
         >
           {children}
         </Animated.View>
+        <View role="navigation" aria-label="Legal" style={[styles.inner, styles.legal]}>
+          {[
+            { href: routes.privacy, label: 'Privacy' },
+            { href: routes.terms, label: 'Terms' },
+            { href: routes.cookies, label: 'Cookies' },
+          ].map((l) => (
+            <Pressable key={l.label} role="link" hitSlop={8} onPress={() => router.push(l.href)} style={({ pressed }) => [styles.legalLink, pressed && styles.pressed]}>
+              <AppText variant="body-sm" tone="muted">
+                {l.label}
+              </AppText>
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -128,4 +143,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   // The form card overlaps the panel's rounded bottom edge.
   body: { marginTop: -40, paddingHorizontal: spacing.lg, gap: spacing.xl },
+  legal: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.xl, marginTop: spacing.xxl, paddingHorizontal: spacing.lg },
+  legalLink: { minHeight: 44, justifyContent: 'center' },
+  pressed: { opacity: 0.6 },
 });

@@ -136,6 +136,8 @@ export function ResetPasswordScreen() {
       <form
         noValidate
         aria-busy={link.isPending || undefined}
+        // Faded and unusable until the link is checked: inert says the same to keyboards and screen readers.
+        inert={link.isPending}
         className={cn('flex flex-col gap-4 transition-opacity', link.isPending && 'pointer-events-none opacity-50')}
         onSubmit={(e) => {
           e.preventDefault();

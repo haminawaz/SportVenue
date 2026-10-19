@@ -72,5 +72,9 @@ export const routes = {
   forgotPassword: (email?: string) => `/forgot-password${q({ email })}` as Href,
   resetPassword: (token: string) => `/reset-password${q({ token })}` as Href,
   requestDemo: (intent?: 'demo' | 'quote') => `/request-demo${q({ intent })}` as Href,
+
+  privacy: '/privacy' as Href,
+  terms: '/terms' as Href,
+  cookies: '/cookies' as Href,
 };
 

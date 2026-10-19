@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 /**
  * Public site details for metadata, robots.txt and the sitemap.
  *
@@ -26,4 +28,20 @@ export const SITE_NAME = 'SportVenue';
 export const SITE_DESCRIPTION = 'Bookings, payments and customers for every court, in one place. Built for padel, tennis, futsal and squash venues.';
 
 /** Public, indexable pages, for the sitemap. */
-export const PUBLIC_PATHS = ['/welcome', '/request-demo', '/sign-in'] as const;
+export const PUBLIC_PATHS = ['/welcome', '/request-demo', '/sign-in', '/privacy', '/terms', '/cookies'] as const;
+
+/** The share image (app/opengraph-image.png, 1200x630) and its alt text (app/opengraph-image.alt.txt). */
+const SHARE_IMAGE = {
+  url: '/opengraph-image.png',
+  width: 1200,
+  height: 630,
+  alt: 'SportVenue: the back office for your sports facility. The SportVenue dashboard for a padel club.',
+};
+
+/**
+ * Open Graph and Twitter fields every page shares. Metadata merges shallowly,
+ * so a page that sets its own `openGraph` or `twitter` replaces the layout's
+ * whole object, share image included: spread these in first.
+ */
+export const OPEN_GRAPH_BASE = { type: 'website', siteName: SITE_NAME, locale: 'en_US', images: [SHARE_IMAGE] } satisfies Metadata['openGraph'];
+export const TWITTER_BASE = { card: 'summary_large_image', images: [SHARE_IMAGE] } satisfies Metadata['twitter'];

@@ -1,9 +1,9 @@
 import type { MetadataRoute } from 'next';
 
-import { SITE_URL } from '@/config/site';
+import { PUBLIC_PATHS, SITE_URL } from '@/config/site';
 
 /**
- * Crawlers may read the public pages (landing, get started, log in). The
+ * Crawlers may read the public pages (landing, get started, log in, legal). The
  * signed-in app is private and also marked noindex page by page; listing its
  * areas here keeps crawlers from spending time on screens that need a session.
  */
@@ -11,7 +11,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: ['/welcome', '/request-demo', '/sign-in'],
+      allow: [...PUBLIC_PATHS],
       disallow: [
         '/booking',
         '/bookings',

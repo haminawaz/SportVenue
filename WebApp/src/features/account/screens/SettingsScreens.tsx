@@ -1,12 +1,16 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import Link from 'next/link';
 import { SignOut } from '@phosphor-icons/react';
 
 import { LogoutDialog } from '@/app-shell/AppShell';
 import { useAppMutation } from '@/api/useAppMutation';
 import type { NotificationPreferences } from '@/domain/types';
+import { LEGAL_LINKS } from '@/features/legal/content';
+import { CookieSettingsButton } from '@/features/legal/CookieSettingsButton';
 import { rules, useForm } from '@/lib/useForm';
+import { notePush } from '@/navigation/useAppRouter';
 import { useAuth, useSession } from '@/session/SessionProvider';
 import { useTheme, type Appearance } from '@/theme/ThemeProvider';
 import { AppText } from '@/ui/AppText';
@@ -55,6 +59,20 @@ export function SettingsScreen() {
                 { value: 'dark', label: 'Dark' },
               ]}
             />
+          </div>
+        </FormSection>
+        <FormSection title="Privacy and legal" description="How SportVenue handles your data, and what it stores on this device.">
+          <div className="flex flex-col items-start gap-3">
+            <ul className="flex flex-col gap-1">
+              {LEGAL_LINKS.map((l) => (
+                <li key={l.slug}>
+                  <Link href={l.href} onClick={notePush} className="t-text inline-flex min-h-8 items-center font-semibold text-accent underline-offset-4 hover:underline">
+                    {l.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <CookieSettingsButton />
           </div>
         </FormSection>
         <FormSection title="Log out" description="You'll need your email and password to log back in.">

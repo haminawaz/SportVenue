@@ -2,9 +2,7 @@
 
 import { useMemo } from 'react';
 
-import { routes, type Href } from '@/navigation/routes';
-import { useAppRouter } from '@/navigation/useAppRouter';
-import { useDocumentTitle } from '@/ui/Page';
+import { routes } from '@/navigation/routes';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
 import { Features } from '../components/landing/Features';
@@ -12,7 +10,7 @@ import { Footer } from '../components/landing/Footer';
 import { ForFacilityOwners } from '../components/landing/ForFacilityOwners';
 import { Hero } from '../components/landing/Hero';
 import { HowItWorks } from '../components/landing/HowItWorks';
-import { LandingScrollProvider, type SectionId } from '../components/landing/LandingScroll';
+import { LandingScrollProvider, type LandingLinks, type SectionId } from '../components/landing/LandingScroll';
 import { Nav } from '../components/landing/Nav';
 import { Pricing } from '../components/landing/Pricing';
 
@@ -22,10 +20,17 @@ import { Pricing } from '../components/landing/Pricing';
  * pricing (quote or demo) and the footer. Stats and testimonials are left out
  * until there are real numbers and real quotes to show.
  */
+/** Real links (not router pushes), so they open in a new tab and crawlers can follow them. */
+const LINKS: LandingLinks = {
+  getStarted: routes.requestDemo(),
+  bookDemo: routes.requestDemo('demo'),
+  getQuote: routes.requestDemo('quote'),
+  login: routes.signIn,
+};
+
+/** The tab title comes from the page's metadata (app/(public)/welcome/page.tsx); nothing here overrides it. */
 export function LandingScreen() {
-  const router = useAppRouter();
   const reduced = useReducedMotion();
-  useDocumentTitle(undefined);
 
   const api = useMemo(
     () => ({
@@ -34,24 +39,18 @@ export function LandingScreen() {
     [reduced],
   );
 
-  const go = (href: Href) => () => router.push(href);
-  const getStarted = go(routes.requestDemo());
-  const bookDemo = go(routes.requestDemo('demo'));
-  const getQuote = go(routes.requestDemo('quote'));
-  const login = go(routes.signIn);
-
   return (
     <LandingScrollProvider value={api}>
       <div className="min-h-dvh bg-background">
-        <Nav onLogin={login} onGetStarted={getStarted} />
+        <Nav links={LINKS} />
         <main>
-          <Hero onGetStarted={getStarted} onBookDemo={bookDemo} />
+          <Hero links={LINKS} />
           <Features />
           <HowItWorks />
           <ForFacilityOwners />
-          <Pricing onGetQuote={getQuote} onBookDemo={bookDemo} />
+          <Pricing links={LINKS} />
         </main>
-        <Footer onLogin={login} onGetStarted={getStarted} onBookDemo={bookDemo} onGetQuote={getQuote} />
+        <Footer links={LINKS} />
       </div>
     </LandingScrollProvider>
   );

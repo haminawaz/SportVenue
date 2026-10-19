@@ -54,6 +54,7 @@ import { RecordPaymentScreen } from '@/features/payments/screens/RecordPaymentSc
 import { DiscountDetailScreen, DiscountFormScreen, PricingHistoryScreen } from '@/features/pricing/screens/DiscountScreens';
 import { PricingRuleScreen } from '@/features/pricing/screens/PricingRuleScreen';
 import { PricingScreen } from '@/features/pricing/screens/PricingScreen';
+import { CookieConsentProvider } from '@/features/legal/CookieConsent';
 import { useAuth } from '@/session/SessionProvider';
 import { SessionProvider } from '@/session/SessionProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -76,7 +77,9 @@ function Providers({ children, signedIn = true }: { children: ReactNode; signedI
     <QueryClientProvider client={client}>
       <ThemeProvider scheme="light">
         <ToastProvider>
-          <SessionProvider>{signedIn ? <Ready>{children}</Ready> : children}</SessionProvider>
+          <SessionProvider>
+            <CookieConsentProvider>{signedIn ? <Ready>{children}</Ready> : children}</CookieConsentProvider>
+          </SessionProvider>
         </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>

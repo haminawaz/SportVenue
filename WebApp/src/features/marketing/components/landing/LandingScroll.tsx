@@ -2,10 +2,14 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
+import type { Href } from '@/navigation/routes';
 import { cn } from '@/ui/cn';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
 export type SectionId = 'features' | 'how' | 'owners' | 'pricing';
+
+/** Where the landing page's calls to action go. */
+export type LandingLinks = { getStarted: Href; bookDemo: Href; getQuote: Href; login: Href };
 
 type LandingScrollApi = {
   /** Scroll the page so a section sits just below the sticky header. */

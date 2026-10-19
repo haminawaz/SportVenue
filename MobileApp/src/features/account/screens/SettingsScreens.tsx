@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { Bell, Buildings, CreditCard, UserCircle } from 'phosphor-react-native';
+import { Bell, Buildings, Cookie, CreditCard, FileText, ShieldCheck, UserCircle } from 'phosphor-react-native';
 
 import type { NotificationPreferences } from '@/domain/types';
+import { PRIVACY_CHOICES_LABEL, useOpenPrivacyChoices } from '@/features/legal/PrivacyChoices';
 import { rules, useForm } from '@/lib/useForm';
 import { routes } from '@/navigation/routes';
 import { useAuth, useSession } from '@/session/SessionProvider';
@@ -25,6 +26,7 @@ import { LogoutRow } from './MoreScreen';
 
 export function SettingsScreen() {
   const router = useRouter();
+  const openChoices = useOpenPrivacyChoices();
   const { appearance, setAppearance } = useTheme();
   return (
     <>
@@ -55,6 +57,12 @@ export function SettingsScreen() {
         <ListGroup title="Facility">
           <ListRow icon={Buildings} title="Facility settings" subtitle="Profile, hours, currency and timezone" onPress={() => router.push(routes.facility)} />
           <ListRow icon={CreditCard} title="Subscription and billing" onPress={() => router.push(routes.billing)} />
+        </ListGroup>
+        <ListGroup title="Privacy and legal">
+          <ListRow icon={ShieldCheck} title="Privacy Policy" onPress={() => router.push(routes.privacy)} />
+          <ListRow icon={FileText} title="Terms and Conditions" onPress={() => router.push(routes.terms)} />
+          <ListRow icon={Cookie} title="Cookie Policy" onPress={() => router.push(routes.cookies)} />
+          <ListRow icon={Cookie} title={PRIVACY_CHOICES_LABEL} subtitle="What SportVenue may store on this device" onPress={openChoices} />
         </ListGroup>
         <LogoutRow />
       </Screen>
