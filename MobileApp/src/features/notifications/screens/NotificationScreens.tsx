@@ -107,7 +107,7 @@ const NotificationRow = memo(function NotificationRow({ notification: n, onPress
   return (
     <Pressable
       role="button"
-      aria-label={`${n.read ? '' : 'Unread. '}${meta.label}. ${n.title}. ${n.body}. ${when}`}
+      aria-label={`${n.title}${n.read ? '' : ', unread'}. ${meta.label}. ${n.body}. ${when}`}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && { backgroundColor: colors.surfaceMuted }]}
     >

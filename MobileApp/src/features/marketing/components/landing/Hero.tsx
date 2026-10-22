@@ -1,54 +1,38 @@
 import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, useWindowDimensions, View } from 'react-native';
-import { CaretLeft, CaretRight } from 'phosphor-react-native';
+import { ArrowRight } from 'phosphor-react-native';
 
-import type { AvailabilitySlot } from '@/domain/types';
-import { DayTimeline } from '@/features/bookings/components/DayTimeline';
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing, typography } from '@/theme/tokens';
+import { spacing, typography } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 import { Button } from '@/ui/Button';
 import { useReducedMotion } from '@/ui/useReducedMotion';
 
-import { LANDING_MAX } from './LandingScroll';
+import { LANDING_MAX, WIDE_AT } from './LandingScroll';
+import { BottomFade, ProductShot, SHOT_RATIO, useShotFrame } from './ProductShot';
 
-const SPORTS = ['Padel', 'Tennis', 'Futsal', 'Squash', 'Badminton', 'Pickleball', 'Cricket nets'];
+type HeroProps = { topInset: number; onGetStarted: () => void; onBookDemo: () => void };
 
-/** Sample day for the preview only (announced as a sample to screen readers). */
-const DAY = '2026-10-02';
-const slot = (h: number, status: AvailabilitySlot['status'], customerName?: string, bookingId?: string): AvailabilitySlot => ({
-  startAt: `${DAY}T${String(h).padStart(2, '0')}:00:00`,
-  endAt: `${DAY}T${String(h + 1).padStart(2, '0')}:00:00`,
-  status,
-  customerName,
-  bookingId,
-});
-const SAMPLE_SLOTS: AvailabilitySlot[] = [
-  slot(16, 'BOOKED', 'Lily Evans', 'b1'),
-  slot(17, 'FREE'),
-  slot(18, 'BOOKED', 'Michael Turner', 'b2'),
-  slot(19, 'BOOKED', 'Michael Turner', 'b2'),
-  slot(20, 'FREE'),
-  slot(21, 'BOOKED', 'James Carter', 'b3'),
-];
-
-type HeroProps = { topInset: number; onGetStarted: () => void; onHowItWorks: () => void };
-
-export function Hero({ topInset, onGetStarted, onHowItWorks }: HeroProps) {
+/**
+ * Left-aligned copy with one action pair, then the real dashboard screen.
+ * Phones stack them; tablets put the screen beside the copy. The screen is
+ * cropped and fades into the page so the next section follows on naturally.
+ */
+export function Hero({ topInset, onGetStarted, onBookDemo }: HeroProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
-  const wide = width >= 1024;
+  const wide = width >= WIDE_AT;
   const reduced = useReducedMotion();
   const [intro] = useState(() => [0, 1, 2, 3].map(() => new Animated.Value(0)));
 
-  // Staggered entrance: headline, subtext, actions, then the phone.
+  // Staggered entrance: headline, subtext, actions, then the screen.
   useEffect(() => {
     if (reduced) {
       intro.forEach((v) => v.setValue(1));
       return;
     }
     const a = Animated.stagger(
-      80,
+      90,
       intro.map((v) => Animated.spring(v, { toValue: 1, stiffness: 110, damping: 20, mass: 1, useNativeDriver: true })),
     );
     a.start();
@@ -57,124 +41,56 @@ export function Hero({ topInset, onGetStarted, onHowItWorks }: HeroProps) {
 
   const rise = (i: number) => ({ opacity: intro[i], transform: [{ translateY: intro[i].interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] });
 
+  const column = Math.min(width, LANDING_MAX + spacing.xl * 2) - spacing.xl * 2;
+  const shotWidth = wide ? Math.min(340, column * 0.42) : Math.min(320, column - spacing.xxl * 2);
+  const cropHeight = Math.min(shotWidth * SHOT_RATIO, wide ? 620 : 520);
+  const frame = useShotFrame();
+
   return (
-    <View style={[styles.band, { paddingTop: topInset + spacing.xxxl }]}>
+    <View style={[styles.band, { paddingTop: topInset + (wide ? 64 : spacing.huge) }]}>
       <View style={[styles.inner, wide && styles.innerWide]}>
         <View style={[styles.copy, wide && styles.copyWide]}>
-          <Animated.View style={[styles.textBlock, rise(0)]}>
-            <View style={styles.eyebrow}>
-              <View style={[styles.dot, { backgroundColor: colors.accentDecor }]} />
-              <AppText variant="caption-uppercase" tone="muted">
-                For sports facility owners
-              </AppText>
-            </View>
-            <AppText role="heading" aria-level={1} style={[typography['display-mega'], { color: colors.text }]}>
-              Run your <AppText style={[typography['display-mega'], { color: colors.accent }]}>courts</AppText>, not your spreadsheets.
+          <Animated.View style={rise(0)}>
+            <AppText role="heading" aria-level={1} style={[typography['display-mega'], wide && styles.h1Wide, { color: colors.text }]}>
+              The back office for your sports facility.
             </AppText>
           </Animated.View>
           <Animated.View style={rise(1)}>
             <AppText tone="muted" style={styles.lead}>
-              Bookings, payments and customers for your whole facility, in one app built for owners.
+              Bookings, payments and customers for every court, in one place. Built for padel, tennis, futsal and squash venues.
             </AppText>
           </Animated.View>
           <Animated.View style={[styles.ctas, rise(2)]}>
-            <Button label="Get started" variant="accent" onPress={onGetStarted} />
-            <Button label="See how it works" variant="secondary" onPress={onHowItWorks} />
+            <Button label="Get started" variant="accent" trailingIcon={ArrowRight} onPress={onGetStarted} />
+            <Button label="Book a demo" variant="secondary" onPress={onBookDemo} />
           </Animated.View>
         </View>
 
-        <Animated.View style={[styles.phoneWrap, wide && styles.phoneWrapWide, rise(3)]}>
-          <PhonePreview />
+        <Animated.View style={[styles.shotWrap, wide && styles.shotWrapWide, rise(3)]}>
+          <View style={[frame, { width: shotWidth, height: cropHeight }]}>
+            <ProductShot
+              name="dashboard"
+              width={shotWidth}
+              alt="The SportVenue dashboard for a padel club: revenue, bookings, utilization and average booking for today, with revenue over time below."
+            />
+            <BottomFade height={cropHeight * 0.32} color={colors.background} />
+          </View>
         </Animated.View>
       </View>
-
-      <View style={[styles.inner, styles.strip]}>
-        <AppText variant="body-strong" tone="muted">
-          Built for
-        </AppText>
-        <View style={styles.pills} role="list">
-          {SPORTS.map((s) => (
-            <View key={s} role="listitem" style={[styles.pill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <AppText variant="nav-link">{s}</AppText>
-            </View>
-          ))}
-        </View>
-      </View>
-    </View>
-  );
-}
-
-/** The real court-day timeline component in a phone frame, with sample bookings. Not interactive. */
-function PhonePreview() {
-  const { colors } = useTheme();
-  return (
-    <View accessible aria-label="Preview of the SportVenue court calendar with sample bookings" style={styles.phoneHost}>
-      <View
-        pointerEvents="none"
-        importantForAccessibility="no-hide-descendants"
-        accessibilityElementsHidden
-        style={[styles.phone, { backgroundColor: colors.background, borderColor: colors.borderStrong }]}
-      >
-        <View style={[styles.notch, { backgroundColor: colors.borderStrong }]} />
-        <View style={styles.phoneHead}>
-          <AppText variant="body-sm" tone="muted">
-            Court 1 · Padel
-          </AppText>
-          <View style={styles.dayRow}>
-            <CaretLeft size={18} color={colors.textMuted} weight="bold" />
-            <AppText variant="display-md" style={styles.flex}>
-              Today
-            </AppText>
-            <CaretRight size={18} color={colors.textMuted} weight="bold" />
-          </View>
-        </View>
-        <View style={styles.summary}>
-          <SummaryPill label="Booked" value="4 of 6" tone="accent" />
-          <SummaryPill label="Free" value="2 slots" tone="muted" />
-        </View>
-        <DayTimeline slots={SAMPLE_SLOTS} />
-      </View>
-    </View>
-  );
-}
-
-function SummaryPill({ label, value, tone }: { label: string; value: string; tone: 'accent' | 'muted' }) {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.summaryPill, { backgroundColor: tone === 'accent' ? colors.accentSoft : colors.surfaceMuted }]}>
-      <AppText variant="caption-uppercase" style={{ color: tone === 'accent' ? colors.accent : colors.textMuted }}>
-        {label}
-      </AppText>
-      <AppText variant="title-sm">{value}</AppText>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   band: { paddingHorizontal: spacing.xl },
-  inner: { width: '100%', maxWidth: LANDING_MAX, alignSelf: 'center', gap: spacing.huge },
+  inner: { width: '100%', maxWidth: LANDING_MAX, alignSelf: 'center', gap: spacing.huge + spacing.sm },
   innerWide: { flexDirection: 'row', alignItems: 'center', gap: 56 },
-  copy: { gap: spacing.xxl },
-  copyWide: { flex: 1.1 },
-  textBlock: { gap: spacing.lg },
-  eyebrow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  dot: { width: 8, height: 8, borderRadius: radius.full },
-  lead: { maxWidth: 520 },
+  copy: { gap: spacing.xl },
+  copyWide: { flex: 1 },
+  h1Wide: { fontSize: 56, lineHeight: 58, letterSpacing: -1.6 },
+  lead: { maxWidth: 520, fontSize: 17, lineHeight: 26 },
   // Both actions share one line from 360pt up; they wrap only on smaller screens.
-  ctas: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-
-  phoneWrap: { alignItems: 'center' },
-  phoneWrapWide: { flex: 1 },
-  phoneHost: { width: '100%', maxWidth: 340 },
-  phone: { borderRadius: 44, borderWidth: 1.5, paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl, gap: spacing.lg },
-  notch: { alignSelf: 'center', width: 96, height: 6, borderRadius: radius.full, opacity: 0.6 },
-  phoneHead: { gap: spacing.xs, paddingHorizontal: spacing.xs },
-  dayRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  flex: { flex: 1 },
-  summary: { flexDirection: 'row', gap: spacing.sm },
-  summaryPill: { flex: 1, borderRadius: radius.control, paddingHorizontal: spacing.md, paddingVertical: spacing.sm + 2, gap: 2 },
-
-  strip: { gap: spacing.md, marginTop: spacing.huge + spacing.sm },
-  pills: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  pill: { borderRadius: radius.full, borderWidth: 1, paddingHorizontal: spacing.lg + 2, minHeight: 44, justifyContent: 'center' },
+  ctas: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingTop: spacing.xs },
+  shotWrap: { alignItems: 'center' },
+  shotWrapWide: { flexShrink: 0 },
 });

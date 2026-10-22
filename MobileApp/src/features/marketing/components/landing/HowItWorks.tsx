@@ -1,61 +1,51 @@
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing, typography } from '@/theme/tokens';
 import { AppText } from '@/ui/AppText';
 
-import { Section } from './LandingScroll';
+import { Lede, Section, SectionTitle, WIDE_AT } from './LandingScroll';
 
 const STEPS = [
-  { title: 'Add your courts', body: 'Set opening hours, base rates and peak pricing once.' },
-  { title: 'Manage bookings', body: 'Book customers into open slots and see every court at a glance.' },
-  { title: 'Grow revenue', body: 'Collect what you are owed and fill the hours that sit empty.' },
+  { title: 'Add your courts', body: 'Enter each court with its sport, opening hours, base rate and any peak or off-peak pricing. You do this once.' },
+  { title: 'Take bookings', body: 'Book customers into open slots from the calendar. A slot can only be sold once, so busy evenings stop getting double-booked.' },
+  { title: 'Collect and grow', body: 'Record payments as they come in, follow up on what is still owed, and use analytics to fill the hours that sit empty.' },
 ];
 
-/** Three numbered steps: a row from 768pt, a connected vertical list on phones. */
+/** Headline, then the three steps under one rule each: stacked on phones, in a row on tablets. */
 export function HowItWorks() {
   const { colors } = useTheme();
-  const row = useWindowDimensions().width >= 768;
+  const wide = useWindowDimensions().width >= WIDE_AT;
+
   return (
-    <Section id="how">
-      <AppText role="heading" variant="display-xl">
-        Up and running in an afternoon.
-      </AppText>
-      <View style={[styles.steps, row && styles.stepsRow]}>
-        {STEPS.map((s, i) => {
-          const last = i === STEPS.length - 1;
-          return (
-            <View key={s.title} style={[styles.step, row && styles.stepRow]} accessible aria-label={`Step ${i + 1}: ${s.title}. ${s.body}`}>
-              <View style={[styles.rail, row && styles.railRow]}>
-                <View style={[styles.number, { borderColor: colors.accent }]}>
-                  <AppText variant="display-md" style={{ color: colors.accent }}>
-                    {i + 1}
-                  </AppText>
-                </View>
-                {!last && <View style={[row ? styles.lineRow : styles.line, { backgroundColor: colors.border }]} />}
-              </View>
-              <View style={[styles.text, !row && !last && styles.textGap]}>
-                <AppText variant="title-md">{s.title}</AppText>
-                <AppText tone="muted">{s.body}</AppText>
-              </View>
-            </View>
-          );
-        })}
+    <Section id="how" style={styles.section}>
+      <View style={styles.head}>
+        <SectionTitle>Set up in an afternoon.</SectionTitle>
+        <Lede>We set it up with your courts and prices, then walk you through it.</Lede>
+      </View>
+      <View role="list" style={[styles.steps, wide && styles.stepsWide]}>
+        {STEPS.map((s, i) => (
+          <View key={s.title} role="listitem" style={[styles.step, wide && styles.stepWide, { borderTopColor: colors.borderStrong }]}>
+            <AppText aria-hidden style={[typography['display-xl'], styles.number, { color: colors.accent }]}>
+              {i + 1}
+            </AppText>
+            <AppText variant="title-md" aria-label={`Step ${i + 1}: ${s.title}`}>
+              {s.title}
+            </AppText>
+            <AppText tone="muted">{s.body}</AppText>
+          </View>
+        ))}
       </View>
     </Section>
   );
 }
 
 const styles = StyleSheet.create({
-  steps: {},
-  stepsRow: { flexDirection: 'row', gap: spacing.xxl },
-  step: { flexDirection: 'row', gap: spacing.lg },
-  stepRow: { flex: 1, flexDirection: 'column' },
-  rail: { alignItems: 'center' },
-  railRow: { flexDirection: 'row', alignSelf: 'stretch' },
-  number: { width: 52, height: 52, borderRadius: radius.full, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
-  line: { width: 1.5, flex: 1, marginVertical: spacing.sm },
-  lineRow: { height: 1.5, flex: 1, marginHorizontal: spacing.md },
-  text: { flex: 1, gap: spacing.xs, paddingTop: spacing.md },
-  textGap: { paddingBottom: spacing.xxxl },
+  section: { gap: spacing.huge },
+  head: { gap: spacing.lg },
+  steps: { gap: 0 },
+  stepsWide: { flexDirection: 'row', gap: spacing.huge },
+  step: { borderTopWidth: StyleSheet.hairlineWidth * 2, paddingVertical: spacing.xxl, gap: spacing.sm },
+  stepWide: { flex: 1, paddingBottom: 0 },
+  number: { fontSize: 40, lineHeight: 44, marginBottom: spacing.xs },
 });

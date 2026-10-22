@@ -33,7 +33,12 @@ export function ForgotPasswordScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ email: string; demoToken?: string } | null>(null);
 
-  const form = useForm({ email: typeof params.email === 'string' ? params.email : '' }, (v) => ({ email: rules.email(v.email) }));
+  const form = useForm(
+    { email: typeof params.email === 'string' ? params.email : '' },
+    (v) => ({ email: rules.email(v.email) }),
+    // This screen prints its own inline error.
+    { reportErrors: false },
+  );
 
   const send = async () => {
     setFormError(null);

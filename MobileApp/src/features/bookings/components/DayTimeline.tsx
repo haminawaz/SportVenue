@@ -39,7 +39,7 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
             <Pressable
               key={s.startAt}
               role="button"
-              aria-label={`Booked, ${range}, ${s.customerName ?? ''}`}
+              aria-label={`${time}, ${s.customerName ?? 'Booked'}, ${range}, booked`}
               disabled={!onOpenBooking || !s.bookingId}
               onPress={() => s.bookingId && onOpenBooking?.(s.bookingId)}
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
@@ -63,7 +63,7 @@ export function DayTimeline({ slots, onBook, onOpenBooking }: DayTimelineProps) 
             <Pressable
               key={s.startAt}
               role="button"
-              aria-label={`Free, ${range}${s.rate ? `, ${f.moneyA11y(s.rate)} per hour` : ''}. Book this slot`}
+              aria-label={`${time}, free, ${range}${s.rate ? `, ${f.moneyA11y(s.rate)} per hour` : ''}. Book this slot`}
               disabled={!onBook}
               onPress={() => onBook?.(s)}
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}

@@ -94,7 +94,7 @@ export function DateRangeSelector({ value, today, onChange }: DateRangeSelectorP
     <>
       <Pressable
         role="button"
-        aria-label={`Showing ${label.title}${label.detail ? `, ${label.detail}` : ''}. Change period`}
+        aria-label={`${label.title}${label.detail ? `, ${label.detail}` : ''}. Change period`}
         onPress={() => setOpen(true)}
         style={({ pressed }) => [styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}
       >

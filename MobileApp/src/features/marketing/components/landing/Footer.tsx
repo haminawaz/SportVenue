@@ -14,15 +14,15 @@ import { LANDING_MAX, useLandingScroll, type SectionId } from './LandingScroll';
 
 type Link = { label: string; onPress: () => void };
 
-type FooterProps = { onLogin: () => void; onGetStarted: () => void; onBookDemo: () => void };
+type FooterProps = { onLogin: () => void; onGetStarted: () => void; onBookDemo: () => void; onGetQuote: () => void };
 
-/** Raised footer with only links that work today: page sections, account actions and the legal pages. */
-export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
+/** Footer with only links that work today: page sections, account actions and the legal pages. */
+export function Footer({ onLogin, onGetStarted, onBookDemo, onGetQuote }: FooterProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const openChoices = useOpenPrivacyChoices();
-  const { scrollTo } = useLandingScroll();
+  const { scrollTo, scrollToTop } = useLandingScroll();
   const row = useWindowDimensions().width >= 600;
   const to = (id: SectionId) => () => scrollTo(id);
 
@@ -30,9 +30,9 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
     {
       title: 'Product',
       links: [
-        { label: 'Features', onPress: to('features') },
+        { label: 'Product tour', onPress: to('features') },
         { label: 'How it works', onPress: to('how') },
-        { label: 'For facility owners', onPress: to('owners') },
+        { label: 'For owners', onPress: to('owners') },
         { label: 'Pricing', onPress: to('pricing') },
       ],
     },
@@ -41,6 +41,7 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
       links: [
         { label: 'Get started', onPress: onGetStarted },
         { label: 'Book a demo', onPress: onBookDemo },
+        { label: 'Get a quote', onPress: onGetQuote },
         { label: 'Log in', onPress: onLogin },
       ],
     },
@@ -57,24 +58,28 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
 
   return (
     // Extra bottom room keeps the floating privacy badge clear of the last line.
-    <View style={[styles.band, { backgroundColor: colors.surfaceRaised, borderTopColor: colors.border, paddingBottom: insets.bottom + 72 }]}>
+    <View style={[styles.band, { borderTopColor: colors.border, paddingBottom: insets.bottom + 72 }]}>
       <View style={styles.inner}>
         <View style={[styles.top, row && styles.topRow]}>
           <View style={styles.brand}>
-            <BrandMark size={32} />
-            <AppText tone="muted" style={styles.tagline}>
-              Software for sports facility owners.
+            <Pressable role="link" aria-label="SportVenue, back to top" onPress={scrollToTop} hitSlop={8} style={({ pressed }) => [styles.logo, pressed && styles.pressed]}>
+              <BrandMark size={30} />
+            </Pressable>
+            <AppText variant="body-sm" tone="muted" style={styles.tagline}>
+              Bookings, payments and customers for sports facility owners.
             </AppText>
           </View>
           <View style={[styles.columns, row && styles.columnsRow]}>
             {columns.map((c) => (
               <View key={c.title} style={styles.column}>
-                <AppText variant="caption-uppercase" tone="muted">
+                <AppText variant="nav-link" tone="subtle" role="heading" style={styles.columnTitle}>
                   {c.title}
                 </AppText>
                 {c.links.map((l) => (
-                  <Pressable key={l.label} role="link" aria-label={l.label} onPress={l.onPress} hitSlop={4} style={({ pressed }) => [styles.link, pressed && { opacity: 0.6 }]}>
-                    <AppText variant="body-md">{l.label}</AppText>
+                  <Pressable key={l.label} role="link" onPress={l.onPress} hitSlop={4} style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
+                    <AppText variant="body-sm" tone="muted">
+                      {l.label}
+                    </AppText>
                   </Pressable>
                 ))}
               </View>
@@ -82,7 +87,7 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
           </View>
         </View>
         <View style={[styles.bottom, { borderTopColor: colors.border }]}>
-          <AppText variant="body-sm" tone="muted">
+          <AppText variant="caption" tone="subtle">
             © {new Date().getFullYear()} SportVenue
           </AppText>
         </View>
@@ -92,15 +97,18 @@ export function Footer({ onLogin, onGetStarted, onBookDemo }: FooterProps) {
 }
 
 const styles = StyleSheet.create({
-  band: { marginTop: 80, paddingHorizontal: spacing.xl, paddingTop: spacing.huge + spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
+  band: { paddingHorizontal: spacing.xl, paddingTop: spacing.huge + spacing.sm, borderTopWidth: StyleSheet.hairlineWidth },
   inner: { width: '100%', maxWidth: LANDING_MAX, alignSelf: 'center', gap: spacing.xxxl },
   top: { gap: spacing.xxxl },
   topRow: { flexDirection: 'row', justifyContent: 'space-between' },
   brand: { gap: spacing.md },
-  tagline: { maxWidth: 260 },
-  columns: { flexDirection: 'row', gap: spacing.huge, flexWrap: 'wrap' },
-  columnsRow: { gap: 72 },
-  column: { gap: spacing.xs, minWidth: 140 },
-  link: { minHeight: 44, justifyContent: 'center' },
+  logo: { alignSelf: 'flex-start' },
+  tagline: { maxWidth: 280 },
+  columns: { flexDirection: 'row', flexWrap: 'wrap', columnGap: spacing.huge, rowGap: spacing.xxl },
+  columnsRow: { columnGap: 56 },
+  column: { minWidth: 130, gap: 2 },
+  columnTitle: { marginBottom: spacing.xs },
+  link: { minHeight: 40, justifyContent: 'center' },
+  pressed: { opacity: 0.6 },
   bottom: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: spacing.xl },
 });

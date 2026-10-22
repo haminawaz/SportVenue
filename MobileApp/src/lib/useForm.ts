@@ -1,15 +1,27 @@
 import { useCallback, useMemo, useState } from 'react';
 
-import { fieldErrorsOf } from '@/api/errors';
+import { fieldErrorsOf, toUserFacingError } from '@/api/errors';
+import { useToast } from '@/ui/Toast';
 
 export type Errors = Record<string, string | undefined>;
+
+type FormOptions = {
+  /**
+   * Show failures that are not about one field (offline, a slot taken
+   * meanwhile, a server error) as an error toast. On by default; screens that
+   * print their own inline error turn it off.
+   */
+  reportErrors?: boolean;
+};
 
 /**
  * Small form state helper.
  * - Client validation runs on submit, then live on every change after that.
  * - 422 field errors from the server are merged in under matching field names.
+ * - Any other failure is reported (see FormOptions), so a save never fails silently.
  */
-export function useForm<T extends Record<string, unknown>>(initial: T, validate: (values: T) => Errors) {
+export function useForm<T extends Record<string, unknown>>(initial: T, validate: (values: T) => Errors, { reportErrors = true }: FormOptions = {}) {
+  const toast = useToast();
   const [values, setValues] = useState<T>(initial);
   const [serverErrors, setServerErrors] = useState<Errors>({});
   const [attempted, setAttempted] = useState(false);
@@ -41,11 +53,16 @@ export function useForm<T extends Record<string, unknown>>(initial: T, validate:
         await action(values);
         return true;
       } catch (error) {
-        setServerErrors(fieldErrorsOf(error));
+        const fields = fieldErrorsOf(error);
+        setServerErrors(fields);
+        if (reportErrors && Object.keys(fields).length === 0) {
+          const err = toUserFacingError(error, "Couldn't save");
+          toast.show(`${err.title}. ${err.message}`, 'error');
+        }
         return false;
       }
     },
-    [validate, values],
+    [validate, values, reportErrors, toast],
   );
 
   const reset = useCallback((next: T) => {

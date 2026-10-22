@@ -26,10 +26,15 @@ export default function SignInScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const form = useForm({ email: '', password: '' }, (v) => ({
-    email: rules.email(v.email),
-    password: rules.required(v.password, 'Enter your password.'),
-  }));
+  const form = useForm(
+    { email: '', password: '' },
+    (v) => ({
+      email: rules.email(v.email),
+      password: rules.required(v.password, 'Enter your password.'),
+    }),
+    // This screen prints its own inline error.
+    { reportErrors: false },
+  );
 
   const onSubmit = async () => {
     setSubmitting(true);
@@ -115,7 +120,7 @@ export default function SignInScreen() {
               variant="ghost"
               size="sm"
               block
-              aria-label="Fill in the owner account with sample data"
+              aria-label="Seeded facility: fill in the owner account with sample data"
               onPress={() => form.patch({ email: 'john@baselinepadel.pk', password: 'sportvenue123' })}
             />
             <Button
@@ -123,7 +128,7 @@ export default function SignInScreen() {
               variant="ghost"
               size="sm"
               block
-              aria-label="Fill in the owner account with no data"
+              aria-label="Empty facility: fill in the owner account with no data"
               onPress={() => form.patch({ email: 'emma@greenlinearena.pk', password: 'sportvenue123' })}
             />
           </View>

@@ -57,7 +57,9 @@ export function AuthLayout({ eyebrow, title, lead, points, children }: AuthLayou
               <Pressable role="button" aria-label="Back to home" onPress={back} hitSlop={8} style={({ pressed }) => [styles.back, { backgroundColor: colors.surface }, pressed && { opacity: 0.7 }]}>
                 <ArrowLeft size={20} color={colors.text} weight="bold" />
               </Pressable>
-              <BrandMark size={30} />
+              <Pressable role="link" aria-label="SportVenue home" onPress={() => router.replace('/welcome')} hitSlop={8} style={({ pressed }) => pressed && { opacity: 0.7 }}>
+                <BrandMark size={30} />
+              </Pressable>
               <View style={styles.spacer} />
             </View>
 

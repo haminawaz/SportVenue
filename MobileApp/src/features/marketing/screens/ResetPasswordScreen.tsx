@@ -49,10 +49,15 @@ export function ResetPasswordScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  const form = useForm<Values>({ password: '', confirm: '' }, (v) => ({
-    password: passwordProblem(v.password),
-    confirm: !v.confirm ? 'Enter the new password again.' : v.confirm !== v.password ? 'The passwords do not match.' : undefined,
-  }));
+  const form = useForm<Values>(
+    { password: '', confirm: '' },
+    (v) => ({
+      password: passwordProblem(v.password),
+      confirm: !v.confirm ? 'Enter the new password again.' : v.confirm !== v.password ? 'The passwords do not match.' : undefined,
+    }),
+    // This screen prints its own inline error.
+    { reportErrors: false },
+  );
 
   const save = async () => {
     setFormError(null);
