@@ -382,6 +382,7 @@ const cookies: LegalDocument = {
               ['sportvenue.accessToken', 'Session storage · strictly necessary', 'Keeps you signed in on this tab', 'Until you close the tab or log out'],
               ['sportvenue.navDepth', 'Session storage · strictly necessary', 'Lets the in-app Back button return to the screen you came from', 'Until you close the tab'],
               ['sportvenue.appearance', 'Local storage · set when you choose', 'Remembers the light or dark theme you picked', 'Until you change it or clear your browser data'],
+              ['sportvenue.navLayout', 'Local storage · set when you choose', 'Remembers whether you keep the navigation at the side or the top on the website', 'Until you change it or clear your browser data'],
               ['sportvenue.consent', 'Local storage · strictly necessary', 'Remembers your cookie choices', '12 months, then we ask again'],
               ['sportvenue.mock.auth', 'Local storage · demo versions only', 'Keeps the sample sign-in working in a demo', 'Until you clear your browser data'],
             ],

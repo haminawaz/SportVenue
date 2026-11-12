@@ -25,6 +25,7 @@ import type { DateRange } from "./types/facilityDashboard.types";
 import {
   buildPresetRange,
   calendarPeriodEnd,
+  DEFAULT_PRESET,
   greetingFor,
   isSameRange,
 } from "./utils/dashboardFormatters";
@@ -45,7 +46,7 @@ export function FacilityDashboardScreen() {
   const [today, setToday] = useState(() => todayIn(tz));
   const [hour, setHour] = useState(() => hourIn(tz));
   const [range, setRange] = useState<DateRange>(() =>
-    buildPresetRange("this_week", todayIn(tz)),
+    buildPresetRange(DEFAULT_PRESET, todayIn(tz)),
   );
   const [pullRefreshing, setPullRefreshing] = useState(false);
 

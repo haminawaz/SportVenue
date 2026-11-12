@@ -19,5 +19,5 @@ export const LEGAL = {
   /** Providers that process personal data for SportVenue (hosting, email delivery, payments). */
   processors: [] as { name: string; purpose: string; location: string }[],
   /** The date the current versions of the legal pages took effect (YYYY-MM-DD). */
-  lastUpdated: '2026-10-19',
+  lastUpdated: '2026-11-12',
 };

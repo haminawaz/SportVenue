@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import { apiRequest, ApiError } from '@/api/client';
@@ -101,24 +101,97 @@ test('changing the period reloads the report for the new dates', async () => {
   await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today, aheadUntil: monthEnd > today ? monthEnd : undefined }));
 });
 
-test('a custom date range loads once both ends are set', async () => {
+const dayName = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+/** Clicks a day on the open range calendar, paging months until it is shown. */
+async function pickDay(user: ReturnType<typeof userEvent.setup>, date: string) {
+  const name = new RegExp(`^${dayName.format(new Date(`${date}T00:00:00Z`))}(,|$)`);
+  for (let i = 0; i < 24; i++) {
+    const day = screen.queryByRole('button', { name });
+    if (day) return user.click(day);
+    const shown = document.querySelector('[data-date]')?.getAttribute('data-date') ?? '';
+    await user.click(screen.getByRole('button', { name: date < shown ? 'Previous month' : 'Next month' }));
+  }
+  throw new Error(`No day button for ${date}`);
+}
+
+test('a custom range is picked on the calendar and loads once applied', async () => {
+  const user = userEvent.setup();
   renderDashboard();
   await screen.findByRole('heading', { name: 'Revenue over time' });
   const today = todayIn(TZ);
   const start = addDays(today, -40);
-  fireEvent.change(screen.getByLabelText('From'), { target: { value: start } });
+  await user.click(screen.getByRole('button', { name: 'Custom range' }));
+  expect(screen.getByRole('dialog', { name: 'Pick a date range' })).toBeInTheDocument();
+  await pickDay(user, start);
+  expect(screen.getByText(/Now pick the last day.$/)).toBeInTheDocument();
+  await pickDay(user, today);
+  expect(screen.getByText(/· 41 days$/)).toBeInTheDocument();
+  // Nothing reloads until Apply.
   expect(lastQuery()).toEqual(thisWeek());
-  fireEvent.change(screen.getByLabelText('To'), { target: { value: today } });
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
   await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: start, endDate: today }));
+  expect(screen.queryByRole('dialog', { name: 'Pick a date range' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /^Custom range, .+. Change$/ })).toHaveFocus();
+});
+
+test('days after today cannot be picked', async () => {
+  const user = userEvent.setup();
+  renderDashboard();
+  await screen.findByRole('heading', { name: 'Revenue over time' });
+  await user.click(screen.getByRole('button', { name: 'Custom range' }));
+  const today = todayIn(TZ);
+  expect(screen.getByRole('button', { name: /, today$/ })).toBeEnabled();
+  expect(screen.getByRole('button', { name: 'Next month' })).toBeDisabled();
+  const tomorrow = document.querySelector(`[data-date="${addDays(today, 1)}"]`);
+  if (tomorrow) expect(tomorrow).toBeDisabled();
 });
 
 test('a custom range longer than a year is refused with a reason', async () => {
+  const user = userEvent.setup();
   renderDashboard();
   await screen.findByRole('heading', { name: 'Revenue over time' });
   const today = todayIn(TZ);
-  fireEvent.change(screen.getByLabelText('From'), { target: { value: addDays(today, -400) } });
-  fireEvent.change(screen.getByLabelText('To'), { target: { value: today } });
+  await user.click(screen.getByRole('button', { name: 'Custom range' }));
+  await pickDay(user, addDays(today, -400));
+  await pickDay(user, today);
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
   expect(screen.getByRole('alert')).toHaveTextContent('Pick a range of one year or less.');
+  expect(lastQuery()).toEqual(thisWeek());
+});
+
+test('Clear empties the picked days, and an applied custom range goes back to this week', async () => {
+  const user = userEvent.setup();
+  renderDashboard();
+  await screen.findByRole('heading', { name: 'Revenue over time' });
+  const today = todayIn(TZ);
+  await user.click(screen.getByRole('button', { name: 'Custom range' }));
+  expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled();
+  await pickDay(user, addDays(today, -10));
+  await pickDay(user, addDays(today, -2));
+  await user.click(screen.getByRole('button', { name: 'Apply' }));
+  await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: addDays(today, -10), endDate: addDays(today, -2) }));
+
+  await user.click(screen.getByRole('button', { name: /^Custom range, / }));
+  await user.click(screen.getByRole('button', { name: 'Clear' }));
+  // Back on this week (its report is already cached, so nothing new is fetched).
+  expect(screen.getByRole('radio', { name: 'This week' })).toBeChecked();
+  expect(screen.getByRole('button', { name: 'Custom range' })).toBeInTheDocument();
+  expect(screen.getByText('Pick the first day.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Clear' })).toBeDisabled();
+  expect(document.activeElement).toHaveAttribute('data-date');
+});
+
+test('Escape closes the calendar without changing the period', async () => {
+  const user = userEvent.setup();
+  renderDashboard();
+  await screen.findByRole('heading', { name: 'Revenue over time' });
+  await user.click(screen.getByRole('button', { name: 'Custom range' }));
+  await pickDay(user, addDays(todayIn(TZ), -3));
+  await user.keyboard('{Escape}');
+  expect(screen.queryByRole('dialog', { name: 'Pick a date range' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Custom range' })).toHaveFocus();
   expect(lastQuery()).toEqual(thisWeek());
 });
 

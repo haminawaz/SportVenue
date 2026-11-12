@@ -4,7 +4,7 @@
  */
 import { useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.hoisted(() => {
@@ -22,6 +22,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => nav.pathname,
 }));
 
+import { AppShell } from '@/app-shell/AppShell';
 import { BillingScreen } from '@/features/account/screens/BillingScreen';
 import { MoreScreen } from '@/features/account/screens/MoreScreen';
 import { NotificationPreferencesScreen, ProfileScreen, SettingsScreen } from '@/features/account/screens/SettingsScreens';
@@ -182,6 +183,29 @@ describe('signed-out screens', () => {
     show(<ResetPasswordScreen />, { signedIn: false });
     expect(screen.getAllByRole('heading', { name: 'This link is not valid' }).length).toBeGreaterThan(0);
     expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
+  });
+});
+
+describe('app shell', () => {
+  test('the navigation moves to the top bar and back, and the choice is remembered', async () => {
+    const user = userEvent.setup();
+    window.localStorage.removeItem('sportvenue.navLayout');
+    show(
+      <AppShell>
+        <p>Page</p>
+      </AppShell>,
+    );
+    await user.click(await screen.findByRole('button', { name: 'Move navigation to the top' }, SLOW));
+    expect(window.localStorage.getItem('sportvenue.navLayout')).toBe('top');
+    // The sidebar is gone; the main links now sit in the top bar.
+    const nav = screen.getByRole('navigation', { name: 'Main' });
+    expect(nav.closest('header')).not.toBeNull();
+    expect(within(nav).getByRole('link', { name: 'Bookings' })).toHaveAttribute('href', '/bookings');
+    expect(within(nav).getByRole('link', { name: 'Dashboard' })).toHaveAttribute('aria-current', 'page');
+
+    await user.click(screen.getByRole('button', { name: 'Move navigation to the side' }));
+    expect(window.localStorage.getItem('sportvenue.navLayout')).toBe('side');
+    expect(screen.getByRole('navigation', { name: 'Main' }).closest('header')).toBeNull();
   });
 });
 

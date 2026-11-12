@@ -11,7 +11,7 @@ import { AnalyticsReport } from './components/AnalyticsReport';
 import { DateRangeSelector } from './components/DateRangeSelector';
 import { useAnalytics } from './hooks/useAnalytics';
 import type { DateRange } from './types/facilityDashboard.types';
-import { buildPresetRange, calendarPeriodEnd, greetingFor, isSameRange, rangeLabel } from './utils/dashboardFormatters';
+import { buildPresetRange, calendarPeriodEnd, DEFAULT_PRESET, greetingFor, isSameRange, rangeLabel } from './utils/dashboardFormatters';
 
 /**
  * Home screen: a greeting for the time of day at the facility, the period
@@ -25,7 +25,7 @@ export function FacilityDashboardScreen() {
 
   const [today, setToday] = useState(() => todayIn(tz));
   const [hour, setHour] = useState(() => hourIn(tz));
-  const [range, setRange] = useState<DateRange>(() => buildPresetRange('this_week', todayIn(tz)));
+  const [range, setRange] = useState<DateRange>(() => buildPresetRange(DEFAULT_PRESET, todayIn(tz)));
 
   // Keep "Today" and the greeting honest if the tab stays open past midnight (or into the evening) at the facility.
   const syncToday = useCallback(() => {

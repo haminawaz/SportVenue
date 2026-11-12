@@ -71,6 +71,9 @@ export function isSameRange(a: DateRange, b: DateRange) {
   return a.startDate === b.startDate && a.endDate === b.endDate;
 }
 
+/** The period the dashboard opens on, and goes back to when a custom range is cleared. */
+export const DEFAULT_PRESET = 'this_week' satisfies Exclude<DateRangePreset, 'custom'>;
+
 export const PRESET_TITLES: Record<Exclude<DateRangePreset, 'custom'>, string> = {
   today: 'Today',
   this_week: 'This week',
