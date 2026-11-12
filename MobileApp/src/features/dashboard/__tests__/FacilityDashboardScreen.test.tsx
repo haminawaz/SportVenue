@@ -5,13 +5,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { apiRequest, ApiError } from '@/api/client';
 import type { Analytics } from '@/domain/types';
-import { todayIn } from '@/lib/datetime';
+import { addDays, daysBetween, startOfWeek, todayIn } from '@/lib/datetime';
 import { SessionProvider } from '@/session/SessionProvider';
 import type { Session } from '@/session/types';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ToastProvider } from '@/ui/Toast';
 
 import { FacilityDashboardScreen } from '../FacilityDashboardScreen';
+import { calendarPeriodEnd } from '../utils/dashboardFormatters';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -79,10 +80,15 @@ test('greets the owner for the time of day, above the facility name', async () =
   expect(await screen.findByText('Revenue over time')).toBeOnTheScreen();
 });
 
-test('shows the full report for today in the facility zone by default', async () => {
+test('shows the full report for this week in the facility zone by default', async () => {
   await renderDashboard();
   expect(await screen.findByText('Peak and off-peak hours')).toBeOnTheScreen();
-  expect(request).toHaveBeenCalledWith('/api/analytics', { query: { startDate: todayIn(TZ), endDate: todayIn(TZ) } });
+  const today = todayIn(TZ);
+  const sunday = addDays(startOfWeek(today), 6);
+  // The chart runs on to Sunday, so the rest of the week is asked for too (none left on a Sunday).
+  expect(request).toHaveBeenCalledWith('/api/analytics', { query: { startDate: startOfWeek(today), endDate: today, aheadUntil: sunday > today ? sunday : undefined } });
+  // One booked-ahead bar per day still to come this week.
+  expect(screen.queryAllByRole('button', { name: /booked ahead$|: Nothing booked yet$/ })).toHaveLength(daysBetween(today, sunday));
   for (const heading of ['Revenue by court', 'Court utilization', 'Customers', 'Outstanding payments', 'Cancellations']) {
     expect(screen.getByText(heading)).toBeOnTheScreen();
   }
@@ -98,7 +104,8 @@ test('changing the period reloads the report for the new dates', async () => {
   await user.press(screen.getByRole('button', { name: /Change period$/ }));
   await user.press(screen.getByRole('radio', { name: 'This month' }));
   const today = todayIn(TZ);
-  await waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today }));
+  const monthEnd = calendarPeriodEnd('this_month', today)!;
+  await waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today, aheadUntil: monthEnd > today ? monthEnd : undefined }));
 });
 
 test('an error offers a retry, then the report recovers', async () => {

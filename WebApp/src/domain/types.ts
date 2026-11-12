@@ -336,7 +336,17 @@ export type Subscription = {
 export type Analytics = {
   period: { startDate: CalendarDate; endDate: CalendarDate };
   currency: string;
-  revenue: { total: number; changePercent: number | null; byDay: { date: CalendarDate; amount: number }[] };
+  revenue: {
+    total: number;
+    changePercent: number | null;
+    byDay: { date: CalendarDate; amount: number }[];
+    /**
+     * Only when the request sets `aheadUntil`: revenue already booked for each
+     * day after the period up to that date (bookings not yet played). It is not
+     * part of `total` or the comparison. Absent means unknown, not zero.
+     */
+    bookedAhead?: { date: CalendarDate; amount: number }[];
+  };
   bookings: { total: number; changePercent: number | null; averagePerDay: number; averageValue: number };
   utilization: { overall: number; byCourt: { courtId: ID; courtName: string; utilization: number }[] };
   revenueByCourt: { courtId: ID; courtName: string; amount: number }[];

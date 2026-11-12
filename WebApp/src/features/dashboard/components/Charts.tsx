@@ -11,13 +11,20 @@ import { cn } from '@/ui/cn';
  * mark, and every chart exposes a text alternative.
  */
 
-type ColumnDatum = { key: string; label: string; value: number; valueLabel: string; axisLabel?: string };
+/**
+ * `ahead`: revenue already booked for the bar's days still to come, drawn as a
+ * striped outline stacked on the solid part (`value`).
+ */
+type ColumnDatum = { key: string; label: string; value: number; valueLabel: string; axisLabel?: string; ahead?: number };
+
+/** Diagonal "/" stripes in the accent hue, for bars that are booked but not yet played. */
+const AHEAD_FILL = { backgroundImage: 'repeating-linear-gradient(135deg, var(--color-accent) 0 1.5px, transparent 1.5px 7px)' };
 
 /** Vertical bars over time (for example revenue per day). Hover or tap a bar to read it. */
 export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum[]; summary: { label: string; value: string }; height?: number }) {
   const [active, setActive] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
-  const max = Math.max(...data.map((d) => d.value), 1);
+  const max = Math.max(...data.map((d) => d.value + (d.ahead ?? 0)), 1);
   const dense = data.length > 20;
   const focus = hover ?? active;
   const shown = focus !== null ? data[focus] : null;
@@ -36,7 +43,9 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
         {/* recessive gridline at the top value */}
         <span aria-hidden className="absolute inset-x-0 top-0 border-t border-dashed border-border" />
         {data.map((d, i) => {
-          const h = d.value <= 0 ? 0 : Math.max(3, (d.value / max) * (height - 8));
+          const total = d.value + (d.ahead ?? 0);
+          const h = total <= 0 ? 0 : Math.max(3, (total / max) * (height - 8));
+          const aheadH = d.ahead ? h * (d.ahead / total) : 0;
           const on = focus === i;
           return (
             <button
@@ -49,11 +58,10 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
               className={cn('flex h-full min-w-0 flex-1 flex-col items-center justify-end', dense ? 'px-[1.5px]' : 'px-[3px]')}
             >
               {/* Bars cap at 48px so a short period (one day, one week) reads as bars, not a wall. */}
-              <span
-                aria-hidden
-                className="block w-full max-w-12 rounded-t bg-accent transition-opacity"
-                style={{ height: h, opacity: focus === null || on ? 1 : 0.35 }}
-              />
+              <span aria-hidden className="flex w-full max-w-12 flex-col overflow-hidden rounded-t transition-opacity" style={{ height: h, opacity: focus === null || on ? 1 : 0.35 }}>
+                {aheadH > 0 && <span className="block w-full shrink-0 rounded-t border-[1.5px] border-b-0 border-accent" style={{ height: aheadH, ...AHEAD_FILL }} />}
+                {h - aheadH > 0 && <span className="block w-full flex-1 bg-accent" />}
+              </span>
             </button>
           );
         })}
@@ -68,6 +76,14 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
           </div>
         ))}
       </div>
+      {data.some((d) => d.ahead !== undefined) && (
+        <div aria-hidden className="mt-3 flex items-center gap-1.5">
+          <span className="block size-3 rounded-[3px] border-[1.5px] border-accent" style={AHEAD_FILL} />
+          <AppText variant="mini" tone="muted">
+            Booked ahead, not yet played
+          </AppText>
+        </div>
+      )}
     </div>
   );
 }

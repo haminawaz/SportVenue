@@ -3,7 +3,7 @@
  * Sample data only; resets when the app reloads.
  */
 
-import { addDays, todayIn } from '@/lib/datetime';
+import { addDays, startOfWeek, todayIn } from '@/lib/datetime';
 import type {
   AppNotification,
   BookingEvent,
@@ -142,7 +142,7 @@ function seed(): Db {
       email: i % 3 === 2 ? undefined : `${slug}@gmail.com`,
       status: i === 26 ? 'INACTIVE' : 'ACTIVE',
       isRegular: i < 6,
-      createdAt: at(-300 + i * 9, '12:00'),
+      createdAt: at(-290 + i * 10, '12:00'),
       notes: [],
     };
   });
@@ -164,13 +164,25 @@ function seed(): Db {
   const cancelReasons = ['Weather', 'Player unavailable', 'Rescheduled by customer', 'Double booking', 'Illness'];
   let seq = 1040;
 
-  for (let offset = -42; offset <= 12; offset++) {
+  // Eighteen weeks of history and twelve days ahead. The club has grown since it
+  // moved its bookings here, so demand ramps up over the history to today's level
+  // and a recent period compares well with the one before it.
+  const HISTORY_DAYS = 126;
+  // Demand for each court and hour carries over from day to day, so the number of
+  // bookings follows demand closely instead of swinging at random, while which
+  // slots are taken still varies. Every fourth padel booking runs 90 minutes, and
+  // cancellations are spread the same way.
+  const carry = new Map<string, number>();
+  let longCarry = random();
+  let cancelCarry = random();
+  const maintenanceFrom = startOfWeek(today);
+  for (let offset = -HISTORY_DAYS; offset <= 12; offset++) {
     const date = addDays(today, offset);
     const weekday = weekdayOf(date);
     const hours = facility.businessHours[weekday];
     for (const court of activeCourts) {
-      // Court 3 went into maintenance 5 days ago.
-      if (court.id === 'court_3' && offset > -5) continue;
+      // Court 3 went into maintenance at the start of this week.
+      if (court.id === 'court_3' && date >= maintenanceFrom) continue;
       let cursor = minutesOf(hours.open);
       const close = minutesOf(hours.close);
       while (cursor + 60 <= close) {
@@ -181,22 +193,34 @@ function seed(): Db {
         if (weekend) p += 0.15;
         if (court.id === 'court_2' && hour >= 13 && hour < 17 && !weekend) p = 0.06;
         if (court.id === 'court_4' && !peak) p *= 0.5;
+        if (offset < 0) p *= 0.5 + 0.5 * (1 + offset / HISTORY_DAYS);
         if (offset > 0) p *= Math.max(0.25, 1 - offset * 0.07);
-        if (random() > p) {
+        const key = `${court.id}@${hour}`;
+        const due = (carry.get(key) ?? random()) + p;
+        if (due < 1) {
+          carry.set(key, due);
           cursor += 60;
           continue;
         }
-        const duration = court.id === 'court_4' || random() < 0.25 ? 90 : 60;
+        carry.set(key, due - 1);
+        longCarry += 0.25;
+        const long = longCarry >= 1;
+        if (long) longCarry -= 1;
+        const duration = court.id === 'court_4' || long ? 90 : 60;
         if (cursor + duration > close) break;
         const startAt = naive(date, cursor);
         const endAt = naive(date, cursor + duration);
-        const customer = pick(weighted);
+        // Only customers who had joined by then.
+        const customer = pick(weighted.filter((c) => dateOf(c.createdAt) <= date));
         const q = quote(court, rules, startAt, endAt);
         const past = toEpoch(endAt) <= toEpoch(now);
         let status: BookingStatus = past ? 'COMPLETED' : random() < 0.1 ? 'PENDING' : 'CONFIRMED';
-        const roll = random();
-        if (roll < 0.06) status = 'CANCELLED';
-        else if (past && roll < 0.08) status = 'NO_SHOW';
+        // About one booking in seventeen is cancelled, spread evenly over time.
+        cancelCarry += 0.06;
+        if (cancelCarry >= 1) {
+          cancelCarry -= 1;
+          status = 'CANCELLED';
+        } else if (past && random() < 0.02) status = 'NO_SHOW';
         const id = `bk_${seq}`;
         const createdAt = naive(addDays(date, -Math.floor(random() * 6) - 1), 600 + Math.floor(random() * 600));
         const booking: StoredBooking = {
@@ -221,7 +245,8 @@ function seed(): Db {
 
         if (status !== 'CANCELLED') {
           const payRoll = random();
-          const fraction = past ? (payRoll < 0.93 ? 1 : payRoll < 0.97 ? 0.5 : 0) : payRoll < 0.4 ? 1 : payRoll < 0.6 ? 0.4 : 0;
+          // Balances older than six weeks have long been settled.
+          const fraction = past ? (offset < -42 || payRoll < 0.93 ? 1 : payRoll < 0.97 ? 0.5 : 0) : payRoll < 0.4 ? 1 : payRoll < 0.6 ? 0.4 : 0;
           const amount = Math.round(q.price * fraction);
           if (amount > 0) {
             const receivedAt = past ? naive(date, cursor + duration) : createdAt;
@@ -243,8 +268,9 @@ function seed(): Db {
   }
 
   const bookingRef = (id: string) => bookings.find((b) => b.id === id);
-  const outstandingOf = (b: StoredBooking) =>
-    b.status === 'CANCELLED' ? 0 : Math.max(0, b.price - b.discountAmount - payments.filter((p) => p.bookingId === b.id).reduce((s, p) => s + p.amount, 0));
+  const paidSoFar = new Map<string, number>();
+  for (const p of payments) paidSoFar.set(p.bookingId, (paidSoFar.get(p.bookingId) ?? 0) + p.amount);
+  const outstandingOf = (b: StoredBooking) => (b.status === 'CANCELLED' ? 0 : Math.max(0, b.price - b.discountAmount - (paidSoFar.get(b.id) ?? 0)));
   const biggestDebt = [...bookings].filter((b) => toEpoch(b.startAt) < toEpoch(now)).sort((a, b) => outstandingOf(b) - outstandingOf(a))[0];
   const upcomingFriday = bookings.find((b) => b.courtId === 'court_1' && weekdayOf(dateOf(b.startAt)) === 5 && toEpoch(b.startAt) > toEpoch(now));
   const riskBooking = bookings.find((b) => b.customerId === 'cust_5' && toEpoch(b.startAt) > toEpoch(now) && b.status !== 'CANCELLED');

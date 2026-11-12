@@ -28,7 +28,20 @@ export const today = () => todayIn(db.facility.timezone);
 const courtName = (id: string) => db.courts.find((c) => c.id === id)?.name ?? 'Deleted court';
 const customerOf = (id: string) => db.customers.find((c) => c.id === id);
 
-export const paidFor = (bookingId: string) => db.payments.filter((p) => p.bookingId === bookingId).reduce((s, p) => s + p.amount, 0);
+/**
+ * Amount paid per booking. Payments are only ever appended, so the totals are
+ * rebuilt when the list grows or is swapped for another owner's, instead of
+ * scanning every payment for every booking.
+ */
+let paidIndex: { list: StoredPayment[]; length: number; totals: Map<string, number> } | null = null;
+export const paidFor = (bookingId: string) => {
+  if (paidIndex?.list !== db.payments || paidIndex.length !== db.payments.length) {
+    const totals = new Map<string, number>();
+    for (const p of db.payments) totals.set(p.bookingId, (totals.get(p.bookingId) ?? 0) + p.amount);
+    paidIndex = { list: db.payments, length: db.payments.length, totals };
+  }
+  return paidIndex.totals.get(bookingId) ?? 0;
+};
 
 export function bookingView(b: StoredBooking): Booking {
   const total = round2(b.price - b.discountAmount);
@@ -286,7 +299,23 @@ export function dashboardView(startDate: string, endDate: string): FacilityDashb
 
 /* ----- analytics ----- */
 
-export function analyticsView(startDate: string, endDate: string): Analytics {
+/** Revenue of the bookings (not cancelled) on each day from `from` to `to`, inclusive. */
+function revenueByDay(from: string, to: string) {
+  const totals = new Map<string, number>();
+  for (const b of db.bookings) {
+    const date = dateOf(b.startAt);
+    if (b.status !== 'CANCELLED' && date >= from && date <= to) totals.set(date, (totals.get(date) ?? 0) + b.price - b.discountAmount);
+  }
+  return dates(from, to).map((date) => ({ date, amount: round2(totals.get(date) ?? 0) }));
+}
+
+/**
+ * The report for a period, compared with the period of the same length before
+ * it. With `aheadUntil` (a date after the period), it also returns the revenue
+ * already booked for each day after the period up to that date, kept apart
+ * from every total and comparison.
+ */
+export function analyticsView(startDate: string, endDate: string, aheadUntil?: string): Analytics {
   const span = daysBetween(startDate, endDate) + 1;
   const prevEnd = addDays(startDate, -1);
   const prevStart = addDays(prevEnd, -(span - 1));
@@ -323,17 +352,18 @@ export function analyticsView(startDate: string, endDate: string): Analytics {
 
   const peakHours: Analytics['peakHours'] = [];
   const openCourts = db.courts.filter((c) => c.status === 'ACTIVE').length || 1;
+  // Minutes booked per weekday and hour, gathered in one pass over the period's bookings.
+  const bookedAt = Array.from({ length: 7 }, () => new Array<number>(24).fill(0));
+  for (const b of live) {
+    const weekday = weekdayOf(dateOf(b.startAt));
+    const s = minutesOf(clockOf(b.startAt));
+    const e = s + (toEpoch(b.endAt) - toEpoch(b.startAt)) / 60000;
+    for (let hour = Math.floor(s / 60); hour < 24 && hour * 60 < e; hour++) bookedAt[weekday][hour] += Math.min(e, (hour + 1) * 60) - Math.max(s, hour * 60);
+  }
   for (let weekday = 0; weekday < 7; weekday++) {
-    const matching = days.filter((d) => weekdayOf(d) === weekday);
+    const capacity = days.filter((d) => weekdayOf(d) === weekday).length * openCourts * 60;
     for (let hour = 7; hour < 23; hour++) {
-      const capacity = matching.length * openCourts * 60;
-      let booked = 0;
-      for (const b of live) {
-        if (!matching.includes(dateOf(b.startAt))) continue;
-        const s = minutesOf(clockOf(b.startAt));
-        const e = s + (toEpoch(b.endAt) - toEpoch(b.startAt)) / 60000;
-        booked += Math.max(0, Math.min(e, (hour + 1) * 60) - Math.max(s, hour * 60));
-      }
+      const booked = bookedAt[weekday][hour];
       peakHours.push({ weekday: weekday as Weekday, hour, utilization: capacity ? Math.min(100, round2((booked / capacity) * 100)) : 0 });
     }
   }
@@ -344,7 +374,8 @@ export function analyticsView(startDate: string, endDate: string): Analytics {
     revenue: {
       total: round2(cur.revenue),
       changePercent: pct(cur.revenue, prev.revenue),
-      byDay: days.map((date) => ({ date, amount: round2(live.filter((b) => dateOf(b.startAt) === date).reduce((s, b) => s + b.price - b.discountAmount, 0)) })),
+      byDay: revenueByDay(startDate, endDate),
+      ...(aheadUntil && aheadUntil > endDate ? { bookedAhead: revenueByDay(addDays(endDate, 1), aheadUntil) } : {}),
     },
     bookings: {
       total: cur.count,

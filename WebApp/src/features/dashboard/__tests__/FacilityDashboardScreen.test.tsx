@@ -5,13 +5,14 @@ import userEvent from '@testing-library/user-event';
 
 import { apiRequest, ApiError } from '@/api/client';
 import type { Analytics } from '@/domain/types';
-import { addDays, todayIn } from '@/lib/datetime';
+import { addDays, startOfWeek, todayIn } from '@/lib/datetime';
 import { SessionProvider } from '@/session/SessionProvider';
 import type { Session } from '@/session/types';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ToastProvider } from '@/ui/Toast';
 
 import { FacilityDashboardScreen } from '../FacilityDashboardScreen';
+import { calendarPeriodEnd } from '../utils/dashboardFormatters';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }), usePathname: () => '/' }));
 
@@ -56,6 +57,12 @@ function Providers({ children }: { children: ReactNode }) {
 
 const renderDashboard = () => render(<FacilityDashboardScreen />, { wrapper: Providers });
 const lastQuery = () => (request.mock.calls.at(-1)?.[1] as { query: { startDate: string; endDate: string } }).query;
+/** The default period: this week so far, with the rest of the week (to Sunday) asked for the chart. */
+const thisWeek = () => {
+  const today = todayIn(TZ);
+  const sunday = addDays(startOfWeek(today), 6);
+  return { startDate: startOfWeek(today), endDate: today, aheadUntil: sunday > today ? sunday : undefined };
+};
 const money = (s: string) => new RegExp(`^${s.replace(/ /g, '[ \\u00a0]')}$`);
 
 beforeEach(() => {
@@ -73,10 +80,10 @@ test('greets the owner for the time of day, with the facility and period', async
   expect(await screen.findByRole('heading', { name: 'Revenue over time' })).toBeInTheDocument();
 });
 
-test('shows the full report for today in the facility zone by default', async () => {
+test('shows the full report for this week in the facility zone by default', async () => {
   renderDashboard();
   expect(await screen.findByRole('heading', { name: 'Peak and off-peak hours' })).toBeInTheDocument();
-  expect(request).toHaveBeenCalledWith('/api/analytics', { query: { startDate: todayIn(TZ), endDate: todayIn(TZ) } });
+  expect(request).toHaveBeenCalledWith('/api/analytics', { query: thisWeek() });
   for (const heading of ['Revenue by court', 'Court utilization', 'Customers', 'Outstanding payments', 'Cancellations']) {
     expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
   }
@@ -90,7 +97,8 @@ test('changing the period reloads the report for the new dates', async () => {
   await screen.findByRole('heading', { name: 'Revenue over time' });
   await user.click(screen.getByRole('radio', { name: 'This month' }));
   const today = todayIn(TZ);
-  await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today }));
+  const monthEnd = calendarPeriodEnd('this_month', today)!;
+  await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today, aheadUntil: monthEnd > today ? monthEnd : undefined }));
 });
 
 test('a custom date range loads once both ends are set', async () => {
@@ -99,7 +107,7 @@ test('a custom date range loads once both ends are set', async () => {
   const today = todayIn(TZ);
   const start = addDays(today, -40);
   fireEvent.change(screen.getByLabelText('From'), { target: { value: start } });
-  expect(lastQuery()).toEqual({ startDate: today, endDate: today });
+  expect(lastQuery()).toEqual(thisWeek());
   fireEvent.change(screen.getByLabelText('To'), { target: { value: today } });
   await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: start, endDate: today }));
 });
@@ -111,7 +119,7 @@ test('a custom range longer than a year is refused with a reason', async () => {
   fireEvent.change(screen.getByLabelText('From'), { target: { value: addDays(today, -400) } });
   fireEvent.change(screen.getByLabelText('To'), { target: { value: today } });
   expect(screen.getByRole('alert')).toHaveTextContent('Pick a range of one year or less.');
-  expect(lastQuery()).toEqual({ startDate: today, endDate: today });
+  expect(lastQuery()).toEqual(thisWeek());
 });
 
 test('Revenue over time has no table toggle', async () => {

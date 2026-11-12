@@ -71,7 +71,7 @@ export function Hero({ topInset, onGetStarted, onBookDemo }: HeroProps) {
             <ProductShot
               name="dashboard"
               width={shotWidth}
-              alt="The SportVenue dashboard for a padel club: revenue, bookings, utilization and average booking for today, with revenue over time below."
+              alt="The SportVenue dashboard for a padel club over eight weeks: revenue, bookings, utilization and average booking compared with the weeks before, with revenue over time below."
             />
             <BottomFade height={cropHeight * 0.32} color={colors.background} />
           </View>

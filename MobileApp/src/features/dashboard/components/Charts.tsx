@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
+import Svg, { Defs, Line, Pattern, Rect } from 'react-native-svg';
 
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -11,13 +12,32 @@ import { AppText } from '@/ui/AppText';
  * (the touch equivalent of hover), and every chart exposes a text alternative.
  */
 
-type ColumnDatum = { key: string; label: string; value: number; valueLabel: string; axisLabel?: string };
+/**
+ * `ahead`: revenue already booked for the bar's days still to come, drawn as a
+ * striped outline stacked on the solid part (`value`).
+ */
+type ColumnDatum = { key: string; label: string; value: number; valueLabel: string; axisLabel?: string; ahead?: number };
+
+/** Diagonal "/" stripes filling their box, for bars that are booked but not yet played. */
+function Hatch({ color }: { color: string }) {
+  const id = `hatch${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  return (
+    <Svg style={StyleSheet.absoluteFill} width="100%" height="100%">
+      <Defs>
+        <Pattern id={id} patternUnits="userSpaceOnUse" width={7} height={7} patternTransform="rotate(45)">
+          <Line x1={0} y1={0} x2={0} y2={7} stroke={color} strokeWidth={1.5} />
+        </Pattern>
+      </Defs>
+      <Rect width="100%" height="100%" fill={`url(#${id})`} />
+    </Svg>
+  );
+}
 
 /** Vertical bars over time (for example revenue per day). Tap a bar to read it. */
 export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum[]; summary: { label: string; value: string }; height?: number }) {
   const { colors } = useTheme();
   const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(...data.map((d) => d.value), 1);
+  const max = Math.max(...data.map((d) => d.value + (d.ahead ?? 0)), 1);
   const dense = data.length > 20;
   const shown = active !== null ? data[active] : null;
 
@@ -35,7 +55,9 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
         {/* recessive gridline at the top value */}
         <View style={[styles.gridline, { top: 0, borderTopColor: colors.border }]} />
         {data.map((d, i) => {
-          const h = d.value <= 0 ? 0 : Math.max(3, (d.value / max) * (height - 8));
+          const total = d.value + (d.ahead ?? 0);
+          const h = total <= 0 ? 0 : Math.max(3, (total / max) * (height - 8));
+          const aheadH = d.ahead ? h * (d.ahead / total) : 0;
           const on = active === i;
           return (
             <Pressable
@@ -46,16 +68,14 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
               style={styles.colHit}
               hitSlop={{ top: 8, bottom: 8 }}
             >
-              <View
-                style={{
-                  height: h,
-                  marginHorizontal: dense ? 1.5 : 3,
-                  borderTopLeftRadius: 4,
-                  borderTopRightRadius: 4,
-                  backgroundColor: colors.accent,
-                  opacity: active === null || on ? 1 : 0.35,
-                }}
-              />
+              <View style={[styles.bar, { height: h, marginHorizontal: dense ? 1.5 : 3, opacity: active === null || on ? 1 : 0.35 }]}>
+                {aheadH > 0 && (
+                  <View style={[styles.ahead, styles.barTop, { height: aheadH, borderColor: colors.accent }]}>
+                    <Hatch color={colors.accent} />
+                  </View>
+                )}
+                {h - aheadH > 0 && <View style={[styles.flex, { backgroundColor: colors.accent }]} />}
+              </View>
             </Pressable>
           );
         })}
@@ -70,6 +90,16 @@ export function ColumnChart({ data, summary, height = 160 }: { data: ColumnDatum
           </View>
         ))}
       </View>
+      {data.some((d) => d.ahead !== undefined) && (
+        <View style={styles.legend} aria-hidden importantForAccessibility="no-hide-descendants">
+          <View style={[styles.ahead, styles.legendSwatch, { borderColor: colors.accent }]}>
+            <Hatch color={colors.accent} />
+          </View>
+          <AppText variant="caption" tone="muted">
+            Booked ahead, not yet played
+          </AppText>
+        </View>
+      )}
     </View>
   );
 }
@@ -224,6 +254,11 @@ const styles = StyleSheet.create({
   gridline: { position: 'absolute', left: 0, right: 0, borderTopWidth: StyleSheet.hairlineWidth, borderStyle: 'dashed' },
   colHit: { flex: 1, justifyContent: 'flex-end', height: '100%' },
   axis: { flexDirection: 'row', marginTop: spacing.xs },
+  bar: { overflow: 'hidden', borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  barTop: { borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  ahead: { borderWidth: 1.5, borderBottomWidth: 0, overflow: 'hidden' },
+  legend: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs + 2, marginTop: spacing.md },
+  legendSwatch: { width: 12, height: 12, borderRadius: 3, borderBottomWidth: 1.5 },
   bars: { gap: spacing.md },
   barRow: { gap: spacing.xs + 2 },
   barHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },

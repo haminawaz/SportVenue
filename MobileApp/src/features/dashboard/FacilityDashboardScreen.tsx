@@ -24,6 +24,7 @@ import { useAnalytics } from "./hooks/useAnalytics";
 import type { DateRange } from "./types/facilityDashboard.types";
 import {
   buildPresetRange,
+  calendarPeriodEnd,
   greetingFor,
   isSameRange,
 } from "./utils/dashboardFormatters";
@@ -44,7 +45,7 @@ export function FacilityDashboardScreen() {
   const [today, setToday] = useState(() => todayIn(tz));
   const [hour, setHour] = useState(() => hourIn(tz));
   const [range, setRange] = useState<DateRange>(() =>
-    buildPresetRange("today", todayIn(tz)),
+    buildPresetRange("this_week", todayIn(tz)),
   );
   const [pullRefreshing, setPullRefreshing] = useState(false);
 
@@ -71,7 +72,11 @@ export function FacilityDashboardScreen() {
     };
   }, [syncToday]);
 
-  const query = useAnalytics(range.startDate, range.endDate);
+  // This week, month and quarter run to their last day on the chart: the days still to come show what is already booked.
+  const periodEnd = calendarPeriodEnd(range.preset, today);
+  const aheadUntil =
+    periodEnd && periodEnd > range.endDate ? periodEnd : undefined;
+  const query = useAnalytics(range.startDate, range.endDate, aheadUntil);
   const unread = useUnreadCount();
 
   const onRangeChange = useCallback((next: DateRange) => {
@@ -138,6 +143,7 @@ export function FacilityDashboardScreen() {
               <AnalyticsReport
                 a={a}
                 fetching={query.isFetching && !pullRefreshing}
+                aheadUntil={aheadUntil}
               />
             )}
           </QueryView>

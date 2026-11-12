@@ -22,13 +22,18 @@ type ModalProps = {
 
 const SIZE = { sm: 'max-w-[420px]', md: 'max-w-[520px]', lg: 'max-w-[720px]' };
 
-/** A centred dialog with a title bar, scrollable body and a footer for actions. */
+/**
+ * A centred dialog with a title bar, scrollable body and a footer for actions.
+ * With nothing in the body (a plain confirmation), it is left out along with
+ * the dividers, so the message sits straight above the actions.
+ */
 export function Modal({ visible, title, description, onClose, children, footer, size = 'md', role = 'dialog' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
   useModalBehavior(visible, panelRef, onClose);
   if (!visible) return null;
+  const hasBody = children !== undefined && children !== null && children !== false;
   return (
     <Portal>
       <div data-overlay className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-6">
@@ -45,7 +50,7 @@ export function Modal({ visible, title, description, onClose, children, footer, 
             SIZE[size],
           )}
         >
-          <div className="flex items-start gap-3 border-b border-border px-5 py-4">
+          <div className={cn('flex items-start gap-3 px-5 py-4', hasBody && 'border-b border-border')}>
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
               <AppText as="h2" id={titleId} variant="heading" className="text-base">
                 {title}
@@ -62,8 +67,17 @@ export function Modal({ visible, title, description, onClose, children, footer, 
               </button>
             )}
           </div>
-          <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 py-4">{children}</div>
-          {footer && <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3 pb-[max(12px,env(safe-area-inset-bottom))]">{footer}</div>}
+          {hasBody && <div className="flex min-h-0 flex-col gap-4 overflow-y-auto px-5 py-4">{children}</div>}
+          {footer && (
+            <div
+              className={cn(
+                'flex flex-wrap items-center justify-end gap-2 px-5',
+                hasBody ? 'border-t border-border py-3 pb-[max(12px,env(safe-area-inset-bottom))]' : 'pt-1 pb-[max(16px,env(safe-area-inset-bottom))]',
+              )}
+            >
+              {footer}
+            </div>
+          )}
         </div>
       </div>
     </Portal>

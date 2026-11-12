@@ -1,5 +1,5 @@
 import { ApiError } from '@/api/client';
-import type { BookingDetail, CourtAvailability, CourtSummary, Customer, Page } from '@/domain/types';
+import type { Analytics, BookingDetail, CourtAvailability, CourtSummary, Customer, Page } from '@/domain/types';
 import { addDays, todayIn } from '@/lib/datetime';
 
 import { handleMockRequest } from '..';
@@ -88,6 +88,21 @@ describe('mock server', () => {
     const courts = await api<CourtSummary[]>('GET', '/api/courts');
     expect(courts.find((c) => c.id === 'court_5')?.todayUtilization).toBe(0);
     expect(courts.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test('reports revenue already booked for the days after the period, apart from every total', async () => {
+    const api = await signIn('john@baselinepadel.pk');
+    const today = todayIn('Asia/Karachi');
+    const period = { startDate: addDays(today, -3), endDate: today };
+    const plain = await api<Analytics>('GET', '/api/analytics', undefined, period);
+    const withAhead = await api<Analytics>('GET', '/api/analytics', undefined, { ...period, aheadUntil: addDays(today, 3) });
+    expect(plain.revenue.bookedAhead).toBeUndefined();
+    expect(withAhead.revenue.total).toBe(plain.revenue.total);
+    expect(withAhead.revenue.changePercent).toBe(plain.revenue.changePercent);
+    expect(withAhead.revenue.bookedAhead?.map((d) => d.date)).toEqual([1, 2, 3].map((n) => addDays(today, n)));
+    expect(withAhead.revenue.bookedAhead?.some((d) => d.amount > 0)).toBe(true);
+    await expectStatus(api('GET', '/api/analytics', undefined, { ...period, aheadUntil: today }), 422);
+    await expectStatus(api('GET', '/api/analytics', undefined, { ...period, aheadUntil: addDays(today, 100) }), 422);
   });
 });
 

@@ -5,6 +5,7 @@ import {
   bookingStatusMeta,
   buildCustomRange,
   buildPresetRange,
+  calendarPeriodEnd,
   countTrend,
   greetingFor,
   percentTrend,
@@ -77,6 +78,17 @@ describe('date range filter', () => {
     expect(buildPresetRange('this_month', today)).toEqual({ preset: 'this_month', startDate: '2026-09-01', endDate: today });
     expect(buildPresetRange('this_quarter', today)).toEqual({ preset: 'this_quarter', startDate: '2026-07-01', endDate: today });
     expect(buildPresetRange('this_year', today)).toEqual({ preset: 'this_year', startDate: '2026-01-01', endDate: today });
+  });
+
+  test('the chart runs each week, month and quarter to its last day', () => {
+    expect(calendarPeriodEnd('this_week', today)).toBe('2026-10-04');
+    expect(calendarPeriodEnd('this_month', today)).toBe('2026-09-30');
+    expect(calendarPeriodEnd('this_month', '2028-02-10')).toBe('2028-02-29');
+    expect(calendarPeriodEnd('this_quarter', today)).toBe('2026-09-30');
+    expect(calendarPeriodEnd('this_quarter', '2026-11-12')).toBe('2026-12-31');
+    expect(calendarPeriodEnd('today', today)).toBeNull();
+    expect(calendarPeriodEnd('this_year', today)).toBeNull();
+    expect(calendarPeriodEnd('custom', today)).toBeNull();
   });
 
   test.each([

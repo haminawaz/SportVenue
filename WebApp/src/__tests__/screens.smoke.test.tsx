@@ -55,6 +55,7 @@ import { DiscountDetailScreen, DiscountFormScreen, PricingHistoryScreen } from '
 import { PricingRuleScreen } from '@/features/pricing/screens/PricingRuleScreen';
 import { PricingScreen } from '@/features/pricing/screens/PricingScreen';
 import { CookieConsentProvider } from '@/features/legal/CookieConsent';
+import { addDays, daysBetween, startOfWeek, todayIn } from '@/lib/datetime';
 import { useAuth } from '@/session/SessionProvider';
 import { SessionProvider } from '@/session/SessionProvider';
 import { ThemeProvider } from '@/theme/ThemeProvider';
@@ -190,6 +191,11 @@ describe('tab screens', () => {
     expect(await screen.findByRole('heading', { name: 'Peak and off-peak hours' }, SLOW)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Revenue by court' })).toBeInTheDocument();
     expect(screen.getByText('Baseline Padel Club')).toBeInTheDocument();
+    // Opens on this week, charted Monday to Sunday: one booked-ahead bar per day still to come.
+    const today = todayIn('Asia/Karachi');
+    const sunday = addDays(startOfWeek(today), 6);
+    expect(screen.queryAllByRole('button', { name: /booked ahead$|: Nothing booked yet$/ })).toHaveLength(daysBetween(today, sunday));
+    if (sunday > today) expect(screen.getByText(/^Total so far/)).toBeInTheDocument();
     expectNoErrors();
   });
 

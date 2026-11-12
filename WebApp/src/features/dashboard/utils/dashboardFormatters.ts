@@ -1,4 +1,4 @@
-import { daysBetween, formatCalendarDate, formatMonthDay, startOfWeek, type CalendarDate } from '@/lib/datetime';
+import { addDays, daysBetween, formatCalendarDate, formatMonthDay, startOfWeek, type CalendarDate } from '@/lib/datetime';
 import type { BadgeTone } from '@/ui/StatusBadge';
 
 import type { BookingStatus, DateRange, DateRangePreset, RecommendedAction } from '../types/facilityDashboard.types';
@@ -26,6 +26,28 @@ export function buildPresetRange(preset: Exclude<DateRangePreset, 'custom'>, tod
     }
     case 'this_year':
       return { preset, startDate: `${year}-01-01`, endDate: today };
+  }
+}
+
+/**
+ * The last day of the calendar week, month or quarter a preset covers (its
+ * Sunday, month end or quarter end), so the revenue chart can show the rest of
+ * it with what is already booked. Null for Today, This year and custom ranges.
+ */
+export function calendarPeriodEnd(preset: DateRangePreset, today: CalendarDate): CalendarDate | null {
+  const year = Number(today.slice(0, 4));
+  const month = Number(today.slice(5, 7));
+  // Day 0 of the next month is the last day of this one.
+  const lastDayOf = (m: number) => new Date(Date.UTC(year, m, 0)).toISOString().slice(0, 10);
+  switch (preset) {
+    case 'this_week':
+      return addDays(startOfWeek(today), 6);
+    case 'this_month':
+      return lastDayOf(month);
+    case 'this_quarter':
+      return lastDayOf(month - ((month - 1) % 3) + 2);
+    default:
+      return null;
   }
 }
 

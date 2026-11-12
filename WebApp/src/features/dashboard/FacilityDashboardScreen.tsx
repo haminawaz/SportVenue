@@ -11,7 +11,7 @@ import { AnalyticsReport } from './components/AnalyticsReport';
 import { DateRangeSelector } from './components/DateRangeSelector';
 import { useAnalytics } from './hooks/useAnalytics';
 import type { DateRange } from './types/facilityDashboard.types';
-import { buildPresetRange, greetingFor, isSameRange, rangeLabel } from './utils/dashboardFormatters';
+import { buildPresetRange, calendarPeriodEnd, greetingFor, isSameRange, rangeLabel } from './utils/dashboardFormatters';
 
 /**
  * Home screen: a greeting for the time of day at the facility, the period
@@ -25,7 +25,7 @@ export function FacilityDashboardScreen() {
 
   const [today, setToday] = useState(() => todayIn(tz));
   const [hour, setHour] = useState(() => hourIn(tz));
-  const [range, setRange] = useState<DateRange>(() => buildPresetRange('today', todayIn(tz)));
+  const [range, setRange] = useState<DateRange>(() => buildPresetRange('this_week', todayIn(tz)));
 
   // Keep "Today" and the greeting honest if the tab stays open past midnight (or into the evening) at the facility.
   const syncToday = useCallback(() => {
@@ -51,7 +51,10 @@ export function FacilityDashboardScreen() {
     };
   }, [syncToday]);
 
-  const query = useAnalytics(range.startDate, range.endDate);
+  // This week, month and quarter run to their last day on the chart: the days still to come show what is already booked.
+  const periodEnd = calendarPeriodEnd(range.preset, today);
+  const aheadUntil = periodEnd && periodEnd > range.endDate ? periodEnd : undefined;
+  const query = useAnalytics(range.startDate, range.endDate, aheadUntil);
 
   const onRangeChange = useCallback((next: DateRange) => {
     // Same dates means same data; only the label could differ.
@@ -79,7 +82,7 @@ export function FacilityDashboardScreen() {
         actions={<DateRangeSelector value={range} today={today} onChange={onRangeChange} />}
       />
       <QueryView query={query} skeleton={<DetailSkeleton />} errorTitle="Couldn't load your dashboard">
-        {(a) => <AnalyticsReport a={a} fetching={query.isFetching} />}
+        {(a) => <AnalyticsReport a={a} fetching={query.isFetching} aheadUntil={aheadUntil} />}
       </QueryView>
     </Page>
   );

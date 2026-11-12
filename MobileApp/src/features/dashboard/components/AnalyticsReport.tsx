@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { CalendarBlank, CalendarCheck, ChartBar, CurrencyCircleDollar, Receipt, UserPlus, Users, XCircle } from 'phosphor-react-native';
 
 import type { Analytics } from '@/domain/types';
-import { daysBetween } from '@/lib/datetime';
+import { daysBetween, type CalendarDate } from '@/lib/datetime';
 import { formatNumber, useFormat, WEEK_ORDER, WEEKDAY_SHORT } from '@/lib/format';
 import { routes } from '@/navigation/routes';
 import { spacing } from '@/theme/tokens';
@@ -21,6 +21,14 @@ import { revenueSeries } from '../utils/revenueSeries';
 
 import { BarList, ColumnChart, Heatmap } from './Charts';
 
+/** What a bar says: its revenue, and for days still to come what is already booked. */
+function aheadLabel(amount: number, ahead: number | undefined, money: (n: number) => string) {
+  if (ahead === undefined) return money(amount);
+  const booked = ahead > 0 ? `${money(ahead)} booked ahead` : null;
+  if (amount > 0) return `${money(amount)} so far, ${booked ?? 'nothing booked ahead yet'}`;
+  return booked ?? 'Nothing booked yet';
+}
+
 const hourLabel = (h: number) => `${h % 12 === 0 ? 12 : h % 12} ${h < 12 ? 'AM' : 'PM'}`;
 const hourShort = (h: number) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 'p'}`;
 
@@ -28,8 +36,10 @@ const hourShort = (h: number) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 
  * The facility report for the dashboard's selected period: headline numbers
  * against the period before, revenue over time and by court, utilization,
  * peak hours, customers, outstanding payments and cancellations.
+ * With `aheadUntil` (for "This week", its Sunday), the revenue chart runs on to
+ * that day, showing what is already booked for the days still to come.
  */
-export function AnalyticsReport({ a, fetching }: { a: Analytics; fetching: boolean }) {
+export function AnalyticsReport({ a, fetching, aheadUntil }: { a: Analytics; fetching: boolean; aheadUntil?: CalendarDate }) {
   const router = useRouter();
   const f = useFormat();
   const { half: tile } = useTileWidth();
@@ -37,11 +47,24 @@ export function AnalyticsReport({ a, fetching }: { a: Analytics; fetching: boole
   const against = 'vs previous period';
 
   // One bar per day up to a month, per week up to about four months, then per month.
-  const series = useMemo(() => revenueSeries(a.revenue.byDay, a.period.startDate, a.period.endDate), [a.revenue.byDay, a.period.startDate, a.period.endDate]);
+  const series = useMemo(
+    () => revenueSeries(a.revenue.byDay, a.period.startDate, a.period.endDate, aheadUntil ? { until: aheadUntil, byDay: a.revenue.bookedAhead } : undefined),
+    [a.revenue.byDay, a.revenue.bookedAhead, a.period.startDate, a.period.endDate, aheadUntil],
+  );
   const byDay = useMemo(
-    () => series.points.map((p) => ({ key: p.key, label: p.label, value: p.amount, valueLabel: f.money(p.amount), axisLabel: p.axisLabel })),
+    () =>
+      series.points.map((p) => ({
+        key: p.key,
+        label: p.label,
+        value: p.amount,
+        ahead: p.ahead,
+        valueLabel: aheadLabel(p.amount, p.ahead, f.money),
+        axisLabel: p.axisLabel,
+      })),
     [series, f],
   );
+  const showsAhead = series.points.some((p) => p.ahead !== undefined);
+  const totalLabel = showsAhead ? 'Total so far' : span === 1 ? 'Total for the day' : `Total for ${span} days`;
 
   const peakTop = [...a.peakHours].sort((x, y) => y.utilization - x.utilization)[0];
   const quietest = [...a.peakHours].filter((c) => c.hour >= 9 && c.hour < 21).sort((x, y) => x.utilization - y.utilization)[0];
@@ -58,7 +81,10 @@ export function AnalyticsReport({ a, fetching }: { a: Analytics; fetching: boole
       <View>
         <SectionHeader title="Revenue over time" />
         <Card>
-          <ColumnChart data={byDay} summary={{ label: span === 1 ? 'Total for the day' : `Total for ${span} days · tap a bar for one ${series.bucket}`, value: f.money(a.revenue.total) }} />
+          <ColumnChart
+            data={byDay}
+            summary={{ label: span === 1 && !showsAhead ? totalLabel : `${totalLabel} · tap a bar for one ${series.bucket}`, value: f.money(a.revenue.total) }}
+          />
         </Card>
       </View>
 

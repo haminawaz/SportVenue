@@ -44,7 +44,7 @@ export function Hero({ links }: HeroProps) {
           <ProductShot
             name="dashboard"
             priority
-            alt="The SportVenue dashboard for a padel club: revenue, bookings, utilization and average booking for this week, with revenue by day and by court."
+            alt="The SportVenue dashboard for a padel club over eight weeks: revenue, bookings, utilization and average booking compared with the weeks before, with revenue by week and by court."
             className="max-h-[640px]"
           />
         </div>

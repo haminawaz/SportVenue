@@ -269,7 +269,10 @@ route('GET', '/api/owner/dashboard', ({ q }) => {
 route('GET', '/api/analytics', ({ q }) => {
   if (!DATE.test(q.startDate ?? '') || !DATE.test(q.endDate ?? '')) throw invalid({ startDate: 'Choose a valid period.' });
   if (daysBetween(q.startDate, q.endDate) > 366) throw invalid({ startDate: 'Choose a period of one year or less.' });
-  return analyticsView(q.startDate, q.endDate);
+  // Optional: the rest of a calendar week, month or quarter whose bookings are already in.
+  const ahead = q.aheadUntil;
+  if (ahead !== undefined && (!DATE.test(ahead) || ahead <= q.endDate || daysBetween(q.endDate, ahead) > 92)) throw invalid({ aheadUntil: 'Choose a day up to three months after the period.' });
+  return analyticsView(q.startDate, q.endDate, ahead);
 });
 
 /* ------------------------------------------------------------------ facility */
