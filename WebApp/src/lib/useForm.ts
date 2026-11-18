@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 
 import { fieldErrorsOf, toUserFacingError } from '@/api/errors';
+import { isPhoneNumber, PHONE_EXAMPLE } from '@/lib/phone';
 import { useToast } from '@/ui/Toast';
 
 export type Errors = Record<string, string | undefined>;
@@ -83,7 +84,7 @@ export const rules = {
   },
   phone: (v: string | undefined, required = true) => {
     if (!v?.trim()) return required ? 'Enter a phone number.' : undefined;
-    return /^\+?[0-9][0-9\s-]{6,18}$/.test(v.trim()) ? undefined : 'Enter a valid phone number, for example +92 300 1234567.';
+    return isPhoneNumber(v) ? undefined : `Enter a valid phone number, for example ${PHONE_EXAMPLE}.`;
   },
   money: (v: string, label = 'amount') => {
     const n = parseMoney(v);
@@ -94,9 +95,10 @@ export const rules = {
   },
 };
 
-/** Accepts "2,500", "2500.5". Returns NaN for anything else. */
+/** Accepts "2,500", "2500.5", "$45". Returns NaN for anything else. */
 export function parseMoney(v: string): number {
-  const cleaned = v.replace(/,/g, '').trim();
+  // A leading currency sign is how people write prices; the field already knows the currency.
+  const cleaned = v.replace(/,/g, '').trim().replace(/^[^\d\s.,-]{1,3}\s*/, '');
   if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return Number.NaN;
   return Number(cleaned);
 }

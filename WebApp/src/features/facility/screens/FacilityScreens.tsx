@@ -3,10 +3,12 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Clock, Envelope, Gear, Globe, MapPin, PencilSimple, Phone } from '@phosphor-icons/react';
 
+import { REGION } from '@/config/region';
 import { SPORTS } from '@/domain/labels';
 import type { BusinessHoursDay, Facility } from '@/domain/types';
 import { clockOptions, formatClock, formatDuration, WEEK_ORDER, WEEKDAY_LONG } from '@/lib/format';
 import { rules, useForm } from '@/lib/useForm';
+import { telHref } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
@@ -20,6 +22,7 @@ import { DescriptionList, Notice, QueryView } from '@/ui/States';
 import { SegmentedControl } from '@/ui/Tabs';
 
 import { useFacility, useUpdateFacility, useUpdateHours } from '../api';
+import { localityLine, oneLineAddress, postalCodeProblem } from '../address';
 
 /* ------------------------------------------------------------------ profile */
 
@@ -50,7 +53,7 @@ function FacilityBody({ facility: fac }: { facility: Facility }) {
             </AppText>
           </span>
         }
-        description={fac.city}
+        description={localityLine(fac)}
         actions={<Button label="Edit facility" icon={PencilSimple} onPress={() => router.push(routes.facilityEdit)} />}
       />
       <DetailLayout
@@ -96,18 +99,18 @@ function FacilityBody({ facility: fac }: { facility: Facility }) {
               <CardHeader title="Contact" />
               <ul className="flex flex-col p-2">
                 <li>
-                  <a href={`https://maps.google.com/?q=${encodeURIComponent(`${fac.address}, ${fac.city}`)}`} target="_blank" rel="noopener noreferrer" className={row}>
+                  <a href={`https://maps.google.com/?q=${encodeURIComponent(oneLineAddress(fac))}`} target="_blank" rel="noopener noreferrer" className={row}>
                     <MapPin size={17} className="mt-0.5 text-text-muted" aria-hidden />
                     <span className="flex flex-col">
                       <AppText>{fac.address}</AppText>
                       <AppText variant="small" tone="muted">
-                        {fac.city}
+                        {localityLine(fac)}
                       </AppText>
                     </span>
                   </a>
                 </li>
                 <li>
-                  <a href={`tel:${fac.phone.replace(/\s/g, '')}`} aria-label={`Phone ${fac.phone}`} className={row}>
+                  <a href={telHref(fac.phone)} aria-label={`Phone ${fac.phone}`} className={row}>
                     <Phone size={17} className="mt-0.5 text-text-muted" aria-hidden />
                     <AppText numeric>{fac.phone}</AppText>
                   </a>
@@ -164,25 +167,50 @@ export function FacilityEditScreen() {
   );
 }
 
-type ProfileValues = { name: string; description: string; sports: string[]; address: string; city: string; phone: string; email: string; website: string };
+type ProfileValues = {
+  name: string;
+  description: string;
+  sports: string[];
+  address: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+  website: string;
+};
 
 function FacilityEditForm({ facility: fac }: { facility: Facility }) {
   const router = useAppRouter();
   const update = useUpdateFacility();
   const [saving, setSaving] = useState(false);
+  const country = fac.country ?? REGION.country;
   const form = useForm<ProfileValues>(
-    { name: fac.name, description: fac.description ?? '', sports: fac.sports, address: fac.address, city: fac.city, phone: fac.phone, email: fac.email, website: fac.website ?? '' },
+    {
+      name: fac.name,
+      description: fac.description ?? '',
+      sports: fac.sports,
+      address: fac.address,
+      city: fac.city,
+      state: fac.state ?? '',
+      postalCode: fac.postalCode ?? '',
+      phone: fac.phone,
+      email: fac.email,
+      website: fac.website ?? '',
+    },
     useCallback(
       (v: ProfileValues) => ({
         name: v.name.trim() ? undefined : 'Enter the facility name.',
         sports: v.sports.length ? undefined : 'Choose at least one sport.',
         address: v.address.trim() ? undefined : 'Enter the street address.',
         city: v.city.trim() ? undefined : 'Enter the city.',
+        state: v.state.trim() ? undefined : `Enter the ${REGION.address.regionLabel.toLowerCase()}.`,
+        postalCode: postalCodeProblem(v.postalCode, country),
         phone: rules.phone(v.phone),
         email: rules.email(v.email),
         website: v.website && !/^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v.website.trim()) ? 'Enter a valid web address.' : undefined,
       }),
-      [],
+      [country],
     ),
   );
   const v = form.values;
@@ -196,6 +224,9 @@ function FacilityEditForm({ facility: fac }: { facility: Facility }) {
         sports: x.sports,
         address: x.address.trim(),
         city: x.city.trim(),
+        state: x.state.trim().toUpperCase(),
+        postalCode: x.postalCode.trim(),
+        country,
         phone: x.phone.trim(),
         email: x.email.trim().toLowerCase(),
         website: x.website.trim() || undefined,
@@ -220,8 +251,12 @@ function FacilityEditForm({ facility: fac }: { facility: Facility }) {
         </FormSection>
         <FormSection title="Location and contact" description="Shown on receipts and reminders.">
           <TextField label="Street address" value={v.address} onChangeText={(t) => form.set('address', t)} error={form.errors.address} autoComplete="street-address" />
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
             <TextField label="City" value={v.city} onChangeText={(t) => form.set('city', t)} error={form.errors.city} autoComplete="address-level2" />
+            <TextField label={REGION.address.regionLabel} value={v.state} onChangeText={(t) => form.set('state', t)} error={form.errors.state} autoComplete="address-level1" maxLength={30} />
+            <TextField label={REGION.address.postalCodeLabel} value={v.postalCode} onChangeText={(t) => form.set('postalCode', t)} error={form.errors.postalCode} autoComplete="postal-code" maxLength={12} />
+          </div>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <TextField label="Phone" value={v.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" />
             <TextField label="Email" value={v.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" />
             <TextField label="Website" optional value={v.website} onChangeText={(t) => form.set('website', t)} error={form.errors.website} autoCapitalize="none" type="url" />
@@ -336,12 +371,9 @@ function HoursForm({ facility: fac }: { facility: Facility }) {
 
 /* ------------------------------------------------------------------ settings */
 
-const CURRENCIES = ['PKR', 'INR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'OMR', 'BDT', 'LKR', 'EGP', 'TRY', 'EUR', 'GBP', 'USD', 'CAD', 'AUD', 'SGD', 'MYR', 'ZAR'];
-const TIMEZONES = [
-  'Asia/Karachi', 'Asia/Kolkata', 'Asia/Dubai', 'Asia/Riyadh', 'Asia/Qatar', 'Asia/Kuwait', 'Asia/Bahrain', 'Asia/Muscat', 'Asia/Dhaka', 'Asia/Colombo',
-  'Africa/Cairo', 'Europe/Istanbul', 'Europe/London', 'Europe/Madrid', 'Europe/Paris', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Los_Angeles',
-  'America/Toronto', 'Australia/Sydney', 'Asia/Singapore', 'Asia/Kuala_Lumpur', 'Africa/Johannesburg',
-];
+// The region's choices first; the facility's own value is always kept in the list.
+const CURRENCIES = REGION.currencies;
+const TIMEZONES = REGION.timeZones;
 
 function currencyName(code: string) {
   try {

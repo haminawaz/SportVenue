@@ -10,6 +10,7 @@ import { PaymentRow } from '@/features/payments/components/PaymentRow';
 import { usePayments } from '@/features/payments/api';
 import { formatDayAndTime } from '@/lib/datetime';
 import { formatClock, formatDuration, useFormat, WEEKDAY_LONG } from '@/lib/format';
+import { telHref } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -96,7 +97,7 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
           </View>
         </View>
         <View style={styles.actions}>
-          <Button size="sm" variant="secondary" label="Call" icon={Phone} onPress={() => Linking.openURL(`tel:${c.phone.replace(/\s/g, '')}`)} aria-label={`Call ${c.name}`} />
+          <Button size="sm" variant="secondary" label="Call" icon={Phone} onPress={() => Linking.openURL(telHref(c.phone))} aria-label={`Call ${c.name}`} />
           {!inactive && <Button size="sm" label="New booking" icon={CalendarPlus} onPress={() => router.push(routes.bookingNew({ customerId: c.id }))} />}
         </View>
       </Card>
@@ -118,7 +119,7 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
       </View>
 
       <ListGroup title="Contact">
-        <ListRow title={c.phone} icon={Phone} onPress={() => Linking.openURL(`tel:${c.phone.replace(/\s/g, '')}`)} label={`Phone ${c.phone}. Call`} />
+        <ListRow title={c.phone} icon={Phone} onPress={() => Linking.openURL(telHref(c.phone))} label={`Phone ${c.phone}. Call`} />
         {c.email ? <ListRow title={c.email} icon={Envelope} onPress={() => Linking.openURL(`mailto:${c.email}`)} label={`Email ${c.email}`} /> : <ListRow title="No email on file" icon={Envelope} />}
       </ListGroup>
 

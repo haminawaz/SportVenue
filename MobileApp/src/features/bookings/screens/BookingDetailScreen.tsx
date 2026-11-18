@@ -18,6 +18,7 @@ import { BOOKING_STATUS, CANCEL_REASONS, PAYMENT_METHOD, PAYMENT_STATUS } from '
 import type { BookingDetail, PaymentMethod } from '@/domain/types';
 import { facilityWallClock, formatCalendarDate, formatDayAndTime, formatTime, minutesBetweenLocal, nowLocalIn } from '@/lib/datetime';
 import { formatDuration, useFormat } from '@/lib/format';
+import { telHref } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { useRecordPayment } from '@/features/payments/api';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -116,7 +117,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
           onPress={() => router.push(routes.customer(b.customerId))}
           hint="Opens customer profile"
         />
-        {!!b.customerPhone && <ListRow title="Call" icon={Phone} onPress={() => Linking.openURL(`tel:${b.customerPhone.replace(/\s/g, '')}`)} label={`Call ${b.customerName}`} />}
+        {!!b.customerPhone && <ListRow title="Call" icon={Phone} onPress={() => Linking.openURL(telHref(b.customerPhone))} label={`Call ${b.customerName}`} />}
       </ListGroup>
 
       <View>

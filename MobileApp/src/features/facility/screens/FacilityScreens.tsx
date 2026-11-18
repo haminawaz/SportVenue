@@ -3,10 +3,12 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { Clock, Envelope, Gear, Globe, MapPin, PencilSimple, Phone } from 'phosphor-react-native';
 
+import { REGION } from '@/config/region';
 import { SPORTS } from '@/domain/labels';
 import type { BusinessHoursDay, Facility } from '@/domain/types';
 import { clockOptions, formatClock, formatDuration, WEEK_ORDER, WEEKDAY_LONG, WEEKDAY_SHORT } from '@/lib/format';
 import { rules, useForm } from '@/lib/useForm';
+import { telHref } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -23,6 +25,7 @@ import { SelectField } from '@/ui/Select';
 import { Notice, QueryView } from '@/ui/States';
 
 import { useFacility, useUpdateFacility, useUpdateHours } from '../api';
+import { localityLine, oneLineAddress, postalCodeProblem } from '../address';
 
 /* ------------------------------------------------------------------ profile */
 
@@ -70,7 +73,7 @@ function FacilityBody({ facility: fac }: { facility: Facility }) {
         <AppText variant="display-lg" style={styles.gapTop}>
           {fac.name}
         </AppText>
-        <AppText tone="muted">{fac.city}</AppText>
+        <AppText tone="muted">{localityLine(fac)}</AppText>
         {fac.description && <AppText style={styles.gapTop}>{fac.description}</AppText>}
         <View style={styles.sports}>
           {fac.sports.map((s) => (
@@ -84,8 +87,8 @@ function FacilityBody({ facility: fac }: { facility: Facility }) {
       </Card>
 
       <ListGroup title="Contact">
-        <ListRow icon={MapPin} title={fac.address} subtitle={fac.city} onPress={() => open(`https://maps.google.com/?q=${encodeURIComponent(`${fac.address}, ${fac.city}`)}`)} />
-        <ListRow icon={Phone} title={fac.phone} onPress={() => open(`tel:${fac.phone.replace(/\s/g, '')}`)} label={`Phone ${fac.phone}`} />
+        <ListRow icon={MapPin} title={fac.address} subtitle={localityLine(fac)} onPress={() => open(`https://maps.google.com/?q=${encodeURIComponent(oneLineAddress(fac))}`)} />
+        <ListRow icon={Phone} title={fac.phone} onPress={() => open(telHref(fac.phone))} label={`Phone ${fac.phone}`} />
         <ListRow icon={Envelope} title={fac.email} onPress={() => open(`mailto:${fac.email}`)} />
         {fac.website && <ListRow icon={Globe} title={fac.website} onPress={() => open(fac.website!.startsWith('http') ? fac.website! : `https://${fac.website}`)} />}
       </ListGroup>
@@ -124,25 +127,50 @@ export function FacilityEditScreen() {
   );
 }
 
-type ProfileValues = { name: string; description: string; sports: string[]; address: string; city: string; phone: string; email: string; website: string };
+type ProfileValues = {
+  name: string;
+  description: string;
+  sports: string[];
+  address: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  phone: string;
+  email: string;
+  website: string;
+};
 
 function FacilityEditForm({ facility: fac }: { facility: Facility }) {
   const router = useRouter();
   const update = useUpdateFacility();
   const [saving, setSaving] = useState(false);
+  const country = fac.country ?? REGION.country;
   const form = useForm<ProfileValues>(
-    { name: fac.name, description: fac.description ?? '', sports: fac.sports, address: fac.address, city: fac.city, phone: fac.phone, email: fac.email, website: fac.website ?? '' },
+    {
+      name: fac.name,
+      description: fac.description ?? '',
+      sports: fac.sports,
+      address: fac.address,
+      city: fac.city,
+      state: fac.state ?? '',
+      postalCode: fac.postalCode ?? '',
+      phone: fac.phone,
+      email: fac.email,
+      website: fac.website ?? '',
+    },
     useCallback(
       (v: ProfileValues) => ({
         name: v.name.trim() ? undefined : 'Enter the facility name.',
         sports: v.sports.length ? undefined : 'Choose at least one sport.',
         address: v.address.trim() ? undefined : 'Enter the street address.',
         city: v.city.trim() ? undefined : 'Enter the city.',
+        state: v.state.trim() ? undefined : `Enter the ${REGION.address.regionLabel.toLowerCase()}.`,
+        postalCode: postalCodeProblem(v.postalCode, country),
         phone: rules.phone(v.phone),
         email: rules.email(v.email),
         website: v.website && !/^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(v.website.trim()) ? 'Enter a valid web address.' : undefined,
       }),
-      [],
+      [country],
     ),
   );
   const v = form.values;
@@ -156,6 +184,9 @@ function FacilityEditForm({ facility: fac }: { facility: Facility }) {
         sports: x.sports,
         address: x.address.trim(),
         city: x.city.trim(),
+        state: x.state.trim().toUpperCase(),
+        postalCode: x.postalCode.trim(),
+        country,
         phone: x.phone.trim(),
         email: x.email.trim().toLowerCase(),
         website: x.website.trim() || undefined,
@@ -181,6 +212,8 @@ function FacilityEditForm({ facility: fac }: { facility: Facility }) {
       </FieldShell>
       <TextField label="Street address" value={v.address} onChangeText={(t) => form.set('address', t)} error={form.errors.address} autoComplete="street-address" />
       <TextField label="City" value={v.city} onChangeText={(t) => form.set('city', t)} error={form.errors.city} />
+      <TextField label={REGION.address.regionLabel} value={v.state} onChangeText={(t) => form.set('state', t)} error={form.errors.state} autoCapitalize="characters" maxLength={30} />
+      <TextField label={REGION.address.postalCodeLabel} value={v.postalCode} onChangeText={(t) => form.set('postalCode', t)} error={form.errors.postalCode} keyboardType="numbers-and-punctuation" maxLength={12} />
       <TextField label="Phone" value={v.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} keyboardType="phone-pad" />
       <TextField label="Email" value={v.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} keyboardType="email-address" autoCapitalize="none" />
       <TextField label="Website" optional value={v.website} onChangeText={(t) => form.set('website', t)} error={form.errors.website} autoCapitalize="none" keyboardType="url" />
@@ -259,12 +292,9 @@ function HoursForm({ facility: fac }: { facility: Facility }) {
 
 /* ------------------------------------------------------------------ settings */
 
-const CURRENCIES = ['PKR', 'INR', 'AED', 'SAR', 'QAR', 'KWD', 'BHD', 'OMR', 'BDT', 'LKR', 'EGP', 'TRY', 'EUR', 'GBP', 'USD', 'CAD', 'AUD', 'SGD', 'MYR', 'ZAR'];
-const TIMEZONES = [
-  'Asia/Karachi', 'Asia/Kolkata', 'Asia/Dubai', 'Asia/Riyadh', 'Asia/Qatar', 'Asia/Kuwait', 'Asia/Bahrain', 'Asia/Muscat', 'Asia/Dhaka', 'Asia/Colombo',
-  'Africa/Cairo', 'Europe/Istanbul', 'Europe/London', 'Europe/Madrid', 'Europe/Paris', 'Europe/Berlin', 'America/New_York', 'America/Chicago', 'America/Los_Angeles',
-  'America/Toronto', 'Australia/Sydney', 'Asia/Singapore', 'Asia/Kuala_Lumpur', 'Africa/Johannesburg',
-];
+// The region's choices first; the facility's own value is always kept in the list.
+const CURRENCIES = REGION.currencies;
+const TIMEZONES = REGION.timeZones;
 
 function currencyName(code: string) {
   try {

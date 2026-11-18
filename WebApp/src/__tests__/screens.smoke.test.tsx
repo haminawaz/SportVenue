@@ -126,7 +126,7 @@ describe('signed-out screens', () => {
   test('log in shows the server message for a wrong password', async () => {
     const user = userEvent.setup();
     show(<SignInScreen />, { signedIn: false });
-    await user.type(screen.getByLabelText('Email'), 'john@baselinepadel.pk');
+    await user.type(screen.getByLabelText('Email'), 'john@baselinepadel.example');
     await user.type(screen.getByLabelText('Password'), 'wrong');
     await user.click(screen.getByRole('button', { name: 'Log in' }));
     expect(await screen.findByText('Email or password is incorrect.', undefined, SLOW)).toBeInTheDocument();
@@ -139,18 +139,18 @@ describe('signed-out screens', () => {
     await user.click(screen.getByRole('button', { name: 'Request demo' }));
     expect(await screen.findByText('Enter your name.')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Your name'), 'Mark Stevens');
-    await user.type(screen.getByLabelText('Phone'), '+92 300 1234567');
-    await user.type(screen.getByLabelText('Email'), 'imran@club.pk');
+    await user.type(screen.getByLabelText('Phone'), '+1 (512) 555-0199');
+    await user.type(screen.getByLabelText('Email'), 'mark@smashclub.example');
     await user.type(screen.getByLabelText('Facility name'), 'Smash Club');
-    await user.type(screen.getByLabelText('City'), 'Lahore');
+    await user.type(screen.getByLabelText('City'), 'Austin');
     await user.click(screen.getByRole('button', { name: 'Request demo' }));
     expect(await screen.findByText('Thanks, Mark.', undefined, SLOW)).toBeInTheDocument();
   });
 
   test('forgot password sends the link, then the reset sets a new password that logs in', async () => {
     const user = userEvent.setup();
-    const r = show(<ForgotPasswordScreen />, { signedIn: false, search: 'email=john@baselinepadel.pk' });
-    expect(screen.getByLabelText('Email')).toHaveValue('john@baselinepadel.pk');
+    const r = show(<ForgotPasswordScreen />, { signedIn: false, search: 'email=john@baselinepadel.example' });
+    expect(screen.getByLabelText('Email')).toHaveValue('john@baselinepadel.example');
     await user.click(screen.getByRole('button', { name: 'Send reset link' }));
     expect((await screen.findAllByRole('heading', { name: 'Check your email' }, SLOW)).length).toBeGreaterThan(0);
     const demoLink = screen.getByRole('link', { name: 'Open the reset link' });
@@ -158,7 +158,7 @@ describe('signed-out screens', () => {
     r.unmount();
 
     show(<ResetPasswordScreen />, { signedIn: false, search: `token=${token}` });
-    expect((await screen.findAllByText(/For the account j\*\*\*@baselinepadel\.pk/, undefined, SLOW)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/For the account j\*\*\*@baselinepadel\.example/, undefined, SLOW)).length).toBeGreaterThan(0);
     await user.type(screen.getByLabelText('New password'), 'short');
     await user.click(screen.getByRole('button', { name: 'Set new password' }));
     expect(await screen.findByText('Use at least 8 characters.')).toBeInTheDocument();
@@ -168,7 +168,7 @@ describe('signed-out screens', () => {
     await user.click(screen.getByRole('button', { name: 'Set new password' }));
     expect((await screen.findAllByRole('heading', { name: 'Password updated' }, SLOW)).length).toBeGreaterThan(0);
 
-    const ok = (await handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email: 'john@baselinepadel.pk', password: 'newcourts42' }, token: null })) as { accessToken: string };
+    const ok = (await handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email: 'john@baselinepadel.example', password: 'newcourts42' }, token: null })) as { accessToken: string };
     expect(ok.accessToken).toMatch(/^mock\.user_john\./);
     resetAuthStore();
   });
@@ -216,7 +216,7 @@ describe('tab screens', () => {
     expect(screen.getByRole('heading', { name: 'Revenue by court' })).toBeInTheDocument();
     expect(screen.getByText('Baseline Padel Club')).toBeInTheDocument();
     // Opens on this week, charted Monday to Sunday: one booked-ahead bar per day still to come.
-    const today = todayIn('Asia/Karachi');
+    const today = todayIn('America/Chicago');
     const sunday = addDays(startOfWeek(today), 6);
     expect(screen.queryAllByRole('button', { name: /booked ahead$|: Nothing booked yet$/ })).toHaveLength(daysBetween(today, sunday));
     if (sunday > today) expect(screen.getByText(/^Total so far/)).toBeInTheDocument();

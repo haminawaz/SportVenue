@@ -3,7 +3,7 @@ import type { Facility, UserProfile } from '@/domain/types';
 export type FacilityContext = {
   id: string;
   name: string;
-  /** IANA zone, for example "Asia/Karachi". All dates use this, never the phone's zone. */
+  /** IANA zone, for example "America/Chicago". All dates use this, never the phone's zone. */
   timezone: string;
   /** ISO 4217 code configured for the facility. */
   currency: string;

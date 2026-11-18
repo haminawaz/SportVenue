@@ -2,7 +2,7 @@
  * SportVenue sports-facility domain types (API contract).
  *
  * Conventions:
- * - Money is in major units of the facility currency (2500 = Rs 2,500).
+ * - Money is in major units of the facility currency (45.5 = $45.50), at most two decimals.
  * - Timestamps without an offset ("2026-09-29T20:00:00") are facility-local wall time.
  * - Every derived figure (totals, balances, utilization, analytics) is computed by the server.
  */
@@ -34,8 +34,15 @@ export type Facility = {
   name: string;
   description?: string;
   sports: string[];
+  /** Street address. */
   address: string;
   city: string;
+  /** State, province or region ("TX"). Optional so backends without it still work. */
+  state?: string;
+  /** ZIP or postal code. */
+  postalCode?: string;
+  /** ISO 3166-1 country code ("US"). */
+  country?: string;
   phone: string;
   email: string;
   website?: string;

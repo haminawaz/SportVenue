@@ -11,8 +11,8 @@ npx expo start     # then open in Expo Go, a simulator, or press w for the brows
 
 With mocks on, the app runs on the seeded demo data in `src/dev/mockServer`. On the log-in screen, the demo buttons fill in a sample owner:
 
-- Seeded facility: `john@baselinepadel.pk` / `sportvenue123`
-- Empty facility: `emma@greenlinearena.pk` / `sportvenue123`
+- Seeded facility: `john@baselinepadel.example` / `sportvenue123`
+- Empty facility: `emma@greenlinearena.example` / `sportvenue123`
 
 In mock mode nothing leaves the device: the "Get started" form says so and does not promise a reply.
 

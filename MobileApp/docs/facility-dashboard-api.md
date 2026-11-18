@@ -31,7 +31,7 @@ As in the implementation plan (section 18), with these additions the client reli
 
 Conventions:
 
-- Money is in **major units** of `currency` (24500 = Rs 24,500). If the backend uses minor units,
+- Money is in **major units** of `currency` (24500 = $24,500). If the backend uses minor units,
   convert once in the service, not in components.
 - Timestamps **without** an offset are read as facility-local wall time; timestamps **with** an
   offset or `Z` are converted into `session.facility.timezone`.

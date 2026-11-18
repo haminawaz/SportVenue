@@ -3,6 +3,7 @@
  * Sample data only; resets when the app reloads.
  */
 
+import { REGION } from '@/config/region';
 import { addDays, startOfWeek, todayIn } from '@/lib/datetime';
 import type {
   AppNotification,
@@ -73,7 +74,8 @@ type Db = {
   bookingSeq: number;
 };
 
-const TZ = 'Asia/Karachi';
+/** The sample club is in Austin, Texas. */
+const TZ = 'America/Chicago';
 const ALL_DAYS: Weekday[] = [0, 1, 2, 3, 4, 5, 6];
 const WEEKDAYS: Weekday[] = [1, 2, 3, 4, 5];
 
@@ -87,15 +89,19 @@ function seed(): Db {
   const facility: Facility = {
     id: 'facility_baseline',
     name: 'Baseline Padel Club',
-    description: 'Three glass-walled padel courts, a floodlit futsal pitch and a squash court in DHA Phase 6.',
+    description: 'Three glass-walled padel courts, a floodlit futsal pitch and a squash court in East Austin.',
     sports: ['Padel', 'Futsal', 'Squash'],
-    address: 'Plot 14, Sector C, DHA Phase 6',
-    city: 'Lahore',
-    phone: '+92 300 4417206',
-    email: 'desk@baselinepadel.pk',
-    website: 'baselinepadel.pk',
+    // Sample contact details: 555-01xx numbers and the reserved .example domain are never real.
+    address: '2401 E 6th St',
+    city: 'Austin',
+    state: 'TX',
+    postalCode: '78702',
+    country: 'US',
+    phone: '+1 (512) 555-0147',
+    email: 'desk@baselinepadel.example',
+    website: 'baselinepadel.example',
     timezone: TZ,
-    currency: 'PKR',
+    currency: 'USD',
     businessHours: ALL_DAYS.map((weekday) => ({
       weekday,
       closed: false,
@@ -106,25 +112,25 @@ function seed(): Db {
   };
 
   const courts: Court[] = [
-    { id: 'court_1', name: 'Court 1', sport: 'Padel', surface: 'Panoramic glass, artificial turf', indoor: true, status: 'ACTIVE', hourlyRate: 5000, slotMinutes: 60, createdAt: at(-400, '10:00') },
-    { id: 'court_2', name: 'Court 2', sport: 'Padel', surface: 'Artificial turf', indoor: false, status: 'ACTIVE', hourlyRate: 4500, slotMinutes: 60, createdAt: at(-400, '10:00') },
-    { id: 'court_3', name: 'Court 3', sport: 'Padel', surface: 'Artificial turf', indoor: true, status: 'MAINTENANCE', hourlyRate: 5000, slotMinutes: 60, notes: 'Glass panel replacement. Expected back next week.', createdAt: at(-200, '10:00') },
-    { id: 'court_4', name: 'Futsal Pitch', sport: 'Futsal', surface: '3G turf, floodlit', indoor: false, status: 'ACTIVE', hourlyRate: 9000, slotMinutes: 60, createdAt: at(-380, '10:00') },
-    { id: 'court_5', name: 'Squash Court', sport: 'Squash', surface: 'Maple wood', indoor: true, status: 'INACTIVE', hourlyRate: 2500, slotMinutes: 60, notes: 'Closed for the season.', createdAt: at(-380, '10:00') },
+    { id: 'court_1', name: 'Court 1', sport: 'Padel', surface: 'Panoramic glass, artificial turf', indoor: true, status: 'ACTIVE', hourlyRate: 48, slotMinutes: 60, createdAt: at(-400, '10:00') },
+    { id: 'court_2', name: 'Court 2', sport: 'Padel', surface: 'Artificial turf', indoor: false, status: 'ACTIVE', hourlyRate: 42, slotMinutes: 60, createdAt: at(-400, '10:00') },
+    { id: 'court_3', name: 'Court 3', sport: 'Padel', surface: 'Artificial turf', indoor: true, status: 'MAINTENANCE', hourlyRate: 48, slotMinutes: 60, notes: 'Glass panel replacement. Expected back next week.', createdAt: at(-200, '10:00') },
+    { id: 'court_4', name: 'Futsal Pitch', sport: 'Futsal', surface: '3G turf, floodlit', indoor: false, status: 'ACTIVE', hourlyRate: 120, slotMinutes: 60, createdAt: at(-380, '10:00') },
+    { id: 'court_5', name: 'Squash Court', sport: 'Squash', surface: 'Maple wood', indoor: true, status: 'INACTIVE', hourlyRate: 25, slotMinutes: 60, notes: 'Closed for the season.', createdAt: at(-380, '10:00') },
   ];
 
   const rules: PricingRule[] = [
-    { id: 'rule_1', name: 'Evening peak', courtId: 'court_1', weekdays: WEEKDAYS, startTime: '18:00', endTime: '23:00', hourlyRate: 6500, active: true, updatedAt: at(-60, '11:20') },
-    { id: 'rule_2', name: 'Evening peak', courtId: 'court_2', weekdays: WEEKDAYS, startTime: '18:00', endTime: '23:00', hourlyRate: 5500, active: true, updatedAt: at(-60, '11:22') },
-    { id: 'rule_3', name: 'Weekend', courtId: 'court_1', weekdays: [0, 6], startTime: '07:00', endTime: '23:00', hourlyRate: 6500, active: true, updatedAt: at(-45, '09:05') },
-    { id: 'rule_4', name: 'Morning off-peak', courtId: 'court_2', weekdays: WEEKDAYS, startTime: '07:00', endTime: '12:00', hourlyRate: 3500, active: true, updatedAt: at(-30, '16:40') },
-    { id: 'rule_5', name: 'Floodlit evenings', courtId: 'court_4', weekdays: ALL_DAYS, startTime: '18:00', endTime: '23:00', hourlyRate: 11000, active: true, updatedAt: at(-90, '12:00') },
+    { id: 'rule_1', name: 'Evening peak', courtId: 'court_1', weekdays: WEEKDAYS, startTime: '18:00', endTime: '23:00', hourlyRate: 64, active: true, updatedAt: at(-60, '11:20') },
+    { id: 'rule_2', name: 'Evening peak', courtId: 'court_2', weekdays: WEEKDAYS, startTime: '18:00', endTime: '23:00', hourlyRate: 54, active: true, updatedAt: at(-60, '11:22') },
+    { id: 'rule_3', name: 'Weekend', courtId: 'court_1', weekdays: [0, 6], startTime: '07:00', endTime: '23:00', hourlyRate: 64, active: true, updatedAt: at(-45, '09:05') },
+    { id: 'rule_4', name: 'Morning off-peak', courtId: 'court_2', weekdays: WEEKDAYS, startTime: '07:00', endTime: '12:00', hourlyRate: 32, active: true, updatedAt: at(-30, '16:40') },
+    { id: 'rule_5', name: 'Floodlit evenings', courtId: 'court_4', weekdays: ALL_DAYS, startTime: '18:00', endTime: '23:00', hourlyRate: 150, active: true, updatedAt: at(-90, '12:00') },
   ];
 
   const discounts: Discount[] = [
     { id: 'disc_1', name: 'Weekday afternoons', kind: 'PERCENT', value: 15, courtIds: ['court_2'], validFrom: addDays(today, -20), weekdays: WEEKDAYS, startTime: '13:00', endTime: '17:00', usageCount: 11, active: true, updatedAt: at(-20, '10:00') },
     { id: 'disc_2', name: 'Student rate', code: 'STUDENT10', kind: 'PERCENT', value: 10, courtIds: [], validFrom: addDays(today, -120), weekdays: [], usageCount: 37, active: true, updatedAt: at(-120, '10:00') },
-    { id: 'disc_3', name: 'League night', code: 'LEAGUE1000', kind: 'AMOUNT', value: 1000, courtIds: ['court_4'], validFrom: addDays(today, -90), validTo: addDays(today, -10), weekdays: [3], usageCount: 9, maxUses: 40, active: false, updatedAt: at(-10, '18:00') },
+    { id: 'disc_3', name: 'League night', code: 'LEAGUE20', kind: 'AMOUNT', value: 20, courtIds: ['court_4'], validFrom: addDays(today, -90), validTo: addDays(today, -10), weekdays: [3], usageCount: 9, maxUses: 40, active: false, updatedAt: at(-10, '18:00') },
   ];
 
   const customerNames = [
@@ -138,7 +144,8 @@ function seed(): Db {
     return {
       id: `cust_${i + 1}`,
       name,
-      phone: `+92 3${String(10 + ((i * 7) % 40)).padStart(2, '0')} ${String(2000000 + (((i + 3) * 2654435761) % 7999999)).padStart(7, '0')}`,
+      // Fictional 555-0100 to 555-0199 numbers, spread over Austin's area codes.
+      phone: `+1 (${['512', '737'][i % 2]}) 555-01${String(10 + i).padStart(2, '0')}`,
       email: i % 3 === 2 ? undefined : `${slug}@gmail.com`,
       status: i === 26 ? 'INACTIVE' : 'ACTIVE',
       isRegular: i < 6,
@@ -151,7 +158,7 @@ function seed(): Db {
   customers[2].regularSlot = { courtId: 'court_1', weekday: 5, startTime: '19:00', durationMinutes: 60 };
   customers[5].regularSlot = { courtId: 'court_1', weekday: 4, startTime: '19:00', durationMinutes: 60 };
   customers[6].regularSlot = { courtId: 'court_4', weekday: 6, startTime: '21:00', durationMinutes: 90 };
-  customers[0].notes.push({ id: 'note_1', body: 'Prefers Court 1. Pays by bank transfer at the end of the month.', createdAt: at(-40, '14:10'), author: 'John Miller' });
+  customers[0].notes.push({ id: 'note_1', body: 'Prefers Court 1. Pays by card at the end of each month.', createdAt: at(-40, '14:10'), author: 'John Miller' });
   customers[6].notes.push({ id: 'note_2', body: 'Captain of the Saturday futsal league team (10 players).', createdAt: at(-75, '21:40'), author: 'John Miller' });
   customers[4].notes.push({ id: 'note_3', body: 'Two late cancellations in August. Ask for advance payment on weekend slots.', createdAt: at(-25, '11:00'), author: 'John Miller' });
 
@@ -160,7 +167,8 @@ function seed(): Db {
   const payments: StoredPayment[] = [];
   const activeCourts = courts.filter((c) => c.id !== 'court_5');
   const weighted = customers.filter((c) => c.status === 'ACTIVE').flatMap((c, i) => (i < 6 ? [c, c, c, c] : [c]));
-  const methods: PaymentMethod[] = ['CASH', 'CASH', 'CASH', 'BANK_TRANSFER', 'CARD', 'WALLET'];
+  // Mostly cards, as at US clubs, then mobile wallets, cash and the odd bank transfer.
+  const methods: PaymentMethod[] = ['CARD', 'CARD', 'CARD', 'WALLET', 'CASH', 'BANK_TRANSFER'];
   const cancelReasons = ['Weather', 'Player unavailable', 'Rescheduled by customer', 'Double booking', 'Illness'];
   let seq = 1040;
 
@@ -295,7 +303,7 @@ function seed(): Db {
       startAt: `${nextTuesday}T13:00:00`,
       endAt: `${nextTuesday}T17:00:00`,
       recommendedAction: { type: 'DISCOUNT', value: 15, unit: 'PERCENT', window: { weekdays: WEEKDAYS, startTime: '13:00', endTime: '17:00' } },
-      potentialRevenue: 64000,
+      potentialRevenue: 640,
       createdAt: at(-2, '06:00'),
     },
     ...(biggestDebt
@@ -329,7 +337,7 @@ function seed(): Db {
       courtId: 'court_1',
       courtName: 'Court 1',
       recommendedAction: { type: 'CONTACT' },
-      potentialRevenue: 26000,
+      potentialRevenue: 260,
       createdAt: at(-3, '06:00'),
     },
     {
@@ -343,7 +351,7 @@ function seed(): Db {
       startAt: upcomingFriday?.startAt,
       endAt: upcomingFriday?.endAt,
       recommendedAction: { type: 'PRICE_INCREASE', value: 10, unit: 'PERCENT', window: { weekdays: [5], startTime: '18:00', endTime: '23:00' } },
-      potentialRevenue: 32500,
+      potentialRevenue: 320,
       createdAt: at(-6, '06:00'),
     },
     ...(riskBooking
@@ -353,7 +361,7 @@ function seed(): Db {
             type: 'CANCELLATION_RISK',
             status: 'OPEN',
             title: 'David Wilson may cancel',
-            description: 'Faisal cancelled 2 of his last 5 bookings less than 12 hours before start.',
+            description: 'David cancelled 2 of his last 5 bookings less than 12 hours before start.',
             bookingId: riskBooking.id,
             bookingReference: riskBooking.reference,
             customerId: 'cust_5',
@@ -377,7 +385,7 @@ function seed(): Db {
       courtId: 'court_4',
       courtName: 'Futsal Pitch',
       recommendedAction: { type: 'PRICE_INCREASE', value: 10, unit: 'PERCENT' },
-      potentialRevenue: 18000,
+      potentialRevenue: 180,
       createdAt: at(-30, '06:00'),
       resolution: { outcome: 'ACTIONED', note: 'Added the Floodlit evenings rate.', at: at(-28, '10:15'), by: 'John Miller' },
     },
@@ -424,16 +432,16 @@ function seed(): Db {
   ];
 
   const users: UserProfile[] = [
-    { id: 'user_john', firstName: 'John', lastName: 'Miller', email: 'john@baselinepadel.pk', phone: '+92 321 4550918', role: 'OWNER' },
+    { id: 'user_john', firstName: 'John', lastName: 'Miller', email: 'john@baselinepadel.example', phone: '+1 (512) 555-0163', role: 'OWNER' },
   ];
 
   const pricingHistory: PricingHistoryEntry[] = [
     { id: 'ph_1', at: at(-10, '18:00'), actor: 'John Miller', subject: 'DISCOUNT', subjectName: 'League night', change: 'Deactivated' },
     { id: 'ph_2', at: at(-20, '10:00'), actor: 'John Miller', subject: 'DISCOUNT', subjectName: 'Weekday afternoons', change: 'Created: 15% off on Court 2, weekdays 1:00 PM - 5:00 PM' },
-    { id: 'ph_3', at: at(-30, '16:40'), actor: 'John Miller', subject: 'RULE', subjectName: 'Morning off-peak', change: 'Court 2 rate changed from Rs 4,000 to Rs 3,500 per hour' },
-    { id: 'ph_4', at: at(-45, '09:05'), actor: 'John Miller', subject: 'RULE', subjectName: 'Weekend', change: 'Created: Court 1, Sat and Sun, Rs 6,500 per hour' },
-    { id: 'ph_5', at: at(-60, '11:22'), actor: 'John Miller', subject: 'RULE', subjectName: 'Evening peak', change: 'Court 2 rate changed from Rs 5,000 to Rs 5,500 per hour' },
-    { id: 'ph_6', at: at(-90, '12:00'), actor: 'John Miller', subject: 'COURT_RATE', subjectName: 'Futsal Pitch', change: 'Base rate changed from Rs 8,000 to Rs 9,000 per hour' },
+    { id: 'ph_3', at: at(-30, '16:40'), actor: 'John Miller', subject: 'RULE', subjectName: 'Morning off-peak', change: 'Court 2 rate changed from $36 to $32 per hour' },
+    { id: 'ph_4', at: at(-45, '09:05'), actor: 'John Miller', subject: 'RULE', subjectName: 'Weekend', change: 'Created: Court 1, Sat and Sun, $64 per hour' },
+    { id: 'ph_5', at: at(-60, '11:22'), actor: 'John Miller', subject: 'RULE', subjectName: 'Evening peak', change: 'Court 2 rate changed from $49 to $54 per hour' },
+    { id: 'ph_6', at: at(-90, '12:00'), actor: 'John Miller', subject: 'COURT_RATE', subjectName: 'Futsal Pitch', change: 'Base rate changed from $105 to $120 per hour' },
   ];
 
   return {
@@ -462,14 +470,14 @@ function seed(): Db {
     subscription: {
       plan: 'Growth',
       status: 'ACTIVE',
-      price: 14900,
-      currency: 'PKR',
+      price: 149,
+      currency: 'USD',
       interval: 'MONTH',
       renewsOn: addDays(today, 17),
       courtsLimit: 8,
       courtsUsed: courts.length,
       paymentMethod: { brand: 'Visa', last4: '4417', expires: '08/28' },
-      invoices: [0, 1, 2, 3].map((i) => ({ id: `inv_${i}`, date: addDays(today, -13 - i * 30), amount: 14900, status: 'PAID' as const })),
+      invoices: [0, 1, 2, 3].map((i) => ({ id: `inv_${i}`, date: addDays(today, -13 - i * 30), amount: 149, status: 'PAID' as const })),
     },
     sessions: new Map(),
     bookingSeq: seq,
@@ -489,11 +497,15 @@ function emptyFacility(): FacilityData {
       name: 'Greenline Sports Arena',
       sports: [],
       address: '',
-      city: 'Karachi',
-      phone: '+92 300 7718245',
-      email: 'emma@greenlinearena.pk',
-      timezone: TZ,
-      currency: 'PKR',
+      city: 'Denver',
+      state: 'CO',
+      postalCode: '80205',
+      country: REGION.country,
+      phone: '+1 (720) 555-0118',
+      email: 'emma@greenlinearena.example',
+      timezone: 'America/Denver',
+      // A new owner starts on the region's defaults.
+      currency: REGION.currency,
       businessHours: ALL_DAYS.map((weekday) => ({ weekday, closed: false, open: '08:00', close: '22:00' })),
       settings: { defaultSlotMinutes: 60, bufferMinutes: 0, cancellationWindowHours: 12, bookingLeadDays: 30 },
     },
@@ -520,8 +532,8 @@ function emptyFacility(): FacilityData {
     subscription: {
       plan: 'Starter',
       status: 'TRIALING',
-      price: 7900,
-      currency: 'PKR',
+      price: 79,
+      currency: 'USD',
       interval: 'MONTH',
       renewsOn: addDays(today, 14),
       courtsLimit: 4,
@@ -550,7 +562,7 @@ const stores = new Map<string, FacilityData>([
   ['user_emma', emptyFacility()],
 ]);
 
-db.users.push({ id: 'user_emma', firstName: 'Emma', lastName: 'Clarke', email: 'emma@greenlinearena.pk', phone: '+92 333 5102847', role: 'OWNER' });
+db.users.push({ id: 'user_emma', firstName: 'Emma', lastName: 'Clarke', email: 'emma@greenlinearena.example', phone: '+1 (720) 555-0129', role: 'OWNER' });
 
 function pickFacility(source: Db | FacilityData): FacilityData {
   const out = {} as Record<string, unknown>;

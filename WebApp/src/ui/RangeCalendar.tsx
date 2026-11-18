@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 
+import { REGION } from '@/config/region';
 import { addDays, type CalendarDate } from '@/lib/datetime';
 
 import { AppText } from './AppText';
@@ -26,8 +27,8 @@ const shiftMonths = (d: CalendarDate, n: number): CalendarDate => {
 /** Monday = 0 ... Sunday = 6. */
 const weekdayIndex = (d: CalendarDate) => (utc(d).getUTCDay() + 6) % 7;
 
-const monthTitle = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long', year: 'numeric' });
-const dayLabel = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+const monthTitle = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', month: 'long', year: 'numeric' });
+const dayLabel = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 const WEEK = [
   ['Mo', 'Monday'],
   ['Tu', 'Tuesday'],

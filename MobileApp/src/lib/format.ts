@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 
+import { REGION } from '@/config/region';
 import { useAuth } from '@/session/SessionProvider';
 
 import { facilityWallClock, formatCalendarDate, relativeDayLabel, todayIn, type CalendarDate } from './datetime';
@@ -54,9 +55,9 @@ const COMPACT_STEPS: [number, string][] = [
 ];
 
 /**
- * "Rs 1.2M" style for chart labels and tight spaces. Built by hand rather
+ * "$1.2M" style for chart labels and tight spaces. Built by hand rather
  * than with Intl's compact notation, which Hermes on Android ignores (it
- * printed "PKR 4,445,750.0").
+ * printed "USD 4,445,750.0").
  */
 export function formatCompactMoney(amount: number, currency: string): string {
   const abs = Math.abs(amount);
@@ -70,7 +71,7 @@ export function formatCompactMoney(amount: number, currency: string): string {
 
 export function formatNumber(n: number, maxFractionDigits = 1): string {
   try {
-    return new Intl.NumberFormat(undefined, { maximumFractionDigits: maxFractionDigits }).format(n);
+    return new Intl.NumberFormat(REGION.locale, { maximumFractionDigits: maxFractionDigits }).format(n);
   } catch {
     return String(Math.round(n * 10) / 10);
   }
@@ -82,13 +83,13 @@ export function formatNumber(n: number, maxFractionDigits = 1): string {
  */
 export function useFormat() {
   const { session } = useAuth();
-  const currency = session?.facility.currency ?? 'USD';
+  const currency = session?.facility.currency ?? REGION.currency;
   const timeZone = session?.facility.timezone ?? 'UTC';
 
   const money = useCallback((n: number, c = currency) => formatMoney(n, c), [currency]);
   const moneyA11y = useCallback((n: number, c = currency) => formatMoneyForA11y(n, c), [currency]);
   const compactMoney = useCallback((n: number) => formatCompactMoney(n, currency), [currency]);
-  /** For narrow tiles: exact below a million, compact above ("Rs 4.6M"). Pair with moneyA11y. */
+  /** For narrow tiles: exact below a million, compact above ("$4.6M"). Pair with moneyA11y. */
   const tileMoney = useCallback((n: number) => (Math.abs(n) >= 1_000_000 ? formatCompactMoney(n, currency) : formatMoney(n, currency)), [currency]);
   const today = useCallback(() => todayIn(timeZone), [timeZone]);
   const day = useCallback((iso: string) => relativeDayLabel(facilityWallClock(iso, timeZone).date, todayIn(timeZone)), [timeZone]);

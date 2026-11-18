@@ -9,8 +9,8 @@ import { Lede, Section, SectionTitle, WIDE_AT } from './LandingScroll';
 
 /** The daily problems an owner names first, and what SportVenue replaces each one with. */
 const CHANGES = [
-  { before: 'Bookings buried in WhatsApp chats', after: 'Every booking on one calendar, for every court' },
-  { before: 'Balances tracked in Excel, or not at all', after: 'Outstanding balances per customer, with a reminder button' },
+  { before: 'Bookings buried in texts and group chats', after: 'Every booking on one calendar, for every court' },
+  { before: 'Balances tracked in spreadsheets, or not at all', after: 'Outstanding balances per customer, with a reminder button' },
   { before: 'Double-booked courts on busy evenings', after: 'Slots that can only be sold once' },
   { before: 'No idea which hours make money', after: 'Revenue and utilization by court and by hour' },
 ];

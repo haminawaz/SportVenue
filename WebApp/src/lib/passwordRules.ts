@@ -22,7 +22,7 @@ export function passwordProblem(password: string): string | undefined {
   return undefined;
 }
 
-/** "j***@baselinepadel.pk": enough to recognise the account without spelling out the address. */
+/** "j***@baselinepadel.example": enough to recognise the account without spelling out the address. */
 export function maskEmail(email: string): string {
   const [name, domain] = email.split('@');
   if (!domain) return email;

@@ -18,7 +18,8 @@ const nbsp = (s: string) => s.replace(/ /g, ' ');
 
 describe('money', () => {
   test.each([
-    ['PKR', /^Rs ?24,500$/],
+    ['USD', /^\$24,500$/],
+    ['CAD', /^\$ ?24,500$/],
     ['INR', /^₹ ?24,500$/],
     ['EUR', /^€ ?24,500$/],
     ['GBP', /^£ ?24,500$/],
@@ -27,8 +28,14 @@ describe('money', () => {
     expect(nbsp(formatMoney(24500, currency, 'en-US'))).toMatch(expected);
   });
 
+  test('whole amounts print without decimals, and cents always print two digits', () => {
+    expect(formatMoney(1250, 'USD')).toBe('$1,250');
+    expect(formatMoney(38.5, 'USD')).toBe('$38.50');
+    expect(formatMoney(38.25, 'USD')).toBe('$38.25');
+  });
+
   test('speaks currency names for screen readers', () => {
-    expect(formatMoneyForA11y(2500, 'PKR', 'en-US')).toBe('2,500 Pakistani rupees');
+    expect(formatMoneyForA11y(2500, 'USD', 'en-US')).toBe('2,500 US dollars');
   });
 
   test('falls back safely for an unknown currency code', () => {
@@ -38,29 +45,30 @@ describe('money', () => {
 
 describe('facility dates', () => {
   test('today is taken in the facility zone, not the device zone', () => {
-    // 2026-09-29 21:30 UTC is already Sep 30 in Karachi (UTC+5) but still Sep 29 in Los Angeles.
-    const instant = new Date('2026-09-29T21:30:00Z');
-    expect(todayIn('Asia/Karachi', instant)).toBe('2026-09-30');
+    // 2026-09-30 04:30 UTC is already Sep 30 in New York (UTC-4) but still Sep 29 in Los Angeles (UTC-7).
+    const instant = new Date('2026-09-30T04:30:00Z');
+    expect(todayIn('America/New_York', instant)).toBe('2026-09-30');
     expect(todayIn('America/Los_Angeles', instant)).toBe('2026-09-29');
   });
 
   test('offset-less timestamps are read as facility wall time', () => {
-    expect(facilityWallClock('2026-09-29T20:00:00', 'Asia/Karachi')).toEqual({ date: '2026-09-29', hour: 20, minute: 0 });
+    expect(facilityWallClock('2026-09-29T20:00:00', 'America/Chicago')).toEqual({ date: '2026-09-29', hour: 20, minute: 0 });
   });
 
   test('UTC timestamps are converted into the facility zone', () => {
-    expect(facilityWallClock('2026-09-29T15:00:00Z', 'Asia/Karachi')).toEqual({ date: '2026-09-29', hour: 20, minute: 0 });
+    // 1:00 AM UTC on Sep 30 is still 8:00 PM on Sep 29 in Chicago (UTC-5 in summer time).
+    expect(facilityWallClock('2026-09-30T01:00:00Z', 'America/Chicago')).toEqual({ date: '2026-09-29', hour: 20, minute: 0 });
   });
 
   test('formats times without en or em dashes', () => {
-    const text = formatTimeRange('2026-09-29T20:00:00', '2026-09-29T21:00:00', 'Asia/Karachi');
+    const text = formatTimeRange('2026-09-29T20:00:00', '2026-09-29T21:00:00', 'America/Chicago');
     expect(text).toBe('8:00 PM - 9:00 PM');
     expect(text).not.toMatch(/[–—]/);
   });
 
   test('labels today and yesterday relative to the facility', () => {
-    expect(formatDayAndTime('2026-09-29T20:00:00', 'Asia/Karachi', '2026-09-29')).toBe('Today, 8:00 PM');
-    expect(formatDayAndTime('2026-09-28T09:05:00', 'Asia/Karachi', '2026-09-29')).toBe('Yesterday, 9:05 AM');
+    expect(formatDayAndTime('2026-09-29T20:00:00', 'America/Chicago', '2026-09-29')).toBe('Today, 8:00 PM');
+    expect(formatDayAndTime('2026-09-28T09:05:00', 'America/Chicago', '2026-09-29')).toBe('Yesterday, 9:05 AM');
   });
 
   test('weeks start on Monday', () => {
@@ -124,7 +132,7 @@ describe('display helpers', () => {
   });
 
   test('only phrases recommendations the backend sent', () => {
-    const fmt = (n: number) => `Rs ${n}`;
+    const fmt = (n: number) => `$${n}`;
     expect(recommendationText({ type: 'DISCOUNT', value: 15, unit: 'PERCENT' }, fmt)).toBe('Suggested: offer a 15% discount');
     expect(recommendationText(undefined, fmt)).toBeNull();
     expect(recommendationText({ type: 'SOMETHING_NEW' }, fmt)).toBeNull();

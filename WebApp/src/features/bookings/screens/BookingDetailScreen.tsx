@@ -9,6 +9,7 @@ import type { BookingDetail, PaymentMethod } from '@/domain/types';
 import { useRecordPayment } from '@/features/payments/api';
 import { facilityWallClock, formatCalendarDate, formatDayAndTime, formatTime, minutesBetweenLocal, nowLocalIn } from '@/lib/datetime';
 import { formatDuration, useFormat } from '@/lib/format';
+import { telHref } from '@/lib/phone';
 import { useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
@@ -185,7 +186,7 @@ function BookingBody({ booking: b }: { booking: BookingDetail }) {
                 </Link>
                 <div className="flex flex-wrap gap-2">
                   {!!b.customerPhone && (
-                    <a href={`tel:${b.customerPhone.replace(/\s/g, '')}`} aria-label={`Call ${b.customerName}`} className="t-label inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 hover:bg-surface-muted">
+                    <a href={telHref(b.customerPhone)} aria-label={`Call ${b.customerName}`} className="t-label inline-flex h-8 items-center gap-1.5 rounded-control border border-border-strong bg-surface px-3 hover:bg-surface-muted">
                       <Phone size={15} weight="bold" aria-hidden />
                       Call
                     </a>

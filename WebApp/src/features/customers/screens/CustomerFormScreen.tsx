@@ -7,6 +7,7 @@ import { useCourts } from '@/features/courts/api';
 import { clockOptions, formatClock, formatDuration, WEEK_ORDER, WEEKDAY_LONG } from '@/lib/format';
 import { selectionBus } from '@/lib/selectionBus';
 import { rules, useForm } from '@/lib/useForm';
+import { PHONE_EXAMPLE } from '@/lib/phone';
 import { useQueryParams, useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
@@ -119,7 +120,7 @@ function CustomerForm({ customer }: { customer?: CustomerDetail }) {
         <FormSection title="Contact details" description="The phone number is used for reminders and to find them quickly.">
           <TextField label="Full name" value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} autoCapitalize="words" autoComplete="name" maxLength={80} />
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-            <TextField label="Phone" value={form.values.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" autoComplete="tel" placeholder="+92 300 1234567" />
+            <TextField label="Phone" value={form.values.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" autoComplete="tel" placeholder={PHONE_EXAMPLE} />
             <TextField label="Email" optional value={form.values.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} type="email" autoCapitalize="none" autoComplete="email" />
           </div>
         </FormSection>

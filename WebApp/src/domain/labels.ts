@@ -91,4 +91,4 @@ export const NOTIFICATION_TYPE: Record<NotificationType, { label: string; icon: 
 
 export const CANCEL_REASONS = ['Customer request', 'Weather', 'Player unavailable', 'Court issue', 'Double booking', 'Illness', 'Other'];
 
-export const SPORTS = ['Padel', 'Tennis', 'Futsal', 'Football', 'Squash', 'Badminton', 'Basketball', 'Cricket nets', 'Pickleball', 'Volleyball'];
+export const SPORTS = ['Padel', 'Tennis', 'Futsal', 'Soccer', 'Squash', 'Badminton', 'Basketball', 'Cricket nets', 'Pickleball', 'Volleyball'];

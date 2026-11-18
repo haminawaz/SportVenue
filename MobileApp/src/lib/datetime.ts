@@ -6,6 +6,8 @@
  * runs in UTC so that DST on the phone can never shift a day.
  */
 
+import { REGION } from '@/config/region';
+
 export type CalendarDate = string;
 
 type WallClock = { date: CalendarDate; hour: number; minute: number };
@@ -96,8 +98,8 @@ export function pickerValueFromCalendarDate(date: CalendarDate): Date {
   return new Date(y, m - 1, d);
 }
 
-const shortDate = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' });
-const monthDay = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' });
+const shortDate = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' });
+const monthDay = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', month: 'short', day: 'numeric' });
 
 /** "Tue, Sep 29" */
 export function formatCalendarDate(date: CalendarDate): string {

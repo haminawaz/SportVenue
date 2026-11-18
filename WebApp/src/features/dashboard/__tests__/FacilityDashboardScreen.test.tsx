@@ -19,18 +19,18 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: 
 vi.mock('@/api/client', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/api/client')>()), apiRequest: vi.fn() }));
 const request = vi.mocked(apiRequest);
 
-const TZ = 'Asia/Karachi';
+const TZ = 'America/Chicago';
 function makeSession(): Session {
   return {
     user: { id: 'u1', firstName: 'John', lastName: 'Miller', email: 'john@example.com', role: 'OWNER' },
-    facility: { id: 'fac_1', name: 'Baseline Padel Club', timezone: TZ, currency: 'PKR' },
+    facility: { id: 'fac_1', name: 'Baseline Padel Club', timezone: TZ, currency: 'USD' },
   };
 }
 
 function makeAnalytics(startDate: string, endDate: string): Analytics {
   return {
     period: { startDate, endDate },
-    currency: 'PKR',
+    currency: 'USD',
     revenue: { total: 24500, changePercent: 12, byDay: [{ date: endDate, amount: 24500 }] },
     bookings: { total: 18, changePercent: -5, averagePerDay: 18, averageValue: 1361 },
     utilization: { overall: 72, byCourt: [{ courtId: 'court_1', courtName: 'Court 1', utilization: 72 }] },
@@ -63,7 +63,8 @@ const thisWeek = () => {
   const sunday = addDays(startOfWeek(today), 6);
   return { startDate: startOfWeek(today), endDate: today, aheadUntil: sunday > today ? sunday : undefined };
 };
-const money = (s: string) => new RegExp(`^${s.replace(/ /g, '[ \\u00a0]')}$`);
+/** Matches an amount exactly, whether the formatter used a normal or a non-breaking space. */
+const money = (s: string) => new RegExp(`^${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[ \\u00a0]')}$`);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -87,7 +88,7 @@ test('shows the full report for this week in the facility zone by default', asyn
   for (const heading of ['Revenue by court', 'Court utilization', 'Customers', 'Outstanding payments', 'Cancellations']) {
     expect(screen.getByRole('heading', { name: heading })).toBeInTheDocument();
   }
-  expect(screen.getAllByText(money('Rs 24,500')).length).toBeGreaterThan(0);
+  expect(screen.getAllByText(money('$24,500')).length).toBeGreaterThan(0);
   expect(screen.getByText('+12% vs previous period')).toBeInTheDocument();
 });
 

@@ -12,7 +12,7 @@ export const LEGAL = {
   operatorAddress: '',
   /** Inbox for privacy requests and legal questions, for example a privacy@ address on the SportVenue domain. */
   contactEmail: '',
-  /** Country whose law governs the Terms, for example "Pakistan". */
+  /** Where the law that governs the Terms comes from, for example "the State of Delaware, United States". */
   governingLaw: '',
   /** EU and UK representative (GDPR Art. 27), if the business has no establishment there. Leave empty if not needed. */
   euRepresentative: '',

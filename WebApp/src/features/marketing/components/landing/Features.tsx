@@ -23,7 +23,7 @@ const FEATURES: Feature[] = [
     key: 'payments',
     tab: 'Payments',
     title: 'Know exactly who owes you',
-    body: 'Every unpaid booking with the customer, the court and how long it has been due. Record cash, card or bank transfer payments against the booking in a few clicks.',
+    body: 'Every unpaid booking with the customer, the court and how long it has been due. Record card, cash or mobile wallet payments against the booking in a few clicks.',
     alt: 'The payments screen listing unpaid bookings, the amount owed and a Record button on each row.',
   },
   {

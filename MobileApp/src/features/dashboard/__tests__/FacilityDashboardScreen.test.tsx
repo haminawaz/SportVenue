@@ -24,18 +24,18 @@ jest.mock('@/features/notifications/api', () => ({
 jest.mock('@/api/client', () => ({ ...jest.requireActual('@/api/client'), apiRequest: jest.fn() }));
 const request = apiRequest as jest.MockedFunction<typeof apiRequest>;
 
-const TZ = 'Asia/Karachi';
+const TZ = 'America/Chicago';
 function makeSession(): Session {
   return {
     user: { id: 'u1', firstName: 'John', lastName: 'Miller', email: 'john@example.com', role: 'OWNER' },
-    facility: { id: 'fac_1', name: 'Baseline Padel Club', timezone: TZ, currency: 'PKR' },
+    facility: { id: 'fac_1', name: 'Baseline Padel Club', timezone: TZ, currency: 'USD' },
   };
 }
 
 function makeAnalytics(startDate: string, endDate: string): Analytics {
   return {
     period: { startDate, endDate },
-    currency: 'PKR',
+    currency: 'USD',
     revenue: { total: 24500, changePercent: 12, byDay: [{ date: endDate, amount: 24500 }] },
     bookings: { total: 18, changePercent: -5, averagePerDay: 18, averageValue: 1361 },
     utilization: { overall: 72, byCourt: [{ courtId: 'court_1', courtName: 'Court 1', utilization: 72 }] },

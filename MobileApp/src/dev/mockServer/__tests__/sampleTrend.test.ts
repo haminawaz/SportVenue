@@ -10,7 +10,7 @@ function lastEightWeeksAsOf(now: Date): Analytics {
   jest.resetModules();
   const { addDays, startOfWeek, todayIn } = jest.requireActual<typeof import('@/lib/datetime')>('@/lib/datetime');
   const { analyticsView } = jest.requireActual<typeof import('../views')>('../views');
-  const endDate = addDays(startOfWeek(todayIn('Asia/Karachi')), -1);
+  const endDate = addDays(startOfWeek(todayIn('America/Chicago')), -1);
   return analyticsView(addDays(endDate, -55), endDate);
 }
 
@@ -18,9 +18,9 @@ const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 
 afterEach(() => jest.useRealTimers());
 
-// Monday 9 November 2026 to Sunday the 15th, at noon in Lahore.
+// Monday 9 November 2026 to Sunday the 15th, at noon in Austin (6 PM UTC).
 test.each([0, 1, 2, 3, 4, 5, 6])('the sample club is growing (captured on day %i of the week)', (day) => {
-  const a = lastEightWeeksAsOf(new Date(Date.UTC(2026, 10, 9 + day, 7)));
+  const a = lastEightWeeksAsOf(new Date(Date.UTC(2026, 10, 9 + day, 18)));
   const weeks = Array.from({ length: 8 }, (_, i) => sum(a.revenue.byDay.slice(i * 7, i * 7 + 7).map((d) => d.amount)));
 
   expect(a.revenue.changePercent).toBeGreaterThan(15);

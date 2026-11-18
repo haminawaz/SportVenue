@@ -7,6 +7,7 @@ import { useCourts } from '@/features/courts/api';
 import { clockOptions, formatClock, formatDuration, WEEK_ORDER, WEEKDAY_LONG } from '@/lib/format';
 import { selectionBus } from '@/lib/selectionBus';
 import { rules, useForm } from '@/lib/useForm';
+import { PHONE_EXAMPLE } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -125,7 +126,7 @@ function CustomerForm({ customer }: { customer?: CustomerDetail }) {
         error={form.errors.phone}
         keyboardType="phone-pad"
         autoComplete="tel"
-        placeholder="+92 300 1234567"
+        placeholder={PHONE_EXAMPLE}
         helper="Used for reminders and to find them quickly."
       />
       <TextField label="Email" optional value={form.values.email} onChangeText={(t) => form.set('email', t)} error={form.errors.email} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />

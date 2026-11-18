@@ -29,11 +29,11 @@ test('forgot password answers the same for unknown emails and validates the form
 });
 
 test('a reset link names the account, sets the new password once, and signs every session out', async () => {
-  const before = await signIn('john@baselinepadel.pk', 'sportvenue123');
-  const { demoResetToken: token } = await requestLink('JOHN@baselinepadel.pk');
+  const before = await signIn('john@baselinepadel.example', 'sportvenue123');
+  const { demoResetToken: token } = await requestLink('JOHN@baselinepadel.example');
   expect(token).toMatch(/^[0-9a-f]{48}$/);
 
-  expect(await call('GET', `/api/auth/reset-password/${token}`)).toEqual({ email: 'j***@baselinepadel.pk' });
+  expect(await call('GET', `/api/auth/reset-password/${token}`)).toEqual({ email: 'j***@baselinepadel.example' });
 
   await rejectsWith(call('POST', '/api/auth/reset-password', { token, password: 'short1' }), 422);
   await rejectsWith(call('POST', '/api/auth/reset-password', { token, password: 'lettersonly' }), 422);
@@ -41,9 +41,9 @@ test('a reset link names the account, sets the new password once, and signs ever
 
   // The old session is gone, the old password no longer works, the new one does.
   await rejectsWith(call('GET', '/api/me', undefined, before.accessToken), 401);
-  await rejectsWith(signIn('john@baselinepadel.pk', 'sportvenue123'), 401);
-  const after = await signIn('john@baselinepadel.pk', 'newcourts42');
-  expect(await call('GET', '/api/me', undefined, after.accessToken)).toMatchObject({ user: { email: 'john@baselinepadel.pk' } });
+  await rejectsWith(signIn('john@baselinepadel.example', 'sportvenue123'), 401);
+  const after = await signIn('john@baselinepadel.example', 'newcourts42');
+  expect(await call('GET', '/api/me', undefined, after.accessToken)).toMatchObject({ user: { email: 'john@baselinepadel.example' } });
 
   // The link is used up.
   await rejectsWith(call('GET', `/api/auth/reset-password/${token}`), 410, 'RESET_USED');
@@ -51,10 +51,10 @@ test('a reset link names the account, sets the new password once, and signs ever
 });
 
 test('asking again replaces the earlier link', async () => {
-  const first = (await requestLink('john@baselinepadel.pk')).demoResetToken!;
-  const second = (await requestLink('john@baselinepadel.pk')).demoResetToken!;
+  const first = (await requestLink('john@baselinepadel.example')).demoResetToken!;
+  const second = (await requestLink('john@baselinepadel.example')).demoResetToken!;
   await rejectsWith(call('GET', `/api/auth/reset-password/${first}`), 410, 'RESET_INVALID');
-  expect(await call('GET', `/api/auth/reset-password/${second}`)).toEqual({ email: 'j***@baselinepadel.pk' });
+  expect(await call('GET', `/api/auth/reset-password/${second}`)).toEqual({ email: 'j***@baselinepadel.example' });
 });
 
 test('expired and unknown links are refused with their own codes', async () => {

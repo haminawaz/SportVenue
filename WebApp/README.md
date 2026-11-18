@@ -11,8 +11,8 @@ npm run dev        # http://localhost:3000
 
 `NEXT_PUBLIC_USE_MOCKS=1` enables the in-browser mock server (`src/dev/mockServer`). On the log-in screen, the demo buttons fill in a sample owner:
 
-- Seeded facility: `john@baselinepadel.pk` / `sportvenue123`
-- Empty facility: `emma@greenlinearena.pk` / `sportvenue123`
+- Seeded facility: `john@baselinepadel.example` / `sportvenue123`
+- Empty facility: `emma@greenlinearena.example` / `sportvenue123`
 
 Mock data lives in memory and resets when the page reloads. In mock mode nothing leaves the browser: the "Get started" form says so and does not promise a reply.
 

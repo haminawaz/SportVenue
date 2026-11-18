@@ -121,7 +121,7 @@ export default function SignInScreen() {
               size="sm"
               block
               aria-label="Seeded facility: fill in the owner account with sample data"
-              onPress={() => form.patch({ email: 'john@baselinepadel.pk', password: 'sportvenue123' })}
+              onPress={() => form.patch({ email: 'john@baselinepadel.example', password: 'sportvenue123' })}
             />
             <Button
               label="Empty facility"
@@ -129,7 +129,7 @@ export default function SignInScreen() {
               size="sm"
               block
               aria-label="Empty facility: fill in the owner account with no data"
-              onPress={() => form.patch({ email: 'emma@greenlinearena.pk', password: 'sportvenue123' })}
+              onPress={() => form.patch({ email: 'emma@greenlinearena.example', password: 'sportvenue123' })}
             />
           </View>
         </View>

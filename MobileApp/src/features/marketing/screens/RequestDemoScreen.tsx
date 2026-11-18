@@ -6,6 +6,7 @@ import { Buildings, CheckCircle, EnvelopeSimple, MapPin, Phone, User } from 'pho
 import { toUserFacingError } from '@/api/errors';
 import { USE_MOCKS } from '@/config/env';
 import { rules, useForm } from '@/lib/useForm';
+import { PHONE_EXAMPLE } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
@@ -136,7 +137,7 @@ export function RequestDemoScreen() {
             error={form.errors.phone}
             keyboardType="phone-pad"
             autoComplete="tel"
-            placeholder="+92 300 1234567"
+            placeholder={PHONE_EXAMPLE}
           />
           <TextField
             label="Email"

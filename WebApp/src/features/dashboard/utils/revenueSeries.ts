@@ -1,3 +1,4 @@
+import { REGION } from '@/config/region';
 import { addDays, daysBetween, formatCalendarDate, formatMonthDay, startOfWeek, type CalendarDate } from '@/lib/datetime';
 import { WEEKDAY_SHORT } from '@/lib/format';
 
@@ -25,8 +26,8 @@ export type RevenuePoint = {
  */
 export type RevenueAhead = { until: CalendarDate; byDay?: { date: CalendarDate; amount: number }[] };
 
-const monthLong = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'long', year: 'numeric' });
-const monthShort = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short' });
+const monthLong = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', month: 'long', year: 'numeric' });
+const monthShort = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', month: 'short' });
 const utc = (d: CalendarDate) => new Date(`${d}T00:00:00Z`);
 
 /** Bars stay readable at every period: one per day up to a month, per week up to about four months, then per month. */

@@ -41,16 +41,16 @@ test('this week runs Monday to Sunday: days still to come carry what is already 
   const { bucket, points } = revenueSeries(days('2026-11-09', '2026-11-12'), '2026-11-09', '2026-11-12', {
     until: '2026-11-15',
     byDay: [
-      { date: '2026-11-13', amount: 45000 },
+      { date: '2026-11-13', amount: 450 },
       { date: '2026-11-14', amount: 0 },
       { date: '2026-11-15', amount: 0 },
     ],
   });
   expect(bucket).toBe('day');
   expect(points.map((p) => p.axisLabel)).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
-  expect(points.map((p) => p.ahead)).toEqual([undefined, undefined, undefined, undefined, 45000, 0, 0]);
+  expect(points.map((p) => p.ahead)).toEqual([undefined, undefined, undefined, undefined, 450, 0, 0]);
   expect(points[3]).toEqual({ key: '2026-11-12', label: 'Thu, Nov 12', axisLabel: 'Thu', amount: 100 });
-  expect(points[4]).toMatchObject({ key: '2026-11-13', label: 'Fri, Nov 13', amount: 0, ahead: 45000 });
+  expect(points[4]).toMatchObject({ key: '2026-11-13', label: 'Fri, Nov 13', amount: 0, ahead: 450 });
 });
 
 test('this month runs to its last day', () => {

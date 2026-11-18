@@ -21,11 +21,11 @@ async function expectStatus(p: Promise<unknown>, status: number) {
   await p.catch((e: ApiError) => expect(e.status).toBe(status));
 }
 
-const tomorrow = () => addDays(todayIn('Asia/Karachi'), 1);
+const tomorrow = () => addDays(todayIn('America/Chicago'), 1);
 
 describe('mock server', () => {
   test('rejects wrong passwords', async () => {
-    await expectStatus(handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email: 'john@baselinepadel.pk', password: 'nope' }, token: null }), 401);
+    await expectStatus(handleMockRequest({ method: 'POST', path: '/api/auth/sign-in', query: {}, body: { email: 'john@baselinepadel.example', password: 'nope' }, token: null }), 401);
   });
 
   test('requests without a session are unauthorized', async () => {
@@ -33,7 +33,7 @@ describe('mock server', () => {
   });
 
   test('books a free slot, prices it server-side, and refuses a double booking', async () => {
-    const api = await signIn('john@baselinepadel.pk');
+    const api = await signIn('john@baselinepadel.example');
     const date = tomorrow();
     const availability = await api<CourtAvailability>('GET', '/api/courts/court_2/availability', undefined, { date });
     const free = availability.slots.find((s) => s.status === 'FREE');
@@ -51,16 +51,16 @@ describe('mock server', () => {
   });
 
   test('records partial then full payment and blocks overpayment', async () => {
-    const api = await signIn('john@baselinepadel.pk');
+    const api = await signIn('john@baselinepadel.example');
     const date = tomorrow();
     const slot = (await api<CourtAvailability>('GET', '/api/courts/court_1/availability', undefined, { date })).slots.filter((s) => s.status === 'FREE').at(-1)!;
     const booking = await api<BookingDetail>('POST', '/api/bookings', { courtId: 'court_1', customerId: 'cust_10', startAt: slot.startAt, endAt: slot.endAt });
 
     await expectStatus(api('POST', '/api/payments', { bookingId: booking.id, amount: booking.total + 1, method: 'CASH' }), 422);
-    await api('POST', '/api/payments', { bookingId: booking.id, amount: 1000, method: 'CASH' });
+    await api('POST', '/api/payments', { bookingId: booking.id, amount: 10, method: 'CARD' });
     let after = await api<BookingDetail>('GET', `/api/bookings/${booking.id}`);
     expect(after.paymentStatus).toBe('PARTIALLY_PAID');
-    expect(after.outstanding).toBe(booking.total - 1000);
+    expect(after.outstanding).toBe(booking.total - 10);
 
     await api('POST', '/api/payments', { bookingId: booking.id, amount: after.outstanding, method: 'CARD' });
     after = await api<BookingDetail>('GET', `/api/bookings/${booking.id}`);
@@ -69,32 +69,32 @@ describe('mock server', () => {
   });
 
   test('courts with booking history cannot be deleted', async () => {
-    const api = await signIn('john@baselinepadel.pk');
+    const api = await signIn('john@baselinepadel.example');
     await expectStatus(api('DELETE', '/api/courts/court_1'), 409);
   });
 
   test('overlapping time-based rates are rejected', async () => {
-    const api = await signIn('john@baselinepadel.pk');
+    const api = await signIn('john@baselinepadel.example');
     await expectStatus(api('POST', '/api/pricing/rules', { name: 'Clash', courtId: 'court_1', weekdays: [1], startTime: '19:00', endTime: '21:00', hourlyRate: 7000, active: true }), 409);
   });
 
   test('validates customer input and duplicate phones', async () => {
-    const api = await signIn('john@baselinepadel.pk');
+    const api = await signIn('john@baselinepadel.example');
     await expectStatus(api('POST', '/api/customers', { name: 'A', phone: '12' }), 422);
     const existing = (await api<Page<Customer>>('GET', '/api/customers')).items[0];
     await expectStatus(api('POST', '/api/customers', { name: 'New Person', phone: existing.phone }), 422);
   });
 
   test('court list reports utilization for active courts only', async () => {
-    const api = await signIn('john@baselinepadel.pk');
+    const api = await signIn('john@baselinepadel.example');
     const courts = await api<CourtSummary[]>('GET', '/api/courts');
     expect(courts.find((c) => c.id === 'court_5')?.todayUtilization).toBe(0);
     expect(courts.length).toBeGreaterThanOrEqual(5);
   });
 
   test('reports revenue already booked for the days after the period, apart from every total', async () => {
-    const api = await signIn('john@baselinepadel.pk');
-    const today = todayIn('Asia/Karachi');
+    const api = await signIn('john@baselinepadel.example');
+    const today = todayIn('America/Chicago');
     const period = { startDate: addDays(today, -3), endDate: today };
     const plain = await api<Analytics>('GET', '/api/analytics', undefined, period);
     const withAhead = await api<Analytics>('GET', '/api/analytics', undefined, { ...period, aheadUntil: addDays(today, 3) });
@@ -109,9 +109,9 @@ describe('mock server', () => {
 });
 
 describe('second owner with an empty facility', () => {
-  const EMPTY = 'emma@greenlinearena.pk';
+  const EMPTY = 'emma@greenlinearena.example';
   const range = () => {
-    const end = todayIn('Asia/Karachi');
+    const end = todayIn('America/Chicago');
     return { startDate: addDays(end, -29), endDate: end };
   };
   /** No NaN, Infinity or null where a number is expected, anywhere in a response. */
@@ -148,7 +148,7 @@ describe('second owner with an empty facility', () => {
   });
 
   test("owners never see each other's data", async () => {
-    const seededApi = await signIn('john@baselinepadel.pk');
+    const seededApi = await signIn('john@baselinepadel.example');
     const emptyApi = await signIn(EMPTY);
     expect((await seededApi<unknown[]>('GET', '/api/courts')).length).toBeGreaterThan(0);
     expect(await emptyApi<unknown[]>('GET', '/api/courts')).toEqual([]);
@@ -158,11 +158,11 @@ describe('second owner with an empty facility', () => {
   test('the empty owner can add a first court and customer, and they stay in their facility', async () => {
     const api = await signIn(EMPTY);
     await api('POST', '/api/courts', { name: 'Court A', sport: 'Padel', indoor: true, hourlyRate: 4000, slotMinutes: 60 });
-    await api('POST', '/api/customers', { name: 'Mark Stevens', phone: '+92 300 1234567' });
+    await api('POST', '/api/customers', { name: 'Mark Stevens', phone: '+1 (512) 555-0199' });
     expect((await api<unknown[]>('GET', '/api/courts')).length).toBe(1);
     expect((await api<Page<unknown>>('GET', '/api/customers')).items.length).toBe(1);
 
-    const seededApi = await signIn('john@baselinepadel.pk');
+    const seededApi = await signIn('john@baselinepadel.example');
     const seededCourts = await seededApi<CourtSummary[]>('GET', '/api/courts');
     expect(seededCourts.some((c) => c.name === 'Court A')).toBe(false);
   });

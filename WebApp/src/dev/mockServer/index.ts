@@ -10,8 +10,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- request bodies are untyped JSON; each route validates the fields it reads. */
 
 import { ApiError } from '@/api/client';
+import { REGION } from '@/config/region';
 import { daysBetween } from '@/lib/datetime';
+import { formatMoney } from '@/lib/money';
 import { maskEmail, passwordProblem } from '@/lib/passwordRules';
+import { isPhoneNumber, PHONE_EXAMPLE } from '@/lib/phone';
 import type {
   BookingEvent,
   BookingStatus,
@@ -106,7 +109,7 @@ const clone = <T,>(v: T): T => (v === undefined ? v : JSON.parse(JSON.stringify(
 
 const fmtMoney = (n: number) => {
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: db.facility.currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 2 }).format(n);
+    return formatMoney(n, db.facility.currency);
   } catch {
     return `${db.facility.currency} ${n}`;
   }
@@ -125,7 +128,8 @@ function event(b: StoredBooking, type: BookingEvent['type'], description: string
   b.history.push({ id: newId('evt'), at: now(), type, description, actor });
 }
 
-const PHONE = /^\+?[0-9][0-9\s-]{6,18}$/;
+/** Same shape check as the app (digits, spaces, dots, dashes, brackets; 7 to 15 digits). */
+const PHONE = { test: (v: string) => isPhoneNumber(v) };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -284,6 +288,13 @@ route('PATCH', '/api/facility', ({ body }) => {
   if ('email' in body && !EMAIL.test(String(body.email))) errors.email = 'Enter a valid email address.';
   if ('phone' in body && !PHONE.test(String(body.phone))) errors.phone = 'Enter a valid phone number.';
   if ('address' in body && !String(body.address).trim()) errors.address = 'Enter the street address.';
+  // ZIP and postal codes are checked against the format of the facility's country when the region knows it.
+  if ('postalCode' in body && String(body.postalCode ?? '').trim()) {
+    const country = String(body.country ?? db.facility.country ?? REGION.country);
+    const pattern = country === REGION.country ? REGION.address.postalCodePattern : undefined;
+    if (pattern && !pattern.test(String(body.postalCode).trim()))
+      errors.postalCode = `Enter a valid ${REGION.address.postalCodeLabel}, for example ${REGION.address.postalCodeExample}.`;
+  }
   if ('currency' in body && !/^[A-Z]{3}$/.test(String(body.currency))) errors.currency = 'Choose a currency.';
   if ('timezone' in body) {
     try {
@@ -576,7 +587,7 @@ function validateCustomer(body: Record<string, any>, id?: string) {
   const name = String(body.name ?? '').trim();
   const phone = String(body.phone ?? '').trim();
   if (name.length < 2) errors.name = 'Enter the customer name.';
-  if (!PHONE.test(phone)) errors.phone = 'Enter a valid phone number, for example +92 300 1234567.';
+  if (!PHONE.test(phone)) errors.phone = `Enter a valid phone number, for example ${PHONE_EXAMPLE}.`;
   else if (db.customers.some((c) => c.id !== id && c.phone.replace(/\D/g, '') === phone.replace(/\D/g, ''))) errors.phone = 'Another customer already uses this phone number.';
   if (body.email && !EMAIL.test(String(body.email))) errors.email = 'Enter a valid email address.';
   if (body.isRegular && body.regularSlot) {

@@ -11,6 +11,7 @@ import { bookingColumns, bookingRowLabel } from '@/features/bookings/components/
 import { usePayments } from '@/features/payments/api';
 import { formatDayAndTime } from '@/lib/datetime';
 import { formatClock, formatDuration, useFormat, WEEKDAY_LONG } from '@/lib/format';
+import { telHref } from '@/lib/phone';
 import { useRouteParam } from '@/navigation/params';
 import { routes } from '@/navigation/routes';
 import { useAppRouter } from '@/navigation/useAppRouter';
@@ -58,7 +59,7 @@ function CustomerBody({ customer: c }: { customer: CustomerDetail }) {
   const recent = bookings.data?.pages[0]?.items.slice(0, 5) ?? [];
   const recentPayments = payments.data?.pages[0]?.items.slice(0, 5) ?? [];
   const inactive = c.status === 'INACTIVE';
-  const tel = `tel:${c.phone.replace(/\s/g, '')}`;
+  const tel = telHref(c.phone);
   const columns = useMemo(() => bookingColumns(f, { showCustomer: false }), [f]);
 
   return (

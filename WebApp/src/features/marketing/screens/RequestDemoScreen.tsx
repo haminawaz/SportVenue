@@ -8,6 +8,7 @@ import { Buildings, CheckCircle, EnvelopeSimple, MapPin, Phone, User } from '@ph
 import { toUserFacingError } from '@/api/errors';
 import { USE_MOCKS } from '@/config/env';
 import { rules, useForm } from '@/lib/useForm';
+import { PHONE_EXAMPLE } from '@/lib/phone';
 import { routes } from '@/navigation/routes';
 import { notePush, useAppRouter } from '@/navigation/useAppRouter';
 import { AppText } from '@/ui/AppText';
@@ -141,7 +142,7 @@ export function RequestDemoForm({ intent }: { intent: LeadIntent }) {
 
         <FormGroup title="About you">
           <TextField label="Your name" icon={User} value={form.values.name} onChangeText={(t) => form.set('name', t)} error={form.errors.name} autoCapitalize="words" autoComplete="name" />
-          <TextField label="Phone" icon={Phone} value={form.values.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" autoComplete="tel" placeholder="+92 300 1234567" />
+          <TextField label="Phone" icon={Phone} value={form.values.phone} onChangeText={(t) => form.set('phone', t)} error={form.errors.phone} type="tel" autoComplete="tel" placeholder={PHONE_EXAMPLE} />
           <TextField
             label="Email"
             icon={EnvelopeSimple}
