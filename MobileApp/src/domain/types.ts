@@ -343,6 +343,12 @@ export type Subscription = {
 export type Analytics = {
   period: { startDate: CalendarDate; endDate: CalendarDate };
   currency: string;
+  /**
+   * The period every changePercent is measured against: the one the request
+   * asked for (compareStartDate, compareEndDate), or by default the period of
+   * the same length just before. Absent from backends that don't report it.
+   */
+  comparison?: { startDate: CalendarDate; endDate: CalendarDate };
   revenue: {
     total: number;
     changePercent: number | null;

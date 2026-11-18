@@ -274,7 +274,14 @@ route('GET', '/api/analytics', ({ q }) => {
   // Optional: the rest of a calendar week, month or quarter whose bookings are already in.
   const ahead = q.aheadUntil;
   if (ahead !== undefined && (!DATE.test(ahead) || ahead <= q.endDate || daysBetween(q.endDate, ahead) > 92)) throw invalid({ aheadUntil: 'Choose a day up to three months after the period.' });
-  return analyticsView(q.startDate, q.endDate, ahead);
+  // Optional: the period to compare with (for example the same days last week). It must end before the period starts.
+  let compare: { startDate: string; endDate: string } | undefined;
+  if (q.compareStartDate !== undefined || q.compareEndDate !== undefined) {
+    const [cs, ce] = [q.compareStartDate ?? '', q.compareEndDate ?? ''];
+    if (!DATE.test(cs) || !DATE.test(ce) || ce < cs || ce >= q.startDate || daysBetween(cs, ce) > 366) throw invalid({ compareStartDate: 'Choose a comparison period that ends before this one.' });
+    compare = { startDate: cs, endDate: ce };
+  }
+  return analyticsView(q.startDate, q.endDate, ahead, compare);
 });
 
 /* ------------------------------------------------------------------ facility */

@@ -30,3 +30,26 @@ test.each([0, 1, 2, 3, 4, 5, 6])('the sample club is growing (captured on day %i
   // The chart ends on (or within a whisker of) its best week, never on a slide.
   expect(weeks[7]).toBeGreaterThanOrEqual(Math.max(...weeks) * 0.97);
 });
+
+/** The dashboard's view of each preset as of `now`, compared like for like (as the app asks for it). */
+function presetsAsOf(now: Date) {
+  jest.useFakeTimers({ now });
+  jest.resetModules();
+  const { todayIn } = jest.requireActual<typeof import('@/lib/datetime')>('@/lib/datetime');
+  const { buildPresetRange, comparisonFor } = jest.requireActual<typeof import('@/features/dashboard/utils/dashboardFormatters')>('@/features/dashboard/utils/dashboardFormatters');
+  const { analyticsView } = jest.requireActual<typeof import('../views')>('../views');
+  const today = todayIn('America/Chicago');
+  return (['today', 'this_week', 'this_month', 'this_quarter'] as const).map((preset) => {
+    const range = buildPresetRange(preset, today);
+    return { preset, a: analyticsView(range.startDate, range.endDate, undefined, comparisonFor(range)) };
+  });
+}
+
+// Opening the dashboard in a demo on any day: two full weeks, and the turn of a month.
+const DEMO_DAYS = [...Array.from({ length: 14 }, (_, i) => `2026-11-${String(2 + i).padStart(2, '0')}`), '2026-11-30', '2026-12-01', '2026-12-02'];
+test.each(DEMO_DAYS)('the dashboard opens on growth for every period (%s)', (day) => {
+  for (const { a } of presetsAsOf(new Date(`${day}T18:00:00Z`))) {
+    expect(a.revenue.changePercent).toBeGreaterThan(0);
+    expect(a.bookings.changePercent).toBeGreaterThan(0);
+  }
+});

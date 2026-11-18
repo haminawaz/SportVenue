@@ -16,7 +16,7 @@ import { useTileWidth } from '@/ui/surface';
 import { SectionHeader } from '@/ui/SectionHeader';
 import { Notice } from '@/ui/States';
 
-import { percentTrend } from '../utils/dashboardFormatters';
+import { percentTrend, type Comparison } from '../utils/dashboardFormatters';
 import { revenueSeries } from '../utils/revenueSeries';
 
 import { BarList, ColumnChart, Heatmap } from './Charts';
@@ -39,12 +39,14 @@ const hourShort = (h: number) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'a' : 
  * With `aheadUntil` (for "This week", its Sunday), the revenue chart runs on to
  * that day, showing what is already booked for the days still to come.
  */
-export function AnalyticsReport({ a, fetching, aheadUntil }: { a: Analytics; fetching: boolean; aheadUntil?: CalendarDate }) {
+export function AnalyticsReport({ a, fetching, aheadUntil, comparison }: { a: Analytics; fetching: boolean; aheadUntil?: CalendarDate; comparison?: Comparison }) {
   const router = useRouter();
   const f = useFormat();
   const { half: tile } = useTileWidth();
   const span = daysBetween(a.period.startDate, a.period.endDate) + 1;
-  const against = 'vs previous period';
+  // The comparison's own label only when the server confirms it measured against that period.
+  const compared = a.comparison && comparison && a.comparison.startDate === comparison.startDate && a.comparison.endDate === comparison.endDate;
+  const against = compared ? comparison.label : 'vs previous period';
 
   // One bar per day up to a month, per week up to about four months, then per month.
   const series = useMemo(

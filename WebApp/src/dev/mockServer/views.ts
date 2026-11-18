@@ -310,15 +310,16 @@ function revenueByDay(from: string, to: string) {
 }
 
 /**
- * The report for a period, compared with the period of the same length before
- * it. With `aheadUntil` (a date after the period), it also returns the revenue
- * already booked for each day after the period up to that date, kept apart
- * from every total and comparison.
+ * The report for a period, compared with `compare` (for example the same days
+ * last week) or by default with the period of the same length before it. With
+ * `aheadUntil` (a date after the period), it also returns the revenue already
+ * booked for each day after the period up to that date, kept apart from every
+ * total and comparison.
  */
-export function analyticsView(startDate: string, endDate: string, aheadUntil?: string): Analytics {
+export function analyticsView(startDate: string, endDate: string, aheadUntil?: string, compare?: { startDate: string; endDate: string }): Analytics {
   const span = daysBetween(startDate, endDate) + 1;
-  const prevEnd = addDays(startDate, -1);
-  const prevStart = addDays(prevEnd, -(span - 1));
+  const prevEnd = compare?.endDate ?? addDays(startDate, -1);
+  const prevStart = compare?.startDate ?? addDays(prevEnd, -(span - 1));
   const inRange = db.bookings.filter((b) => dateOf(b.startAt) >= startDate && dateOf(b.startAt) <= endDate);
   const live = inRange.filter((b) => b.status !== 'CANCELLED');
   const cur = periodTotals(startDate, endDate);
@@ -371,6 +372,7 @@ export function analyticsView(startDate: string, endDate: string, aheadUntil?: s
   return {
     period: { startDate, endDate },
     currency: db.facility.currency,
+    comparison: { startDate: prevStart, endDate: prevEnd },
     revenue: {
       total: round2(cur.revenue),
       changePercent: pct(cur.revenue, prev.revenue),

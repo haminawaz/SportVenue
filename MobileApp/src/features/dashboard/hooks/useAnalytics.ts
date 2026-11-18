@@ -5,11 +5,20 @@ import { qk } from '@/api/queryKeys';
 import type { Analytics } from '@/domain/types';
 import type { CalendarDate } from '@/lib/datetime';
 
-/** `aheadUntil` also asks for the revenue already booked for the days after the period up to that date. */
-export function useAnalytics(startDate: CalendarDate, endDate: CalendarDate, aheadUntil?: CalendarDate) {
+type Period = { startDate: CalendarDate; endDate: CalendarDate };
+
+/**
+ * Every change is measured against `compare` (for example the same days last
+ * week; by default the period of the same length before). `aheadUntil` also
+ * asks for the revenue already booked for the days after the period up to that date.
+ */
+export function useAnalytics(startDate: CalendarDate, endDate: CalendarDate, aheadUntil?: CalendarDate, compare?: Period) {
   return useQuery({
-    queryKey: [...qk.analytics, startDate, endDate, aheadUntil ?? null],
-    queryFn: () => apiRequest<Analytics>('/api/analytics', { query: { startDate, endDate, aheadUntil } }),
+    queryKey: [...qk.analytics, startDate, endDate, aheadUntil ?? null, compare?.startDate ?? null, compare?.endDate ?? null],
+    queryFn: () =>
+      apiRequest<Analytics>('/api/analytics', {
+        query: { startDate, endDate, aheadUntil, compareStartDate: compare?.startDate, compareEndDate: compare?.endDate },
+      }),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
   });

@@ -32,3 +32,26 @@ test.each([0, 1, 2, 3, 4, 5, 6])('the sample club is growing (captured on day %i
   // The chart ends on (or within a whisker of) its best week, never on a slide.
   expect(weeks[7]).toBeGreaterThanOrEqual(Math.max(...weeks) * 0.97);
 });
+
+/** The dashboard's view of each preset as of `now`, compared like for like (as the app asks for it). */
+async function presetsAsOf(now: Date) {
+  vi.useFakeTimers({ now, toFake: ['Date'] });
+  vi.resetModules();
+  const { todayIn } = await import('@/lib/datetime');
+  const { buildPresetRange, comparisonFor } = await import('@/features/dashboard/utils/dashboardFormatters');
+  const { analyticsView } = await import('../views');
+  const today = todayIn('America/Chicago');
+  return (['today', 'this_week', 'this_month', 'this_quarter'] as const).map((preset) => {
+    const range = buildPresetRange(preset, today);
+    return { preset, a: analyticsView(range.startDate, range.endDate, undefined, comparisonFor(range)) };
+  });
+}
+
+// Opening the dashboard in a demo on any day: two full weeks, and the turn of a month.
+const DEMO_DAYS = [...Array.from({ length: 14 }, (_, i) => `2026-11-${String(2 + i).padStart(2, '0')}`), '2026-11-30', '2026-12-01', '2026-12-02'];
+test.each(DEMO_DAYS)('the dashboard opens on growth for every period (%s)', async (day) => {
+  for (const { preset, a } of await presetsAsOf(new Date(`${day}T18:00:00Z`))) {
+    expect(a.revenue.changePercent, preset).toBeGreaterThan(0);
+    expect(a.bookings.changePercent, preset).toBeGreaterThan(0);
+  }
+});

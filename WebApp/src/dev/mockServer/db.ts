@@ -4,7 +4,7 @@
  */
 
 import { REGION } from '@/config/region';
-import { addDays, startOfWeek, todayIn } from '@/lib/datetime';
+import { addDays, todayIn } from '@/lib/datetime';
 import type {
   AppNotification,
   BookingEvent,
@@ -114,9 +114,9 @@ function seed(): Db {
   const courts: Court[] = [
     { id: 'court_1', name: 'Court 1', sport: 'Padel', surface: 'Panoramic glass, artificial turf', indoor: true, status: 'ACTIVE', hourlyRate: 48, slotMinutes: 60, createdAt: at(-400, '10:00') },
     { id: 'court_2', name: 'Court 2', sport: 'Padel', surface: 'Artificial turf', indoor: false, status: 'ACTIVE', hourlyRate: 42, slotMinutes: 60, createdAt: at(-400, '10:00') },
-    { id: 'court_3', name: 'Court 3', sport: 'Padel', surface: 'Artificial turf', indoor: true, status: 'MAINTENANCE', hourlyRate: 48, slotMinutes: 60, notes: 'Glass panel replacement. Expected back next week.', createdAt: at(-200, '10:00') },
+    { id: 'court_3', name: 'Court 3', sport: 'Padel', surface: 'Artificial turf', indoor: true, status: 'ACTIVE', hourlyRate: 48, slotMinutes: 60, createdAt: at(-200, '10:00') },
     { id: 'court_4', name: 'Futsal Pitch', sport: 'Futsal', surface: '3G turf, floodlit', indoor: false, status: 'ACTIVE', hourlyRate: 120, slotMinutes: 60, createdAt: at(-380, '10:00') },
-    { id: 'court_5', name: 'Squash Court', sport: 'Squash', surface: 'Maple wood', indoor: true, status: 'INACTIVE', hourlyRate: 25, slotMinutes: 60, notes: 'Closed for the season.', createdAt: at(-380, '10:00') },
+    { id: 'court_5', name: 'Squash Court', sport: 'Squash', surface: 'Maple wood', indoor: true, status: 'MAINTENANCE', hourlyRate: 25, slotMinutes: 60, notes: 'Floor refinishing. Back next week.', createdAt: at(-380, '10:00') },
   ];
 
   const rules: PricingRule[] = [
@@ -172,50 +172,59 @@ function seed(): Db {
   const cancelReasons = ['Weather', 'Player unavailable', 'Rescheduled by customer', 'Double booking', 'Illness'];
   let seq = 1040;
 
-  // Eighteen weeks of history and twelve days ahead. The club has grown since it
-  // moved its bookings here, so demand ramps up over the history to today's level
-  // and a recent period compares well with the one before it.
-  const HISTORY_DAYS = 126;
-  // Demand for each court and hour carries over from day to day, so the number of
-  // bookings follows demand closely instead of swinging at random, while which
-  // slots are taken still varies. Every fourth padel booking runs 90 minutes, and
-  // cancellations are spread the same way.
-  const carry = new Map<string, number>();
-  let longCarry = random();
-  let cancelCarry = random();
-  const maintenanceFrom = startOfWeek(today);
+  // Twenty-seven weeks of history (back past the start of the last quarter) and
+  // twelve days ahead.
+  const HISTORY_DAYS = 190;
+
+  /** How sought-after a court is at an hour on a weekday, at the club's current size. */
+  const demand = (court: Court, weekday: number, hour: number) => {
+    const peak = hour >= 18 && hour < 23;
+    const weekend = weekday === 0 || weekday === 6;
+    let p = peak ? 0.78 : hour < 12 ? 0.3 : 0.18;
+    if (weekend) p += 0.15;
+    if (court.id === 'court_2' && hour >= 13 && hour < 17 && !weekend) p = 0.06;
+    if (court.id === 'court_4' && !peak) p *= 0.5;
+    return p;
+  };
+
+  // Each weekday's slots fill in a fixed order: sought-after ones first, with
+  // some chance in the order. A slot once taken stays taken in later weeks
+  // (regulars keep their slot), and the club gains one more regular slot per
+  // weekday each week over the last eight weeks, more slowly before that. So
+  // today, this week, month or quarter so far always beats the same stretch
+  // before it, by a believable margin, whichever day the demo runs.
+  type Slot = { court: Court; start: number; minutes: number; rank: number };
+  const weekdays = ALL_DAYS.map((weekday) => {
+    const open = minutesOf(facility.businessHours[weekday].open);
+    const close = minutesOf(facility.businessHours[weekday].close);
+    const slots: Slot[] = [];
+    let full = 0;
+    for (const court of activeCourts) {
+      // Futsal plays 90-minute sessions; padel books by the hour.
+      const minutes = court.id === 'court_4' ? 90 : 60;
+      for (let start = open; start + minutes <= close; start += minutes) {
+        const p = demand(court, weekday, Math.floor(start / 60));
+        full += p;
+        slots.push({ court, start, minutes, rank: -Math.log(1 - random()) / p });
+      }
+    }
+    slots.sort((a, b) => a.rank - b.rank);
+    return { slots, full: Math.round(full) };
+  });
+  /** Regular slots on a weekday n weeks ago: one fewer per week for eight weeks, then one fewer every four. */
+  const takenWeeksAgo = (full: number, n: number) => Math.max(0, full - (n <= 8 ? n : 8 + Math.floor((n - 8) / 4)));
+
   for (let offset = -HISTORY_DAYS; offset <= 12; offset++) {
     const date = addDays(today, offset);
-    const weekday = weekdayOf(date);
-    const hours = facility.businessHours[weekday];
-    for (const court of activeCourts) {
-      // Court 3 went into maintenance at the start of this week.
-      if (court.id === 'court_3' && date >= maintenanceFrom) continue;
-      let cursor = minutesOf(hours.open);
-      const close = minutesOf(hours.close);
-      while (cursor + 60 <= close) {
-        const hour = Math.floor(cursor / 60);
-        const peak = hour >= 18 && hour < 23;
-        const weekend = weekday === 0 || weekday === 6;
-        let p = peak ? 0.78 : hour < 12 ? 0.3 : 0.18;
-        if (weekend) p += 0.15;
-        if (court.id === 'court_2' && hour >= 13 && hour < 17 && !weekend) p = 0.06;
-        if (court.id === 'court_4' && !peak) p *= 0.5;
-        if (offset < 0) p *= 0.5 + 0.5 * (1 + offset / HISTORY_DAYS);
-        if (offset > 0) p *= Math.max(0.25, 1 - offset * 0.07);
-        const key = `${court.id}@${hour}`;
-        const due = (carry.get(key) ?? random()) + p;
-        if (due < 1) {
-          carry.set(key, due);
-          cursor += 60;
-          continue;
-        }
-        carry.set(key, due - 1);
-        longCarry += 0.25;
-        const long = longCarry >= 1;
-        if (long) longCarry -= 1;
-        const duration = court.id === 'court_4' || long ? 90 : 60;
-        if (cursor + duration > close) break;
+    const { slots, full } = weekdays[weekdayOf(date)];
+    // Days ahead hold only what is booked in advance so far.
+    const taken = offset > 0 ? Math.round(full * Math.max(0.25, 1 - offset * 0.07)) : takenWeeksAgo(full, Math.floor(-offset / 7));
+    // The next slots in line were sometimes booked and then cancelled, so they stayed free.
+    const day = slots.slice(0, taken).map((s) => ({ ...s, cancelled: false }));
+    for (const s of slots.slice(taken, taken + 2)) if (random() < 0.7) day.push({ ...s, cancelled: true });
+    day.sort((a, b) => a.court.id.localeCompare(b.court.id) || a.start - b.start);
+    for (const { court, start: cursor, minutes: duration, cancelled } of day) {
+      {
         const startAt = naive(date, cursor);
         const endAt = naive(date, cursor + duration);
         // Only customers who had joined by then.
@@ -223,12 +232,8 @@ function seed(): Db {
         const q = quote(court, rules, startAt, endAt);
         const past = toEpoch(endAt) <= toEpoch(now);
         let status: BookingStatus = past ? 'COMPLETED' : random() < 0.1 ? 'PENDING' : 'CONFIRMED';
-        // About one booking in seventeen is cancelled, spread evenly over time.
-        cancelCarry += 0.06;
-        if (cancelCarry >= 1) {
-          cancelCarry -= 1;
-          status = 'CANCELLED';
-        } else if (past && random() < 0.02) status = 'NO_SHOW';
+        if (cancelled) status = 'CANCELLED';
+        else if (past && random() < 0.02) status = 'NO_SHOW';
         const id = `bk_${seq}`;
         const createdAt = naive(addDays(date, -Math.floor(random() * 6) - 1), 600 + Math.floor(random() * 600));
         const booking: StoredBooking = {
@@ -270,7 +275,6 @@ function seed(): Db {
             booking.history.push({ id: `${id}_h3`, at: receivedAt, type: 'PAYMENT', description: `Payment received`, actor: 'John Miller' });
           }
         }
-        cursor += duration;
       }
     }
   }
@@ -422,7 +426,7 @@ function seed(): Db {
     ...(biggestDebt
       ? [{ id: 'ntf_3', type: 'PAYMENT_REMINDER' as const, title: 'Balance still unpaid', body: `${nameOf(biggestDebt.customerId)} has not paid for ${biggestDebt.reference}. Send a reminder or record a payment.`, createdAt: minutesAgo(180), read: false, link: { kind: 'booking' as const, id: biggestDebt.id } }]
       : []),
-    { id: 'ntf_4', type: 'SYSTEM', title: 'Court 3 is in maintenance', body: 'Bookings on Court 3 are paused until you set it back to active.', createdAt: minutesAgo(60 * 20), read: true, link: { kind: 'court', id: 'court_3' } },
+    { id: 'ntf_4', type: 'SYSTEM', title: 'Squash Court is in maintenance', body: 'Bookings on the Squash Court are paused until you set it back to active.', createdAt: minutesAgo(60 * 20), read: true, link: { kind: 'court', id: 'court_5' } },
     ...(lastCancelled
       ? [{ id: 'ntf_5', type: 'BOOKING_CANCELLED' as const, title: 'Booking cancelled', body: `${nameOf(lastCancelled.customerId)} cancelled ${lastCancelled.reference} (${lastCancelled.cancelReason}).`, createdAt: minutesAgo(60 * 26), read: true, link: { kind: 'booking' as const, id: lastCancelled.id } }]
       : []),

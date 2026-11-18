@@ -6,6 +6,7 @@ import {
   buildCustomRange,
   buildPresetRange,
   calendarPeriodEnd,
+  comparisonFor,
   countTrend,
   greetingFor,
   percentTrend,
@@ -13,6 +14,7 @@ import {
   recommendationText,
   validateRange,
 } from '../utils/dashboardFormatters';
+import type { DateRangePreset } from '../types/facilityDashboard.types';
 
 const nbsp = (s: string) => s.replace(/ /g, ' ');
 
@@ -86,6 +88,26 @@ describe('date range filter', () => {
     expect(buildPresetRange('this_month', today)).toEqual({ preset: 'this_month', startDate: '2026-09-01', endDate: today });
     expect(buildPresetRange('this_quarter', today)).toEqual({ preset: 'this_quarter', startDate: '2026-07-01', endDate: today });
     expect(buildPresetRange('this_year', today)).toEqual({ preset: 'this_year', startDate: '2026-01-01', endDate: today });
+  });
+
+  test('each period is compared like for like, weekday for weekday', () => {
+    // Thursday 12 November 2026.
+    const today = '2026-11-12';
+    const of = (preset: Exclude<DateRangePreset, 'custom'>) => comparisonFor(buildPresetRange(preset, today));
+    expect(of('today')).toEqual({ startDate: '2026-11-05', endDate: '2026-11-05', label: 'vs last Thursday' });
+    expect(of('this_week')).toEqual({ startDate: '2026-11-02', endDate: '2026-11-05', label: 'vs same days last week' });
+    // Nov 1 (a Sunday) to Nov 12, against the same weekdays four weeks earlier.
+    expect(of('this_month')).toEqual({ startDate: '2026-10-04', endDate: '2026-10-15', label: 'vs same weekdays last month' });
+    expect(of('this_quarter')).toEqual({ startDate: '2026-07-02', endDate: '2026-08-13', label: 'vs same weekdays last quarter' });
+    expect(of('this_year')).toMatchObject({ startDate: '2025-01-02', endDate: '2025-11-13', label: 'vs same weekdays last year' });
+    // A custom range: the period of the same length just before it.
+    expect(comparisonFor(buildCustomRange('2026-11-01', '2026-11-10'))).toEqual({ startDate: '2026-10-22', endDate: '2026-10-31', label: 'vs previous period' });
+  });
+
+  test('a comparison never overlaps the period it is compared with', () => {
+    // The whole of a 31-day month goes back five weeks, not four.
+    const c = comparisonFor({ preset: 'this_month', startDate: '2026-12-01', endDate: '2026-12-31' });
+    expect(c).toMatchObject({ startDate: '2026-10-27', endDate: '2026-11-26' });
   });
 
   test('the chart runs each week, month and quarter to its last day', () => {

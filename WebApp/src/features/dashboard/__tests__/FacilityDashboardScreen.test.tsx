@@ -12,7 +12,8 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ToastProvider } from '@/ui/Toast';
 
 import { FacilityDashboardScreen } from '../FacilityDashboardScreen';
-import { calendarPeriodEnd } from '../utils/dashboardFormatters';
+import type { DateRange } from '../types/facilityDashboard.types';
+import { calendarPeriodEnd, comparisonFor } from '../utils/dashboardFormatters';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }), usePathname: () => '/' }));
 
@@ -57,11 +58,16 @@ function Providers({ children }: { children: ReactNode }) {
 
 const renderDashboard = () => render(<FacilityDashboardScreen />, { wrapper: Providers });
 const lastQuery = () => (request.mock.calls.at(-1)?.[1] as { query: { startDate: string; endDate: string } }).query;
-/** The default period: this week so far, with the rest of the week (to Sunday) asked for the chart. */
+/** The query the dashboard sends for a period: the period, the rest of it for the chart, and what it is compared with. */
+const query = (preset: DateRange['preset'], startDate: string, endDate: string, aheadUntil?: string) => {
+  const c = comparisonFor({ preset, startDate, endDate });
+  return { startDate, endDate, aheadUntil, compareStartDate: c.startDate, compareEndDate: c.endDate };
+};
+/** The default period: this week so far, against the same days last week. */
 const thisWeek = () => {
   const today = todayIn(TZ);
   const sunday = addDays(startOfWeek(today), 6);
-  return { startDate: startOfWeek(today), endDate: today, aheadUntil: sunday > today ? sunday : undefined };
+  return query('this_week', startOfWeek(today), today, sunday > today ? sunday : undefined);
 };
 /** Matches an amount exactly, whether the formatter used a normal or a non-breaking space. */
 const money = (s: string) => new RegExp(`^${s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/ /g, '[ \\u00a0]')}$`);
@@ -99,7 +105,7 @@ test('changing the period reloads the report for the new dates', async () => {
   await user.click(screen.getByRole('radio', { name: 'This month' }));
   const today = todayIn(TZ);
   const monthEnd = calendarPeriodEnd('this_month', today)!;
-  await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today, aheadUntil: monthEnd > today ? monthEnd : undefined }));
+  await vi.waitFor(() => expect(lastQuery()).toEqual(query('this_month', `${today.slice(0, 8)}01`, today, monthEnd > today ? monthEnd : undefined)));
 });
 
 const dayName = new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -131,7 +137,7 @@ test('a custom range is picked on the calendar and loads once applied', async ()
   // Nothing reloads until Apply.
   expect(lastQuery()).toEqual(thisWeek());
   await user.click(screen.getByRole('button', { name: 'Apply' }));
-  await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: start, endDate: today }));
+  await vi.waitFor(() => expect(lastQuery()).toEqual(query('custom', start, today)));
   expect(screen.queryByRole('dialog', { name: 'Pick a date range' })).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /^Custom range, .+. Change$/ })).toHaveFocus();
 });
@@ -171,7 +177,7 @@ test('Clear empties the picked days, and an applied custom range goes back to th
   await pickDay(user, addDays(today, -10));
   await pickDay(user, addDays(today, -2));
   await user.click(screen.getByRole('button', { name: 'Apply' }));
-  await vi.waitFor(() => expect(lastQuery()).toEqual({ startDate: addDays(today, -10), endDate: addDays(today, -2) }));
+  await vi.waitFor(() => expect(lastQuery()).toEqual(query('custom', addDays(today, -10), addDays(today, -2))));
 
   await user.click(screen.getByRole('button', { name: /^Custom range, / }));
   await user.click(screen.getByRole('button', { name: 'Clear' }));

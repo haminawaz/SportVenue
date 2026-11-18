@@ -1,3 +1,4 @@
+import { REGION } from '@/config/region';
 import { addDays, daysBetween, formatCalendarDate, formatMonthDay, startOfWeek, type CalendarDate } from '@/lib/datetime';
 import type { BadgeTone } from '@/ui/StatusBadge';
 
@@ -48,6 +49,49 @@ export function calendarPeriodEnd(preset: DateRangePreset, today: CalendarDate):
       return lastDayOf(month - ((month - 1) % 3) + 2);
     default:
       return null;
+  }
+}
+
+/** A period the report is measured against, and how the change is described. */
+export type Comparison = { startDate: CalendarDate; endDate: CalendarDate; label: string };
+
+const weekdayName = new Intl.DateTimeFormat(REGION.locale, { timeZone: 'UTC', weekday: 'long' });
+
+/**
+ * The same days of the week, whole weeks earlier: at least `weeks`, and always
+ * far enough back that the two stretches don't overlap.
+ */
+function weeksEarlier(range: DateRange, weeks: number): Pick<Comparison, 'startDate' | 'endDate'> {
+  const days = 7 * Math.max(weeks, Math.ceil((daysBetween(range.startDate, range.endDate) + 1) / 7));
+  return { startDate: addDays(range.startDate, -days), endDate: addDays(range.endDate, -days) };
+}
+
+/**
+ * What a period is compared with, like for like and weekday for weekday,
+ * because a venue's Saturdays look nothing like its Tuesdays: today against
+ * the same weekday last week, this week so far against the same days last
+ * week, this month (quarter, year) so far against the same weekdays 4 (13, 52)
+ * weeks earlier. A custom range is compared with the period of the same
+ * length just before it.
+ */
+export function comparisonFor(range: DateRange): Comparison {
+  switch (range.preset) {
+    case 'today': {
+      const day = addDays(range.startDate, -7);
+      return { startDate: day, endDate: day, label: `vs last ${weekdayName.format(new Date(`${day}T00:00:00Z`))}` };
+    }
+    case 'this_week':
+      return { ...weeksEarlier(range, 1), label: 'vs same days last week' };
+    case 'this_month':
+      return { ...weeksEarlier(range, 4), label: 'vs same weekdays last month' };
+    case 'this_quarter':
+      return { ...weeksEarlier(range, 13), label: 'vs same weekdays last quarter' };
+    case 'this_year':
+      return { ...weeksEarlier(range, 52), label: 'vs same weekdays last year' };
+    default: {
+      const endDate = addDays(range.startDate, -1);
+      return { startDate: addDays(endDate, -daysBetween(range.startDate, range.endDate)), endDate, label: 'vs previous period' };
+    }
   }
 }
 

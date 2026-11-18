@@ -106,6 +106,20 @@ describe('mock server', () => {
     await expectStatus(api('GET', '/api/analytics', undefined, { ...period, aheadUntil: today }), 422);
     await expectStatus(api('GET', '/api/analytics', undefined, { ...period, aheadUntil: addDays(today, 100) }), 422);
   });
+
+  test('measures changes against the comparison period asked for, and says which one it used', async () => {
+    const api = await signIn('john@baselinepadel.example');
+    const today = todayIn('America/Chicago');
+    const period = { startDate: addDays(today, -2), endDate: today };
+    const plain = await api<Analytics>('GET', '/api/analytics', undefined, period);
+    expect(plain.comparison).toEqual({ startDate: addDays(today, -5), endDate: addDays(today, -3) });
+    const lastWeek = { compareStartDate: addDays(today, -9), compareEndDate: addDays(today, -7) };
+    const compared = await api<Analytics>('GET', '/api/analytics', undefined, { ...period, ...lastWeek });
+    expect(compared.comparison).toEqual({ startDate: lastWeek.compareStartDate, endDate: lastWeek.compareEndDate });
+    expect(compared.revenue.total).toBe(plain.revenue.total);
+    // A comparison must end before the period starts.
+    await expectStatus(api('GET', '/api/analytics', undefined, { ...period, compareStartDate: addDays(today, -3), compareEndDate: today }), 422);
+  });
 });
 
 describe('second owner with an empty facility', () => {

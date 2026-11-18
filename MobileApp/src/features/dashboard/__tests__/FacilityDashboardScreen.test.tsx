@@ -12,7 +12,14 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ToastProvider } from '@/ui/Toast';
 
 import { FacilityDashboardScreen } from '../FacilityDashboardScreen';
-import { calendarPeriodEnd } from '../utils/dashboardFormatters';
+import type { DateRange } from '../types/facilityDashboard.types';
+import { calendarPeriodEnd, comparisonFor } from '../utils/dashboardFormatters';
+
+/** The query the dashboard sends for a period: the period, the rest of it for the chart, and what it is compared with. */
+const query = (preset: DateRange['preset'], startDate: string, endDate: string, aheadUntil?: string) => {
+  const c = comparisonFor({ preset, startDate, endDate });
+  return { startDate, endDate, aheadUntil, compareStartDate: c.startDate, compareEndDate: c.endDate };
+};
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
@@ -86,7 +93,7 @@ test('shows the full report for this week in the facility zone by default', asyn
   const today = todayIn(TZ);
   const sunday = addDays(startOfWeek(today), 6);
   // The chart runs on to Sunday, so the rest of the week is asked for too (none left on a Sunday).
-  expect(request).toHaveBeenCalledWith('/api/analytics', { query: { startDate: startOfWeek(today), endDate: today, aheadUntil: sunday > today ? sunday : undefined } });
+  expect(request).toHaveBeenCalledWith('/api/analytics', { query: query('this_week', startOfWeek(today), today, sunday > today ? sunday : undefined) });
   // One booked-ahead bar per day still to come this week.
   expect(screen.queryAllByRole('button', { name: /booked ahead$|: Nothing booked yet$/ })).toHaveLength(daysBetween(today, sunday));
   for (const heading of ['Revenue by court', 'Court utilization', 'Customers', 'Outstanding payments', 'Cancellations']) {
@@ -105,7 +112,7 @@ test('changing the period reloads the report for the new dates', async () => {
   await user.press(screen.getByRole('radio', { name: 'This month' }));
   const today = todayIn(TZ);
   const monthEnd = calendarPeriodEnd('this_month', today)!;
-  await waitFor(() => expect(lastQuery()).toEqual({ startDate: `${today.slice(0, 8)}01`, endDate: today, aheadUntil: monthEnd > today ? monthEnd : undefined }));
+  await waitFor(() => expect(lastQuery()).toEqual(query('this_month', `${today.slice(0, 8)}01`, today, monthEnd > today ? monthEnd : undefined)));
 });
 
 test('an error offers a retry, then the report recovers', async () => {

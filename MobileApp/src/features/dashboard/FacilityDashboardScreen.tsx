@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AppState,
   RefreshControl,
@@ -25,6 +25,7 @@ import type { DateRange } from "./types/facilityDashboard.types";
 import {
   buildPresetRange,
   calendarPeriodEnd,
+  comparisonFor,
   DEFAULT_PRESET,
   greetingFor,
   isSameRange,
@@ -77,7 +78,14 @@ export function FacilityDashboardScreen() {
   const periodEnd = calendarPeriodEnd(range.preset, today);
   const aheadUntil =
     periodEnd && periodEnd > range.endDate ? periodEnd : undefined;
-  const query = useAnalytics(range.startDate, range.endDate, aheadUntil);
+  // Like for like: this week so far against the same days last week, and so on.
+  const comparison = useMemo(() => comparisonFor(range), [range]);
+  const query = useAnalytics(
+    range.startDate,
+    range.endDate,
+    aheadUntil,
+    comparison,
+  );
   const unread = useUnreadCount();
 
   const onRangeChange = useCallback((next: DateRange) => {
@@ -145,6 +153,7 @@ export function FacilityDashboardScreen() {
                 a={a}
                 fetching={query.isFetching && !pullRefreshing}
                 aheadUntil={aheadUntil}
+                comparison={comparison}
               />
             )}
           </QueryView>
